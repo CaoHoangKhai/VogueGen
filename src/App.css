@@ -1,0 +1,29 @@
+*{margin: 0px; padding: 0px;}
+body{
+  font-family: "Lato", sans-serif;
+}
+.bg-purple {background: #8e00a3;}
+.headerWrapper .top-strip{padding: 8px 0px;}
+.headerWrapper .headerWrapper p {color: #fff; font-size:12px}
+
+.headerWrapper .header{width: 100%; height:auto; padding:15px 0px;}
+.logoWrapper img {width: 100%;}
+
+
+
+.footer-icon {
+    font-size: 1.5rem;
+}
+
+.footer span,
+.footer h5 {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 300;  /* Mỏng */
+    font-size: 0.85rem; /* Kích thước chữ nhỏ hơn */
+}
+
+.footer ul li {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 300;  /* Mỏng */
+    font-size: 0.85rem; /* Kích thước chữ nhỏ hơn */
+}
