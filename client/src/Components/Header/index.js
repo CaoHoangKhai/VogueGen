@@ -2,7 +2,7 @@ import Logo from '../../assets/images/header/VogueGen.jpg';
 import { Link } from 'react-router-dom';
 import { IoIosSearch } from "react-icons/io";
 import { FaShoppingCart, FaUser } from "react-icons/fa";
-
+import Button from "@mui/material/Button";
 
 const Header = () => {
     return (
@@ -38,19 +38,49 @@ const Header = () => {
                                     placeholder="Tìm kiếm sản phẩm..."
                                 />
                                 <span className="input-group-text search-icon">
-                                    <IoIosSearch />
+                                    <Button>
+                                        <IoIosSearch />
+                                    </Button>
                                 </span>
                             </div>
                         </div>
 
                         {/* Nút Đăng Nhập và Giỏ Hàng */}
                         <div className="col-sm-4 d-flex justify-content-end gap-3">
-                            <Link to={'/login'} className="btn btn-outline-primary d-flex align-items-center gap-2">
+                            <Link className="btn btn-outline-primary d-flex align-items-center gap-2" to={'/signin'}>
                                 <FaUser /> Đăng Nhập
                             </Link>
-                            <Link to={'/cart'} className="btn btn-outline-success d-flex align-items-center gap-2">
+                            <Link className="btn btn-outline-success d-flex align-items-center gap-2">
                                 <FaShoppingCart /> Giỏ Hàng
                             </Link>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Thanh Điều hướng */}
+            <div className="header">
+                <div className="bg-dark text-white py-2 mt-4">
+                    <div className="container">
+                        <div className="row justify-content-start">
+                            <div className="col-auto">
+                                <Button className="btn btn-dark text-white">Trang Chủ</Button>
+                            </div>
+                            <div className="col-auto">
+                                <Button className="btn btn-dark text-white">Giới Thiệu</Button>
+                            </div>
+                            <div className="col-auto">
+                                <Button className="btn btn-dark text-white">Sản Phẩm</Button>
+                            </div>
+                            <div className="col-auto">
+                                <Button className="btn btn-dark text-white">Tin Tức</Button>
+                            </div>
+                            <div className="col-auto">
+                                <Button className="btn btn-dark text-white">Hệ Thống Cửa Hàng</Button>
+                            </div>
+                            <div className="col-auto">
+                                <Button className="btn btn-dark text-white">Liên Hệ</Button>
+                            </div>
                         </div>
                     </div>
                 </div>
