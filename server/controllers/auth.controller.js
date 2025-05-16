@@ -1,33 +1,48 @@
-const AuthService = require("../services/auth.services");
-const MongoDB = require("../utils/mongodb.utils");
 const ApiError = require("../api-error");
+const AuthService = require("../services/auth.service");
+const MongoDB = require("../utils/mongodb.utils");
+const messages = require("../utils/messages");
 
-exports.signup = async (req, res, next) => {
-    const {hoten, sodienthoai, matkhau, email} = req.body;
-    if (!hoten || sodienthoai || !matkhau || !email) {
-        return next(new ApiError(400, "Dữ liệu không hợp lệ! Vui lòng kiểm tra lại."));
-    }
-
+exports.register = async (req, res, next) => {
     try {
+        const { hoten, email, sodienthoai, matkhau } = req.body;
+
+        if (!hoten || !email || !sodienthoai || !matkhau) {
+            return next(new ApiError(400, "Vui lòng nhập đầy đủ thông tin đăng ký."));
+        }
+
         const authService = new AuthService(MongoDB.client);
-        const userId = await authService.signup(req.body);
+        const user = await authService.register({ hoten, email, sodienthoai, matkhau });
 
-        return res.status(201).json({ message: "Đăng ký thành công !", userId })
-
+        return res.status(201).json({ message: "Đăng ký thành công!", user });
     } catch (error) {
-        return next(new ApiError(500, `Lỗi đăng ký: ${error.message}`));
+        console.error("Lỗi trong register controller:", error);
+        return res.status(400).json({ message: error.message });
     }
 };
 
-exports.signin = async (req, res, next) => {
-    const { email, matkhau } = req.body;
-    if (!email || !matkhau) {
-        return next(new ApiError(400, "Dữ liệu không hợp lệ! Vui lòng kiểm tra lại."));
-    }
+exports.login = async (req, res, next) => {
     try {
+        const { email, matkhau } = req.body;
 
+        if (!email || !matkhau) {
+            return next(new ApiError(400, "Email và mật khẩu là bắt buộc."));
+        }
+
+        const authService = new AuthService(MongoDB.client);
+
+        const user = await authService.login({ email, matkhau });
+
+        return res.status(200).json({
+            message: "Đăng nhập thành công!",
+            user
+        });
     } catch (error) {
-        return next(new ApiError(500, `Lỗi đăng nhập: ${error.message}`));
-    }
+        console.error(error.message);
 
-}
+        
+        return res.status(401).json({
+            message: error.message || "Đăng nhập thất bại!"
+        });
+    }
+};

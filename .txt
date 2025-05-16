@@ -1,0 +1,3 @@
+gán giới tính
+
+vô trang user thì tắt footer và header

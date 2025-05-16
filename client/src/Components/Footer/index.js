@@ -54,6 +54,7 @@ const Footer = () => {
                         </div>
 
                         <div className="col-2">
+
                             <strong className="d-block mb-2" style={{ textTransform: 'uppercase' }}>
                                 HƯỚNG DẪN
                             </strong>
@@ -72,19 +73,19 @@ const Footer = () => {
                             </strong>
                             <ul className="list-unstyled mb-4">
 
-                                <Link class="text-decoration-none quick-link text-secondary" to={'/phuong_thu_thanh_toan'}>
+                                <Link className="text-decoration-none quick-link text-secondary" to={'/phuong_thu_thanh_toan'}>
                                     <li className="mb-1">Phương thức thanh toán</li>
                                 </Link>
 
-                                <Link class="text-decoration-none quick-link text-secondary" to={'/phuong_thu_giao_hang'}>
+                                <Link className="text-decoration-none quick-link text-secondary" to={'/phuong_thu_giao_hang'}>
                                     <li className="mb-1">Phương thức giao hàng</li>
                                 </Link>
 
-                                <Link class="text-decoration-none quick-link text-secondary" to={'/chinh_sach_doi_tra'}>
+                                <Link className="text-decoration-none quick-link text-secondary" to={'/chinh_sach_doi_tra'}>
                                     <li className="mb-1">Chính sách đổi trả</li>
                                 </Link>
 
-                                <Link class="text-decoration-none quick-link text-secondary" to={'/chinh_sach_bao_mat'}>
+                                <Link className="text-decoration-none quick-link text-secondary" to={'/chinh_sach_bao_mat'}>
                                     <li className="mb-1">Chính sách bảo mật</li>
                                 </Link>
 
@@ -101,6 +102,7 @@ const Footer = () => {
                     <div className="col-8 text-center">
                         © 2025
                     </div>
+
                     <div className="col-4 d-flex justify-content-center">
                         <div className="d-flex gap-3">
                             <Button

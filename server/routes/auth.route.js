@@ -1,17 +1,17 @@
 const express = require("express");
 const authController = require("../controllers/auth.controller");
-
+const message = require("../utils/messages");
 const router = express.Router();
 
-// Register
-router.post("/signup", authController.signup);
-router.get("/signup", (req, res) => {
+router.post("/register", authController.register);
+router.get("/register", (req, res) => {
     res.json({ message: "Trang Đăng Ký" });
 });
 
-
-router.post("/signin", authController.signup);
-router.get("/signin", (req, res) => {
-    res.json({ message: "Trang Đăng Nhập" });
+// Đăng nhập (POST)
+router.post("/login", authController.login);
+router.get("/login", (req, res) => {
+    res.json({ message: message.Login });
 });
+
 module.exports = router;
