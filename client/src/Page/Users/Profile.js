@@ -2,7 +2,7 @@ const Profile = () => {
     return (
         <>
             <div>
-                hihi
+                hihidd
             </div>
         </>
     );

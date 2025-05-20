@@ -1,10 +1,8 @@
 import 'bootstrap/dist/css/bootstrap.css';
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
-import { SignIn, SignUp } from './Page/Auth/Auth';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { MyProvider } from './Context/AppContext';
 import Layout from './Components/Layout';
-import { Profile } from './Page/Users/User';
-import HomePage from './Page/Home';
+import routes from './Router/routes';
 
 function App() {
   return (
@@ -12,10 +10,9 @@ function App() {
       <MyProvider>
         <Layout>
           <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/signIn" element={<SignIn />} />
-            <Route path="/signUp" element={<SignUp />} />
-            <Route path="/user" element={<Profile />} />
+            {routes.map((route, index) => (
+              <Route key={index} path={route.path} element={route.element} />
+            ))}
             <Route path="/admin" element={<div>Admin Page</div>} />
           </Routes>
         </Layout>

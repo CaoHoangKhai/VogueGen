@@ -1,14 +1,13 @@
 import { useEffect, useState } from 'react';
 import Logo from '../assets/images/header/VogueGen.jpg';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { IoIosSearch } from "react-icons/io";
 import { FaShoppingCart, FaUser } from "react-icons/fa";
 import Button from "@mui/material/Button";
 
 const Header = () => {
     const [user, setUser] = useState(null);
-    const navigate = useNavigate();
-
+    
     // ✅ Lấy thông tin user từ LocalStorage khi component render lần đầu
     useEffect(() => {
         const userData = localStorage.getItem('user');
@@ -17,7 +16,6 @@ const Header = () => {
         }
     }, []);
 
-    // ✅ Lắng nghe sự kiện loginSuccess để cập nhật Header
     useEffect(() => {
         const handleLoginSuccess = () => {
             const userData = localStorage.getItem('user');
@@ -33,33 +31,34 @@ const Header = () => {
         };
     }, []);
     useEffect(() => {
-    const handleLoginSuccess = () => {
-        const userData = localStorage.getItem('user');
-        if (userData) {
-            setUser(JSON.parse(userData));
-        }
-    };
+        const handleLoginSuccess = () => {
+            const userData = localStorage.getItem('user');
+            if (userData) {
+                setUser(JSON.parse(userData));
+            }
+        };
 
-    // 🔔 Lắng nghe sự kiện loginSuccess
-    window.addEventListener('loginSuccess', handleLoginSuccess);
+        // 🔔 Lắng nghe sự kiện loginSuccess
+        window.addEventListener('loginSuccess', handleLoginSuccess);
 
-    // 🧹 Hủy lắng nghe khi component unmount
-    return () => {
-        window.removeEventListener('loginSuccess', handleLoginSuccess);
-    };
-}, []);
-
-
-    const handleLogout = () => {
-        localStorage.removeItem('user');
-        window.dispatchEvent(new Event("storage"));
-        setUser(null);
-        navigate('/signin');
-    };
+        // 🧹 Hủy lắng nghe khi component unmount
+        return () => {
+            window.removeEventListener('loginSuccess', handleLoginSuccess);
+        };
+    }, []);
 
     return (
         <>
             <div className="header">
+
+                <div className="bg-danger text-white py-2">
+                    <div className="container">
+                        <p className="mb-0 text-center">
+                            50th Anniversary of the Liberation of Southern Vietnam and National Reunification.
+                        </p>
+                    </div>
+                </div>
+
                 <div className="container mt-3">
                     <div className="row align-items-center">
 
@@ -87,15 +86,9 @@ const Header = () => {
                         <div className="col-sm-4 d-flex justify-content-end gap-3">
                             {user ? (
                                 <>
-                                    <Link className="btn btn-outline-primary d-flex align-items-center gap-2" to={'/user'}>
+                                    <Link className="btn btn-outline-primary d-flex align-items-center gap-2" to={'/user/profile'}>
                                         <FaUser /> {user.username}
                                     </Link>
-                                    <button
-                                        className="btn btn-outline-danger d-flex align-items-center gap-2"
-                                        onClick={handleLogout}
-                                    >
-                                        Đăng Xuất
-                                    </button>
                                 </>
                             ) : (
                                 <Link className="btn btn-outline-primary d-flex align-items-center gap-2" to={'/signin'}>
