@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import Logo from '../../assets/images/header/VogueGen.jpg';
+import Logo from '../assets/images/header/VogueGen.jpg';
 import { Link, useNavigate } from 'react-router-dom';
 import { IoIosSearch } from "react-icons/io";
 import { FaShoppingCart, FaUser } from "react-icons/fa";
@@ -17,27 +17,42 @@ const Header = () => {
         }
     }, []);
 
-    // ✅ Lắng nghe sự kiện thay đổi của LocalStorage
+    // ✅ Lắng nghe sự kiện loginSuccess để cập nhật Header
     useEffect(() => {
-        const handleStorageChange = () => {
+        const handleLoginSuccess = () => {
             const userData = localStorage.getItem('user');
             if (userData) {
                 setUser(JSON.parse(userData));
-            } else {
-                setUser(null);
             }
         };
 
-        window.addEventListener('storage', handleStorageChange);
+        window.addEventListener('loginSuccess', handleLoginSuccess);
+
         return () => {
-            window.removeEventListener('storage', handleStorageChange);
+            window.removeEventListener('loginSuccess', handleLoginSuccess);
         };
     }, []);
+    useEffect(() => {
+    const handleLoginSuccess = () => {
+        const userData = localStorage.getItem('user');
+        if (userData) {
+            setUser(JSON.parse(userData));
+        }
+    };
 
-    // ✅ Hàm xử lý đăng xuất
+    // 🔔 Lắng nghe sự kiện loginSuccess
+    window.addEventListener('loginSuccess', handleLoginSuccess);
+
+    // 🧹 Hủy lắng nghe khi component unmount
+    return () => {
+        window.removeEventListener('loginSuccess', handleLoginSuccess);
+    };
+}, []);
+
+
     const handleLogout = () => {
         localStorage.removeItem('user');
-        window.dispatchEvent(new Event("storage"));  // Phát sự kiện để cập nhật Header
+        window.dispatchEvent(new Event("storage"));
         setUser(null);
         navigate('/signin');
     };
@@ -47,6 +62,7 @@ const Header = () => {
             <div className="header">
                 <div className="container mt-3">
                     <div className="row align-items-center">
+
                         <div className="col-sm-2">
                             <Link to={'/'}>
                                 <img src={Logo} alt="VogueGen Logo" className="logo-img" />
@@ -72,8 +88,14 @@ const Header = () => {
                             {user ? (
                                 <>
                                     <Link className="btn btn-outline-primary d-flex align-items-center gap-2" to={'/user'}>
-                                    <FaUser /> Đăng Nhập
-                                </Link>
+                                        <FaUser /> {user.username}
+                                    </Link>
+                                    <button
+                                        className="btn btn-outline-danger d-flex align-items-center gap-2"
+                                        onClick={handleLogout}
+                                    >
+                                        Đăng Xuất
+                                    </button>
                                 </>
                             ) : (
                                 <Link className="btn btn-outline-primary d-flex align-items-center gap-2" to={'/signin'}>

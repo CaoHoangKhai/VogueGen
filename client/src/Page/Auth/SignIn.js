@@ -1,62 +1,68 @@
 import { useState } from 'react';
-import { TextField } from '@mui/material';
+import { TextField, Alert, Button } from '@mui/material';
 import { Link, useNavigate } from 'react-router-dom';
-import Button from "@mui/material/Button";
 import axios from 'axios';
 
 const SignIn = () => {
+    // 🌟 State lưu trữ thông tin
     const [email, setEmail] = useState('');
-    const [matkhau, setMatKhau] = useState('');
-    const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
+    const [password, setPassword] = useState('');
+    const [message, setMessage] = useState({ type: '', content: '' });
     const navigate = useNavigate();
 
-    // Hàm xử lý khi submit
-    const handleSubmit = async (e) => {
+    // 🌟 Hàm xử lý đăng nhập
+    const handleSignIn = async (e) => {
         e.preventDefault();
-        setError('');
-        setSuccess('');
+        setMessage({ type: '', content: '' });
 
+        // 🔍 Kiểm tra input
         if (!email) {
-            setError('Vui lòng nhập Email.');
+            setMessage({ type: 'error', content: 'Vui lòng nhập Email.' });
             document.getElementById('email-input').focus();
             return;
         }
 
-        if (!matkhau) {
-            setError('Vui lòng nhập mật khẩu');
+        if (!password) {
+            setMessage({ type: 'error', content: 'Vui lòng nhập mật khẩu.' });
             document.getElementById('password-input').focus();
             return;
         }
 
+        // 📨 Chuẩn bị payload gửi lên server
         const payload = {
             email,
-            matkhau
+            matkhau: password
         };
 
         try {
             const response = await axios.post('http://localhost:4000/auth/login', payload);
 
             if (response.status === 200) {
-                setSuccess(response.data.message);
+                // 🟢 Thông báo thành công
+                setMessage({ type: 'success', content: response.data.message });
 
-                // ✅ Lưu thông tin user vào LocalStorage
+                // 🔥 Lưu thông tin user vào LocalStorage
                 localStorage.setItem('user', JSON.stringify(response.data.user));
-
                 console.log("Thông tin user đã được lưu vào LocalStorage:", response.data.user);
 
-                // ✅ Chuyển hướng sang trang chủ hoặc dashboard
-                navigate('/dashboard');
+                // 🔔 Phát sự kiện loginSuccess để đồng bộ Header
+                window.dispatchEvent(new Event('loginSuccess'));
+
+                // 🔄 Chuyển hướng sang dashboard
+                setTimeout(() => {
+                    navigate('/dashboard');
+                }, 1000);
             }
         } catch (err) {
             if (err.response) {
-                setError(err.response.data.message || 'Có lỗi xảy ra, vui lòng thử lại!');
+                setMessage({ type: 'error', content: err.response.data.message || 'Có lỗi xảy ra, vui lòng thử lại!' });
             } else {
-                setError('Không thể kết nối đến máy chủ, vui lòng thử lại!');
+                setMessage({ type: 'error', content: 'Không thể kết nối đến máy chủ, vui lòng thử lại!' });
             }
         }
     };
 
+    // 🌟 Render giao diện
     return (
         <section className="section signInPage">
             <div className="container mt-4">
@@ -64,11 +70,14 @@ const SignIn = () => {
 
                 <div className="row justify-content-center">
                     <div className="col-md-6 col-sm-12">
-                        <form className="p-4 border rounded bg-light" onSubmit={handleSubmit}>
+                        <form className="p-4 border rounded bg-light" onSubmit={handleSignIn}>
                             <h4 className="mb-3 text-center">KHÁCH HÀNG ĐĂNG NHẬP</h4>
 
-                            {error && <p className="text-danger text-center">{error}</p>}
-                            {success && <p className="text-success text-center">{success}</p>}
+                            {message.content && (
+                                <Alert severity={message.type} className="mb-3">
+                                    {message.content}
+                                </Alert>
+                            )}
 
                             <div className="mb-3">
                                 <TextField
@@ -89,8 +98,8 @@ const SignIn = () => {
                                     label="Mật khẩu"
                                     type="password"
                                     variant="outlined"
-                                    value={matkhau}
-                                    onChange={(e) => setMatKhau(e.target.value)}
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
                                 />
                             </div>
 
