@@ -7,7 +7,7 @@ import Button from "@mui/material/Button";
 
 const Header = () => {
     const [user, setUser] = useState(null);
-    
+
     // ✅ Lấy thông tin user từ LocalStorage khi component render lần đầu
     useEffect(() => {
         const userData = localStorage.getItem('user');
@@ -15,7 +15,7 @@ const Header = () => {
             setUser(JSON.parse(userData));
         }
     }, []);
-
+    console.log(user)
     useEffect(() => {
         const handleLoginSuccess = () => {
             const userData = localStorage.getItem('user');
@@ -85,16 +85,26 @@ const Header = () => {
 
                         <div className="col-sm-4 d-flex justify-content-end gap-3">
                             {user ? (
-                                <>
+                                user.VaiTro_id === 0 ? (
                                     <Link className="btn btn-outline-primary d-flex align-items-center gap-2" to={'/user/profile'}>
-                                        <FaUser /> {user.username}
+                                        <FaUser /> 
                                     </Link>
-                                </>
+                                ) : user.VaiTro_id === 1 ? (
+                                    <Link className="btn btn-outline-danger d-flex align-items-center gap-2" to={'/admin/dashboard'}>
+                                        <FaUser />
+                                    </Link>
+                                ) : (
+                                    <Link className="btn btn-outline-primary d-flex align-items-center gap-2" to={'/signin'}>
+                                        <FaUser /> Đăng Nhập
+                                    </Link>
+                                )
                             ) : (
                                 <Link className="btn btn-outline-primary d-flex align-items-center gap-2" to={'/signin'}>
                                     <FaUser /> Đăng Nhập
                                 </Link>
                             )}
+
+
                             <Link className="btn btn-outline-success d-flex align-items-center gap-2">
                                 <FaShoppingCart /> Giỏ Hàng
                             </Link>

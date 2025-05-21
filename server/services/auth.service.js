@@ -1,6 +1,5 @@
 const bcrypt = require('bcrypt');
 const { ObjectId } = require("mongodb");
-const errorMessages = require("../utils/messages");
 
 class AuthService {
     constructor(client) {
@@ -12,17 +11,19 @@ class AuthService {
             hoten: payload.hoten,
             sodienthoai: payload.sodienthoai,
             matkhau: payload.matkhau,
-            email: payload.email
+            email: payload.email,
+            VaiTro_id: 0,        // Mặc định là độc giả
+            TrangThai_id: 1      // Mặc định là hoạt động
         };
     }
 
-    //🔒 Đăng ký độc giả mới với mã hóa mật khẩu
-    async register(payload) {
+    // 🔒 Đăng ký độc giả mới với mã hóa mật khẩu
+    async signup(payload) {
         const user = this.extractAuthData(payload);
 
         const emailExists = await this.checkEmail(user.email);
         if (emailExists) {
-            throw new Error(errorMessages.EMAIL_NOT_FOUND);
+            throw new Error("Email đã tồn tại.");
         }
 
         const phoneExists = await this.checkSoDienThoai(user.sodienthoai);
@@ -39,49 +40,38 @@ class AuthService {
             id: result.insertedId,
             hoten: user.hoten,
             sodienthoai: user.sodienthoai,
-            email: user.email
+            email: user.email, 
+            VaiTro_id: user.VaiTro_id
         };
     }
 
-    async login({ email, sodienthoai, matkhau }) {
-        if (!email && !sodienthoai) {
-            throw new Error(errorMessages.MISSING_EMAIL_PHONE);
+    // 🔓 Đăng nhập bằng email + mật khẩu
+    async signin({ email, matkhau }) {
+        if (!email || !matkhau) {
+            throw new Error("Vui lòng nhập email và mật khẩu.");
         }
 
-        let user = null;
-
-        if (email) {
-            user = await this.checkEmail(email);
-            if (!user) {
-                throw new Error(errorMessages.EMAIL_NOT_FOUND);
-            }
+        const user = await this.checkEmail(email);
+        if (!user) {
+            throw new Error("Email không tồn tại.");
         }
 
-        if (sodienthoai) {
-            // Nếu đã tìm được user bằng email rồi, kiểm tra thêm số điện thoại phải khớp
-            if (user && user.sodienthoai !== sodienthoai) {
-                throw new Error("Email hoặc số điện thoại không chính xác.");
-            } else {
-                user = await this.checkPhone(sodienthoai);
-                if (!user) {
-                    throw new Error("Số điện thoại không tồn tại.");
-                }
-            }
+        // ⚠️ Kiểm tra trạng thái tài khoản
+        if (user.TrangThai_id !== 1) {
+            throw new Error("Tài khoản đã bị khóa hoặc chưa được kích hoạt.");
         }
 
-        // Kiểm tra mật khẩu
         const isMatch = await bcrypt.compare(matkhau, user.matkhau);
         if (!isMatch) {
             throw new Error("Mật khẩu không đúng.");
         }
 
-        // Ở đây nếu muốn trả về user an toàn thì nên xóa hoặc ẩn trường mật khẩu trước khi return
+        // Ẩn mật khẩu trước khi trả về
         delete user.matkhau;
 
         return user;
     }
 
-    
     async checkEmail(email) {
         return await this.Auth.findOne({ email });
     }

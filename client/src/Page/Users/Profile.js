@@ -1,7 +1,7 @@
 const Profile = () => {
     return (
         <>
-            <div>
+            <div className="text-center">
                 hihidd
             </div>
         </>

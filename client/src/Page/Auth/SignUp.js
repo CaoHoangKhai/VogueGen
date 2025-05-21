@@ -1,7 +1,12 @@
 import { useState } from 'react';
-import { TextField } from '@mui/material';
+import {
+    TextField,
+    Button,
+    IconButton,
+    InputAdornment
+} from '@mui/material';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
-import Button from "@mui/material/Button";
 import axios from 'axios';
 
 const SignUp = () => {
@@ -15,15 +20,16 @@ const SignUp = () => {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
-    // Hàm cập nhật giá trị cho form
+    // Cập nhật giá trị input
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
         setError('');
         setSuccess('');
     };
 
-    // Hàm kiểm tra thông tin đầu vào
+    // Kiểm tra đầu vào
     const validateForm = () => {
         if (!formData.hoten) {
             setError('Vui lòng nhập Họ và Tên.');
@@ -44,19 +50,17 @@ const SignUp = () => {
         return true;
     };
 
-    // Hàm xử lý khi submit form
+    // Submit form
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
         setSuccess('');
 
-        // ✅ Kiểm tra thông tin đầu vào
         if (!validateForm()) return;
-
         setLoading(true);
 
         try {
-            const response = await axios.post('http://localhost:4000/auth/register', formData);
+            const response = await axios.post('http://localhost:4000/auth/signup', formData);
 
             if (response.status === 201 || response.status === 200) {
                 setSuccess('Đăng ký thành công! Vui lòng đăng nhập.');
@@ -89,7 +93,6 @@ const SignUp = () => {
                         <form className="p-4 border rounded bg-light" onSubmit={handleSubmit} noValidate>
                             <h4 className="mb-3">Thông tin cá nhân</h4>
 
-                            {/* Thông báo lỗi */}
                             {error && <p className="text-danger text-center">{error}</p>}
                             {success && <p className="text-success text-center">{success}</p>}
 
@@ -134,10 +137,23 @@ const SignUp = () => {
                                     fullWidth
                                     label="Mật khẩu"
                                     name="matkhau"
-                                    type="password"
+                                    type={showPassword ? 'text' : 'password'}
                                     variant="outlined"
                                     value={formData.matkhau}
                                     onChange={handleChange}
+                                    InputProps={{
+                                        endAdornment: (
+                                            <InputAdornment position="end">
+                                                <IconButton
+                                                    onClick={() => setShowPassword(!showPassword)}
+                                                    edge="end"
+                                                    aria-label="toggle password visibility"
+                                                >
+                                                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                                                </IconButton>
+                                            </InputAdornment>
+                                        )
+                                    }}
                                 />
                             </div>
 
@@ -153,7 +169,7 @@ const SignUp = () => {
                             </Button>
 
                             <div className="text-center mt-3">
-                                <span>Nếu đã có tài khoản, click vào <Link to={'/signin'}>đây</Link> để đăng nhập</span>
+                                <span>Đã có tài khoản? <Link to={'/signin'}>Đăng nhập</Link></span>
                             </div>
                         </form>
                     </div>

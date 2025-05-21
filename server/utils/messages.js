@@ -18,14 +18,21 @@ const messages = {
         PASSWORD_INCORRECT: "Mật khẩu không đúng."
     },
     info: {
-        LOGIN_PAGE: "Trang Đăng Nhập",
-        REGISTER_PAGE: "Trang Đăng Ký",
+        SIGNIN_PAGE: "Trang Đăng Nhập",
+        SIGNUP_PAGE: "Trang Đăng Ký",
         HOME_PAGE: "Trang Chủ",
-        CONTACT_PAGE: "Trang Liên Hệ"
+        CONTACT_PAGE: "Trang Liên Hệ",
+        USER_PAGE: "Trang Người Dùng",
+        ADMIN_PAGE: "Trang Quản Trị Viên",
+        DASHBOARD_PAGE: "Bảng Điều Khiển",
+        PROFILE_PAGE: "Trang Cá Nhân",
+        SETTINGS_PAGE: "Cài Đặt Hệ Thống"
     },
     warning: {
         INCOMPLETE_INFORMATION: "Thông tin bạn cung cấp chưa đầy đủ.",
-        UNAUTHORIZED_ACCESS: "Bạn không có quyền truy cập vào tài nguyên này."
+        UNAUTHORIZED_ACCESS: "Bạn không có quyền truy cập vào tài nguyên này.",
+        ACCESS_RESTRICTED: "Bạn cần đăng nhập để tiếp tục.",
+        INVALID_INPUT: "Dữ liệu nhập không hợp lệ."
     }
 };
 

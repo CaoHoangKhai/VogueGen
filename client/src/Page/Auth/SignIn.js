@@ -1,21 +1,22 @@
 import { useState } from 'react';
-import { TextField, Alert, Button } from '@mui/material';
+import {
+    TextField, Alert, Button, InputAdornment, IconButton
+} from '@mui/material';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 const SignIn = () => {
-    // 🌟 State lưu trữ thông tin
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [message, setMessage] = useState({ type: '', content: '' });
     const navigate = useNavigate();
 
-    // 🌟 Hàm xử lý đăng nhập
     const handleSignIn = async (e) => {
         e.preventDefault();
         setMessage({ type: '', content: '' });
 
-        // 🔍 Kiểm tra input
         if (!email) {
             setMessage({ type: 'error', content: 'Vui lòng nhập Email.' });
             document.getElementById('email-input').focus();
@@ -28,30 +29,16 @@ const SignIn = () => {
             return;
         }
 
-        // 📨 Chuẩn bị payload gửi lên server
-        const payload = {
-            email,
-            matkhau: password
-        };
+        const payload = { email, matkhau: password };
 
         try {
-            const response = await axios.post('http://localhost:4000/auth/login', payload);
+            const response = await axios.post('http://localhost:4000/auth/signin', payload);
 
             if (response.status === 200) {
-                // 🟢 Thông báo thành công
                 setMessage({ type: 'success', content: response.data.message });
-
-                // 🔥 Lưu thông tin user vào LocalStorage
                 localStorage.setItem('user', JSON.stringify(response.data.user));
-                console.log("Thông tin user đã được lưu vào LocalStorage:", response.data.user);
-
-                // 🔔 Phát sự kiện loginSuccess để đồng bộ Header
                 window.dispatchEvent(new Event('loginSuccess'));
-
-                // 🔄 Chuyển hướng sang dashboard
-                setTimeout(() => {
-                    navigate('/dashboard');
-                }, 1000);
+                setTimeout(() => navigate('/'), 1000);
             }
         } catch (err) {
             if (err.response) {
@@ -62,7 +49,6 @@ const SignIn = () => {
         }
     };
 
-    // 🌟 Render giao diện
     return (
         <section className="section signInPage">
             <div className="container mt-4">
@@ -96,10 +82,22 @@ const SignIn = () => {
                                     id="password-input"
                                     fullWidth
                                     label="Mật khẩu"
-                                    type="password"
+                                    type={showPassword ? 'text' : 'password'} // 👁️ Toggle hiển thị
                                     variant="outlined"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
+                                    InputProps={{
+                                        endAdornment: (
+                                            <InputAdornment position="end">
+                                                <IconButton
+                                                    onClick={() => setShowPassword(!showPassword)}
+                                                    edge="end"
+                                                >
+                                                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                                                </IconButton>
+                                            </InputAdornment>
+                                        ),
+                                    }}
                                 />
                             </div>
 

@@ -13,7 +13,6 @@ function App() {
             {routes.map((route, index) => (
               <Route key={index} path={route.path} element={route.element} />
             ))}
-            <Route path="/admin" element={<div>Admin Page</div>} />
           </Routes>
         </Layout>
       </MyProvider>

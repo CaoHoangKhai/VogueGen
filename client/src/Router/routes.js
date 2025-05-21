@@ -1,12 +1,13 @@
 import Home from '../Page/Home';
-import { SignIn, SignUp } from '../Page/Auth/Auth';
-import { Profile } from '../Page/Users/User';
+import authRoutes from './authRoutes';
+import userRoutes from './userRoutes';
+import adminRoutes from './adminRoutes';
 
-const routes = [
+const mainRoutes = [
   { path: '/', element: <Home /> },
-  { path: '/signIn', element: <SignIn /> },
-  { path: '/signUp', element: <SignUp /> },
-  { path: '/user/profile', element: <Profile /> },
+  ...authRoutes,
+  ...userRoutes,
+  ...adminRoutes,
 ];
 
-export default routes;
+export default mainRoutes;

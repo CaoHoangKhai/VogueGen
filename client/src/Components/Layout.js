@@ -22,7 +22,7 @@ const Layout = ({ children }) => {
 
         {/* Nếu là admin/user thì khoảng cách lề sẽ là 250px, ngược lại là 0 */}
         <div style={{ 
-          marginLeft: isAdmin || isUser ? '250px' : '0px', 
+          marginLeft: isAdmin || isUser ? '250px' : '50px', 
           marginTop: isAdmin || isUser ? '0px' : '60px', // 60px cho header
           width: '100%' 
         }}>
