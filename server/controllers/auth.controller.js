@@ -17,7 +17,7 @@ exports.signup = async (req, res, next) => {
         return res.status(201).json({ message: "Đăng ký thành công!", user });
     } catch (error) {
         console.error("Lỗi trong register controller:", error);
-        return res.status(400).json({ message: message.error.REGISTER_FAILED});
+        return res.status(400).json({ message: message.error.REGISTER_FAILED });
     }
 };
 
@@ -40,7 +40,7 @@ exports.signin = async (req, res, next) => {
     } catch (error) {
         console.error(error.message);
 
-        
+
         return res.status(401).json({
             message: error.message || "Đăng nhập thất bại!"
         });

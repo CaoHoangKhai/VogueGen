@@ -166,7 +166,7 @@ const SignUp = () => {
                             </Button>
 
                             <div className="text-center mt-3">
-                                <span>Đã có tài khoản? <Link to="/signin">Đăng nhập</Link></span>
+                                <span>Đã có tài khoản? <Link to="/signin" className="text-decoration-none quick-link text-secondary">Đăng nhập</Link></span>
                             </div>
                         </form>
                     </div>

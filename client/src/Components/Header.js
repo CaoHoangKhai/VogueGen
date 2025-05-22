@@ -87,11 +87,11 @@ const Header = () => {
                             {user ? (
                                 user.VaiTro_id === 0 ? (
                                     <Link className="btn btn-outline-primary d-flex align-items-center gap-2" to={'/user/profile'}>
-                                        <FaUser /> 
+                                        <FaUser /> {user.sodiachi} Khair
                                     </Link>
                                 ) : user.VaiTro_id === 1 ? (
                                     <Link className="btn btn-outline-danger d-flex align-items-center gap-2" to={'/admin/dashboard'}>
-                                        <FaUser />
+                                        <FaUser /> 
                                     </Link>
                                 ) : (
                                     <Link className="btn btn-outline-primary d-flex align-items-center gap-2" to={'/signin'}>

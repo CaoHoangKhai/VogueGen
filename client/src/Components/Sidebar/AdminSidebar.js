@@ -13,7 +13,7 @@ const AdminSidebar = () => {
   const [showProductMenu, setShowProductMenu] = useState(false);
 
   const handleLogout = () => {
-    localStorage.removeItem('admin');
+    localStorage.removeItem('user');
     window.dispatchEvent(new Event("storage"));
     navigate('/signin');
   };

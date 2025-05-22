@@ -40,13 +40,12 @@ const SignIn = () => {
             if (response.status === 200) {
                 setMessage({ type: 'success', content: response.data.message || 'Đăng nhập thành công!' });
 
-                // Lưu thông tin user vào localStorage
                 localStorage.setItem('user', JSON.stringify(response.data.user));
 
-                // Gửi event để các component khác biết đã đăng nhập
+
                 window.dispatchEvent(new Event('loginSuccess'));
 
-                // Điều hướng sau 1 giây
+
                 setTimeout(() => navigate('/'), 1000);
             }
         } catch (err) {
@@ -127,8 +126,8 @@ const SignIn = () => {
                                 {loading ? 'Đang xử lý...' : 'Đăng Nhập'}
                             </Button>
 
-                            <div className="text-center mt-3">
-                                <span>Bạn chưa có tài khoản? <Link to="/signup">Đăng ký tại đây</Link></span>
+                            <div className="text-center mt-3 ">
+                                <span>Bạn chưa có tài khoản? <Link to="/signup" className="text-decoration-none quick-link text-secondary">Đăng ký tại đây</Link></span>
                             </div>
                         </form>
                     </div>

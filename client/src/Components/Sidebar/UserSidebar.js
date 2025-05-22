@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { FaUser, FaTshirt, FaShoppingCart, FaHeart, FaCog, FaSignOutAlt } from 'react-icons/fa';
+import { FaUser, FaTshirt, FaShoppingCart, FaHeart, FaCog, FaSignOutAlt, FaMapMarkerAlt  } from 'react-icons/fa';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './Sidebar.css';
 
@@ -29,6 +29,9 @@ const UserSidebar = () => {
         </Link>
         <Link to="/user/cart" className="list-group-item list-group-item-action d-flex align-items-center">
           <FaShoppingCart className="me-2" /> Giỏ hàng
+        </Link>
+        <Link to="/user/location" className="list-group-item list-group-item-action d-flex align-items-center">
+          <FaMapMarkerAlt   className="me-2" /> Địa chỉ
         </Link>
         <Link to="/user/favorites" className="list-group-item list-group-item-action d-flex align-items-center">
           <FaHeart className="me-2" /> Yêu thích
