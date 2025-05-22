@@ -12,8 +12,8 @@ class AuthService {
             sodienthoai: payload.sodienthoai,
             matkhau: payload.matkhau,
             email: payload.email,
-            VaiTro_id: 0,        // Mặc định là độc giả
-            TrangThai_id: 1      // Mặc định là hoạt động
+            VaiTro_id: 0,
+            TrangThai_id: 1
         };
     }
 

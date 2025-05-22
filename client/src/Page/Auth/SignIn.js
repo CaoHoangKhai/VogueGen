@@ -10,42 +10,56 @@ const SignIn = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
+    const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState({ type: '', content: '' });
+
     const navigate = useNavigate();
 
     const handleSignIn = async (e) => {
         e.preventDefault();
         setMessage({ type: '', content: '' });
 
-        if (!email) {
+        if (!email.trim()) {
             setMessage({ type: 'error', content: 'Vui lòng nhập Email.' });
             document.getElementById('email-input').focus();
             return;
         }
 
-        if (!password) {
+        if (!password.trim()) {
             setMessage({ type: 'error', content: 'Vui lòng nhập mật khẩu.' });
             document.getElementById('password-input').focus();
             return;
         }
 
         const payload = { email, matkhau: password };
+        setLoading(true);
 
         try {
             const response = await axios.post('http://localhost:4000/auth/signin', payload);
 
             if (response.status === 200) {
-                setMessage({ type: 'success', content: response.data.message });
+                setMessage({ type: 'success', content: response.data.message || 'Đăng nhập thành công!' });
+
+                // Lưu thông tin user vào localStorage
                 localStorage.setItem('user', JSON.stringify(response.data.user));
+
+                // Gửi event để các component khác biết đã đăng nhập
                 window.dispatchEvent(new Event('loginSuccess'));
+
+                // Điều hướng sau 1 giây
                 setTimeout(() => navigate('/'), 1000);
             }
         } catch (err) {
             if (err.response) {
-                setMessage({ type: 'error', content: err.response.data.message || 'Có lỗi xảy ra, vui lòng thử lại!' });
+                setMessage({
+                    type: 'error',
+                    content: err.response.data.message || 'Tài khoản hoặc mật khẩu không đúng!'
+                });
             } else {
                 setMessage({ type: 'error', content: 'Không thể kết nối đến máy chủ, vui lòng thử lại!' });
             }
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -82,7 +96,7 @@ const SignIn = () => {
                                     id="password-input"
                                     fullWidth
                                     label="Mật khẩu"
-                                    type={showPassword ? 'text' : 'password'} // 👁️ Toggle hiển thị
+                                    type={showPassword ? 'text' : 'password'}
                                     variant="outlined"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
@@ -92,11 +106,12 @@ const SignIn = () => {
                                                 <IconButton
                                                     onClick={() => setShowPassword(!showPassword)}
                                                     edge="end"
+                                                    aria-label="toggle password visibility"
                                                 >
                                                     {showPassword ? <VisibilityOff /> : <Visibility />}
                                                 </IconButton>
                                             </InputAdornment>
-                                        ),
+                                        )
                                     }}
                                 />
                             </div>
@@ -107,12 +122,13 @@ const SignIn = () => {
                                 fullWidth
                                 size="large"
                                 type="submit"
+                                disabled={loading}
                             >
-                                Đăng Nhập
+                                {loading ? 'Đang xử lý...' : 'Đăng Nhập'}
                             </Button>
 
                             <div className="text-center mt-3">
-                                <span>Bạn chưa có tài khoản? <Link to={'/signup'}>Đăng ký tại đây</Link></span>
+                                <span>Bạn chưa có tài khoản? <Link to="/signup">Đăng ký tại đây</Link></span>
                             </div>
                         </form>
                     </div>

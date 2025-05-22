@@ -3,7 +3,8 @@ import {
     TextField,
     Button,
     IconButton,
-    InputAdornment
+    InputAdornment,
+    Alert
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
@@ -17,34 +18,32 @@ const SignUp = () => {
         matkhau: ''
     });
 
-    const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
+    const [message, setMessage] = useState({ type: '', content: '' });
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
     // Cập nhật giá trị input
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
-        setError('');
-        setSuccess('');
+        setMessage({ type: '', content: '' });
     };
 
     // Kiểm tra đầu vào
     const validateForm = () => {
         if (!formData.hoten) {
-            setError('Vui lòng nhập Họ và Tên.');
+            setMessage({ type: 'error', content: 'Vui lòng nhập Họ và Tên.' });
             return false;
         }
         if (!formData.email) {
-            setError('Vui lòng nhập Email.');
+            setMessage({ type: 'error', content: 'Vui lòng nhập Email.' });
             return false;
         }
         if (!formData.sodienthoai) {
-            setError('Vui lòng nhập Số điện thoại.');
+            setMessage({ type: 'error', content: 'Vui lòng nhập Số điện thoại.' });
             return false;
         }
         if (!formData.matkhau) {
-            setError('Vui lòng nhập Mật khẩu.');
+            setMessage({ type: 'error', content: 'Vui lòng nhập Mật khẩu.' });
             return false;
         }
         return true;
@@ -53,8 +52,7 @@ const SignUp = () => {
     // Submit form
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError('');
-        setSuccess('');
+        setMessage({ type: '', content: '' });
 
         if (!validateForm()) return;
         setLoading(true);
@@ -63,7 +61,10 @@ const SignUp = () => {
             const response = await axios.post('http://localhost:4000/auth/signup', formData);
 
             if (response.status === 201 || response.status === 200) {
-                setSuccess('Đăng ký thành công! Vui lòng đăng nhập.');
+                setMessage({
+                    type: 'success',
+                    content: 'Đăng ký thành công! Vui lòng đăng nhập.'
+                });
                 setFormData({
                     hoten: '',
                     email: '',
@@ -72,30 +73,27 @@ const SignUp = () => {
                 });
             }
         } catch (err) {
-            if (err.response && err.response.data.message) {
-                setError(err.response.data.message);
-            } else {
-                setError('Đã có lỗi xảy ra, vui lòng thử lại!');
-            }
+            const errorMsg = err.response?.data?.message || 'Đã có lỗi xảy ra, vui lòng thử lại!';
+            setMessage({ type: 'error', content: errorMsg });
         } finally {
             setLoading(false);
         }
     };
 
-    // Giao diện
     return (
         <section className="section signUpPage">
             <div className="container mt-4">
                 <h3 className="text-center mb-4">Đăng Ký Tài Khoản</h3>
-
+                
                 <div className="row justify-content-center">
                     <div className="col-md-6 col-sm-12">
                         <form className="p-4 border rounded bg-light" onSubmit={handleSubmit} noValidate>
                             <h4 className="mb-3">Thông tin cá nhân</h4>
-
-                            {error && <p className="text-danger text-center">{error}</p>}
-                            {success && <p className="text-success text-center">{success}</p>}
-
+                            {message.content && (
+                                <Alert severity={message.type} className="mb-3">
+                                    {message.content}
+                                </Alert>
+                            )}
                             <div className="mb-3">
                                 <TextField
                                     fullWidth
@@ -147,7 +145,6 @@ const SignUp = () => {
                                                 <IconButton
                                                     onClick={() => setShowPassword(!showPassword)}
                                                     edge="end"
-                                                    aria-label="toggle password visibility"
                                                 >
                                                     {showPassword ? <VisibilityOff /> : <Visibility />}
                                                 </IconButton>
@@ -169,7 +166,7 @@ const SignUp = () => {
                             </Button>
 
                             <div className="text-center mt-3">
-                                <span>Đã có tài khoản? <Link to={'/signin'}>Đăng nhập</Link></span>
+                                <span>Đã có tài khoản? <Link to="/signin">Đăng nhập</Link></span>
                             </div>
                         </form>
                     </div>

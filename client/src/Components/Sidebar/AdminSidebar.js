@@ -1,13 +1,19 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { FaUser, FaTshirt, FaShoppingCart, FaHeart, FaCog, FaSignOutAlt } from 'react-icons/fa';
+import {
+  FaUser, FaTshirt, FaPlus, FaList,
+  FaShoppingCart, FaHeart, FaCog,
+  FaSignOutAlt, FaChevronDown
+} from 'react-icons/fa';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './Sidebar.css';
+import { useState } from 'react';
 
-const UserSidebar = () => {
+const AdminSidebar = () => {
   const navigate = useNavigate();
+  const [showProductMenu, setShowProductMenu] = useState(false);
 
   const handleLogout = () => {
-    localStorage.removeItem('user');
+    localStorage.removeItem('admin');
     window.dispatchEvent(new Event("storage"));
     navigate('/signin');
   };
@@ -21,19 +27,40 @@ const UserSidebar = () => {
       </div>
 
       <ul className="list-group list-group-flush">
-        <Link to="/user/profile" className="list-group-item list-group-item-action d-flex align-items-center">
-          <FaUser className="me-2" /> Thông tin cá nhân
+
+        <Link to="/admin/profile" className="list-group-item list-group-item-action d-flex align-items-center">
+          <FaUser className="me-2" /> Thông tin quản trị
         </Link>
-        <Link to="/user/my-products" className="list-group-item list-group-item-action d-flex align-items-center">
-          <FaTshirt className="me-2" /> Sản phẩm của tôi
+
+        {/* Nhóm Quản lý sản phẩm */}
+        <li className="list-group-item list-group-item-action d-flex align-items-center justify-content-between"
+          onClick={() => setShowProductMenu(!showProductMenu)}
+          style={{ cursor: 'pointer' }}>
+          <div>
+            <FaTshirt className="me-2" /> Quản lý sản phẩm
+          </div>
+          <FaChevronDown className={`transition ${showProductMenu ? 'rotate-180' : ''}`} />
+        </li>
+
+        {showProductMenu && (
+          <>
+            <Link to="/admin/product_list" className="list-group-item list-group-item-action ps-5 text-start d-flex align-items-center">
+              <FaList className="me-2" /> Danh sách sản phẩm
+            </Link>
+            <Link to="/admin/product_add" className="list-group-item list-group-item-action ps-5 text-start d-flex align-items-center">
+              <FaPlus className="me-2" /> Thêm sản phẩm
+            </Link>
+
+          </>
+        )}
+
+        <Link to="/admin/orders" className="list-group-item list-group-item-action d-flex align-items-center">
+          <FaShoppingCart className="me-2" /> Đơn hàng
         </Link>
-        <Link to="/user/cart" className="list-group-item list-group-item-action d-flex align-items-center">
-          <FaShoppingCart className="me-2" /> Giỏ hàng
+        <Link to="/admin/favorites" className="list-group-item list-group-item-action d-flex align-items-center">
+          <FaHeart className="me-2" /> Sản phẩm nổi bật
         </Link>
-        <Link to="/user/favorites" className="list-group-item list-group-item-action d-flex align-items-center">
-          <FaHeart className="me-2" /> Yêu thích
-        </Link>
-        <Link to="/user/settings" className="list-group-item list-group-item-action d-flex align-items-center">
+        <Link to="/admin/settings" className="list-group-item list-group-item-action d-flex align-items-center">
           <FaCog className="me-2" /> Cài đặt
         </Link>
         <button
@@ -47,4 +74,4 @@ const UserSidebar = () => {
   );
 };
 
-export default UserSidebar;
+export default AdminSidebar;
