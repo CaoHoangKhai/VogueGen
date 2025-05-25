@@ -58,7 +58,6 @@ exports.addUserLocation = async (req, res, next) => {
     }
 };
 
-
 exports.deleteUserLocation = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -68,17 +67,18 @@ exports.deleteUserLocation = async (req, res, next) => {
 
         const locationService = new LocationService(MongoDB.client);
 
-        const deleted = await locationService.deleteUserLocation(id);
+        const deleted = await locationService.softDeleteUserLocation(id);
 
         if (!deleted) {
-            return res.status(404).json({ message: "Không tìm thấy địa chỉ để xóa." });
+            return res.status(404).json({ message: "Không tìm thấy địa chỉ để xóa hoặc đã bị xóa trước đó." });
         }
 
-        return res.json({ message: "Xóa địa chỉ thành công." });
+        return res.json({ message: "Đã ẩn địa chỉ khỏi danh sách thành công." });
     } catch (error) {
         return res.status(500).json({ message: `Lỗi server: ${error.message}` });
     }
 };
+
 
 exports.getUserLocations = async (req, res, next) => {
     try {

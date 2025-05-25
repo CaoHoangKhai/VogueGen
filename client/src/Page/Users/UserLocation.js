@@ -4,7 +4,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import diachiData from '../../assets/data/vietnam_administrative_data.json';
 
 const UserLocation = () => {
-    const userId = '682eca37fbebecabe93b033a'; // có thể lấy từ localStorage hoặc context nếu cần
+    const manguoidung = '682eca37fbebecabe93b033a'; // Lấy từ localStorage hoặc context nếu cần
 
     const [cityList, setCityList] = useState([]);
     const [districtList, setDistrictList] = useState([]);
@@ -14,6 +14,7 @@ const UserLocation = () => {
         address: ''
     });
     const [addressList, setAddressList] = useState([]);
+
     const getCityName = (cityCode) => {
         const city = diachiData.find(c => c.Id === cityCode);
         return city ? city.Name : cityCode;
@@ -27,7 +28,6 @@ const UserLocation = () => {
     };
 
     useEffect(() => {
-        // Load danh sách tỉnh/thành từ file JSON
         const cities = diachiData.map(city => ({
             code: city.Id,
             name: city.Name
@@ -36,7 +36,6 @@ const UserLocation = () => {
     }, []);
 
     useEffect(() => {
-        // Khi chọn thành phố, cập nhật quận/huyện tương ứng
         const selectedCity = diachiData.find(c => c.Id === form.city);
         if (selectedCity) {
             const districts = selectedCity.Districts.map(d => ({
@@ -49,9 +48,8 @@ const UserLocation = () => {
         }
     }, [form.city]);
 
-    useEffect(() => {
-        // Lấy danh sách địa chỉ của user từ API
-        axios.get(`http://localhost:4000/user/location/list?userId=${userId}`)
+    const fetchAddressList = () => {
+        axios.get(`http://localhost:4000/user/location/list?userId=${manguoidung}`)
             .then(res => {
                 if (Array.isArray(res.data)) {
                     setAddressList(res.data);
@@ -62,38 +60,54 @@ const UserLocation = () => {
             .catch(err => {
                 console.error('Lỗi lấy danh sách địa chỉ:', err);
             });
-    }, [userId]);
+    };
+
+    useEffect(() => {
+        fetchAddressList();
+    }, [manguoidung]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setForm(prev => ({
             ...prev,
             [name]: value,
-            ...(name === "city" && { district: '' }) // Reset district nếu chọn lại city
+            ...(name === "city" && { district: '' })
         }));
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        // Chuẩn bị dữ liệu gửi lên server
         const payload = {
-            userId,
-            city: form.city,
-            district: form.district,
-            address: form.address
+            manguoidung,
+            thanhpho: form.city,
+            quan_huyen: form.district,
+            diachi: form.address
         };
 
-        axios.post('http://localhost:4000/user/location/add', payload)
+        axios.post('http://localhost:4000/user/location', payload)
             .then(res => {
-                alert('Thêm địa chỉ thành công');
-                // Cập nhật lại danh sách địa chỉ sau khi thêm
-                setAddressList(prev => [...prev, res.data]);
-                // Reset form
+                alert(res.data?.message || 'Thêm địa chỉ thành công');
+                fetchAddressList();
                 setForm({ city: '', district: '', address: '' });
             })
             .catch(err => {
+                alert(err.response?.data?.message || 'Thêm địa chỉ thất bại');
                 console.error('Lỗi thêm địa chỉ:', err);
-                alert('Thêm địa chỉ thất bại');
+            });
+    };
+
+    // Hàm xử lý xóa địa chỉ
+    const handleDeleteAddress = (id) => {
+        if (!window.confirm("Bạn có chắc muốn xóa địa chỉ này không?")) return;
+
+        axios.delete(`http://localhost:4000/user/location/${id}`)
+            .then(res => {
+                alert(res.data?.message || "Xóa thành công");
+                fetchAddressList();
+            })
+            .catch(err => {
+                alert(err.response?.data?.message || "Xóa thất bại");
+                console.error("Lỗi xóa địa chỉ:", err);
             });
     };
 
@@ -161,13 +175,23 @@ const UserLocation = () => {
                 {addressList.length === 0 && <p>Chưa có địa chỉ nào.</p>}
                 <ul className="list-group">
                     {addressList.map(addr => (
-                        <li key={addr._id} className="list-group-item">
-                            🏙 Thành phố: {getCityName(addr.thanhpho)},📍 Quận/Huyện: {getDistrictName(addr.thanhpho, addr.quan_huyen)}, 🏠 Địa chỉ: {addr.diachi}
+                        <li
+                            key={addr._id}
+                            className="list-group-item d-flex justify-content-between align-items-center"
+                        >
+                            <div>
+                                🏙 Thành phố: {getCityName(addr.thanhpho)}, 📍 Quận/Huyện: {getDistrictName(addr.thanhpho, addr.quan_huyen)}, 🏠 Địa chỉ: {addr.diachi}
+                            </div>
+                            <button
+                                className="btn btn-sm btn-danger"
+                                onClick={() => handleDeleteAddress(addr._id)}
+                            >
+                                Xóa
+                            </button>
                         </li>
                     ))}
                 </ul>
             </div>
-
         </div>
     );
 };
