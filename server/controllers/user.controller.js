@@ -96,3 +96,17 @@ exports.getUserLocations = async (req, res, next) => {
         return res.status(500).json({ message: error.message });
     }
 };
+
+
+exports.getListUsers = async (req, res, next) => {
+    try {
+        const userService = new UserService(MongoDB.client);
+        const users = await userService.findAll();
+       if (!users.length) {
+            return res.status(404).json({ message: "Không tìm thấy người dùng nào." });
+        }
+        return res.json(users);
+    } catch (error) {
+                return res.status(500).json({ message: `Lỗi khi lấy danh sách độc giả: ${error.message}` });
+    }
+}

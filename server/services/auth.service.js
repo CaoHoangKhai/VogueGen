@@ -58,7 +58,7 @@ class AuthService {
 
         // ⚠️ Kiểm tra trạng thái tài khoản
         if (user.TrangThai_id !== 1) {
-            throw new Error("Tài khoản đã bị khóa hoặc chưa được kích hoạt.");
+            throw new Error("Tài khoản đã bị khóa");
         }
 
         const isMatch = await bcrypt.compare(matkhau, user.matkhau);

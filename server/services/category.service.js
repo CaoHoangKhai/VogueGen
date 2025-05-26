@@ -1,25 +1,8 @@
 const { ObjectId } = require("mongodb");
 
-class ProductServer {
+class CategoryServer {
     constructor(client) {
-        this.Product = client.db().collection("sanpham");
-        this.Category = client.db().collection("danhmuc");
-        this.Supplier = client.db().collection("nhacungcap");
-    }
-
-    // Xử lý dữ liệu sản phẩm đầu vào
-    extractProductData(payload) {
-        return {
-            masanpham: payload.masanpham,
-            tensanpham: payload.tensanpham,
-            giasanpham: payload.giasanpham,
-            theloai: payload.theloai,
-            mota: payload.mota,
-            ngaythem: payload.ngaythem,
-            soluong: payload.soluong || 0,
-            hinhanh: payload.hinhanh || [],
-            kichthuoc: payload.kichthuoc || []
-        };
+        this.Category = client.db().collection("theloaisanpham");
     }
 
     // Chuẩn hóa và xử lý dữ liệu danh mục đầu vào
@@ -63,4 +46,4 @@ class ProductServer {
     }
 }
 
-module.exports = ProductServer;
+module.exports = CategoryServer;

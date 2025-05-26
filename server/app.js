@@ -1,19 +1,18 @@
-const express =  require("express");
+const express = require("express");
 const cors = require("cors");
-
-const authRouter = require("./routes/auth.route");
-const userRouter = require("./routes/user.route");
+const routes = require("./routes"); // <-- Gọi file index.js trong thư mục routes
 
 const app = express();
 
 app.use(cors());
-
 app.use(express.json());
 
-app.use("/auth",authRouter);
-app.use("/user", userRouter);
-app.get("/", (req, res)=>{
-    res.json({message:"Welcome to Shopify"});
+// Gọi tất cả route đã gộp lại
+routes(app);
+
+// Route gốc
+app.get("/", (req, res) => {
+    res.json({ message: "Welcome to Shopify" });
 });
 
 module.exports = app;
