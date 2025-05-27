@@ -1,10 +1,10 @@
-const ProductList = () => {
+const Promotions_Add = () => {
     return (
         <>
-            <div className="container mt-5">
+            <div className="container mt-3">
                 <div className="card shadow-sm">
                     <div className="card-header text-dark text-center">
-                        <h4>Danh Sách Sản Phẩm</h4>
+                        <h4>Danh Sách Khuyến Mãi</h4>
                     </div>
 
                     <div className="card-body">
@@ -16,4 +16,5 @@ const ProductList = () => {
         </>
     )
 }
-export default ProductList;
+
+export default Promotions_Add;

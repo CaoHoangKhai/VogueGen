@@ -1,10 +1,10 @@
-const ProductList = () => {
+const NewDetail = () => {
     return (
         <>
-            <div className="container mt-5">
+            <div className="container mt-3">
                 <div className="card shadow-sm">
                     <div className="card-header text-dark text-center">
-                        <h4>Danh Sách Sản Phẩm</h4>
+                        <h4>Tin Tức Chi Tiết</h4>
                     </div>
 
                     <div className="card-body">
@@ -16,4 +16,4 @@ const ProductList = () => {
         </>
     )
 }
-export default ProductList;
+export default NewDetail;

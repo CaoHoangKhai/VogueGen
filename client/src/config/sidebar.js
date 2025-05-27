@@ -45,16 +45,16 @@ const sidebarConfig = {
       label: 'Quản lý tin tức',
       icon: MdOutlineCampaign,
       children: [
-        { label: 'Danh sách tin tức', path: '/admin/news', icon: HiOutlineClipboardList },
-        { label: 'Thêm tin tức', path: '/admin/news/add', icon: IoMdAddCircle }
+        { label: 'Danh sách tin tức', path: '/admin/news_list', icon: HiOutlineClipboardList },
+        { label: 'Thêm tin tức', path: '/admin/news_add', icon: IoMdAddCircle }
       ]
     },
     {
       label: 'Quản lý khuyến mãi',
       icon: FaGift,
       children: [
-        { label: 'Danh sách khuyến mãi', path: '/admin/promotions', icon: HiOutlineClipboardList },
-        { label: 'Thêm khuyến mãi', path: '/admin/promotions/add', icon: IoMdAddCircle }
+        { label: 'Danh sách khuyến mãi', path: '/admin/promotions_list', icon: HiOutlineClipboardList },
+        { label: 'Thêm khuyến mãi', path: '/admin/promotions_add', icon: IoMdAddCircle }
       ]
     },
     {
