@@ -1,7 +1,7 @@
 // File: NewAdd.jsx
 
 import React, { useState, useRef } from 'react';
-import { Editor } from '@tinymce/tinymce-react';
+// import { Editor } from '@tinymce/tinymce-react';
 
 // Bắt buộc import các thành phần core của TinyMCE
 import 'tinymce/tinymce';
@@ -143,7 +143,7 @@ const NewAdd = () => {
                                 )}
                             </div>
 
-                            <div className="mb-3">
+                            {/* <div className="mb-3">
                                 <label className="form-label"><strong>Nội dung đầy đủ (Phần 1)</strong></label>
                                 <Editor
                                     id="content1"
@@ -162,7 +162,7 @@ const NewAdd = () => {
                                     }}
                                     onEditorChange={(newValue) => setContent1(newValue)}
                                 />
-                            </div>
+                            </div> */}
 
                             {/* HÌNH 2 */}
                             <div className="mb-3">
@@ -188,7 +188,7 @@ const NewAdd = () => {
                                 )}
                             </div>
 
-                            <div className="mb-3">
+                            {/* <div className="mb-3">
                                 <label className="form-label"><strong>Nội dung đầy đủ (Phần 2)</strong></label>
                                 <Editor
                                     id="content2"
@@ -207,7 +207,7 @@ const NewAdd = () => {
                                     }}
                                     onEditorChange={(newValue) => setContent2(newValue)}
                                 />
-                            </div>
+                            </div> */}
 
                             <div className="mb-3">
                                 <label className="form-label"><strong>Trạng thái</strong></label>
@@ -244,9 +244,9 @@ const NewAdd = () => {
                                 <h4 className='text-center'>{title}</h4>
                                 <p>{description}</p>
                                 {previewImg1 && <img src={previewImg1} alt="Ảnh minh họa phần 1" className="img-fluid mb-2" />}
-                                <div dangerouslySetInnerHTML={{ __html: content1 }} />
+                                {/* <div dangerouslySetInnerHTML={{ __html: content1 }} /> */}
                                 {previewImg2 && <img src={previewImg2} alt="Ảnh minh họa phần 2" className="img-fluid mb-2" />}
-                                <div dangerouslySetInnerHTML={{ __html: content2 }} />
+                                {/* <div dangerouslySetInnerHTML={{ __html: content2 }} /> */}
                             </div>
                         </div>
                     </div>

@@ -2,18 +2,39 @@ const express = require("express");
 const router = express.Router();
 
 const adminController = require("../controllers/admin.controller");
-const categorytController = require("../controllers/categories.controller")
-
+const categoryController = require("../controllers/categories.controller");
+const productController = require("../controllers/product.controller");
+const sizeController = require("../controllers/sizes.controller");
 const message = require("../utils/messages");
 
+// Trang chính, ví dụ trang đăng nhập
 router.get("/", (req, res) => {
    res.json({ message: message.info.SIGNIN_PAGE });
 });
 
-router.get("/dashboard",adminController.adminDashboard);
+// Dashboard admin
+router.get("/dashboard", adminController.adminDashboard);
 
-router.get("/user_list",adminController.getListUsers);
+// Quản lý user
+router.get("/user_list", adminController.getListUsers);
 router.patch("/user/status/:id", adminController.toggleUserStatus);
-router.get("/getallcategories",categorytController.getAllCategories)
-router.post("/addcategory",categorytController.createCategory)
+
+// Quản lý danh mục
+router.get("/getallcategories", categoryController.getAllCategories);
+router.post("/addcategory", categoryController.createCategory);
+
+// Quản lý sản phẩm
+router.post("/products", productController.createProduct);
+router.get("/products", productController.getAllProducts);
+
+// Các route tĩnh liên quan đến sản phẩm phải đặt trước route có param :id
+router.get("/products/search", productController.searchProducts);
+router.get("/products/sizes", sizeController.getAllSizes);
+
+// Route lấy sản phẩm theo ID, đặt cuối cùng để tránh nhầm lẫn với các route trên
+router.get("/products/:id", productController.getProductById);
+
+router.put("/products/:id", productController.updateProduct);
+router.delete("/products/:id", productController.deleteProduct);
+
 module.exports = router;

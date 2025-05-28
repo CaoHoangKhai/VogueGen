@@ -20,17 +20,17 @@ const sidebarConfig = {
       label: 'Quản lý người dùng',
       icon: FaUsers,
       children: [
-        { label: 'Danh sách người dùng', path: '/admin/user_list', icon: HiOutlineClipboardList },
-        { label: 'Thêm người dùng', path: '/admin/user_add', icon: FaUserPlus }
+        { label: 'Danh sách người dùng', path: '/admin/users', icon: HiOutlineClipboardList },
+        { label: 'Thêm người dùng', path: '/admin/users/add', icon: FaUserPlus }
       ]
     },
     {
       label: 'Quản lý sản phẩm',
       icon: FaBoxOpen,
       children: [
-        { label: 'Danh sách sản phẩm', path: '/admin/product_list', icon: HiOutlineClipboardList },
-        { label: 'Thêm sản phẩm', path: '/admin/product_add', icon: IoMdAddCircle },
-        { label: 'Thêm danh mục', path: '/admin/cacategory_add', icon: MdCategory }
+        { label: 'Danh sách sản phẩm', path: '/admin/products', icon: HiOutlineClipboardList },
+        { label: 'Thêm sản phẩm', path: '/admin/products/add', icon: IoMdAddCircle },
+        { label: 'Thêm danh mục', path: '/admin/products/category_add', icon: MdCategory }
       ]
     },
     {
@@ -45,22 +45,25 @@ const sidebarConfig = {
       label: 'Quản lý tin tức',
       icon: MdOutlineCampaign,
       children: [
-        { label: 'Danh sách tin tức', path: '/admin/news_list', icon: HiOutlineClipboardList },
-        { label: 'Thêm tin tức', path: '/admin/news_add', icon: IoMdAddCircle }
+        { label: 'Danh sách tin tức', path: '/admin/news', icon: HiOutlineClipboardList },
+        { label: 'Thêm tin tức', path: '/admin/news/add', icon: IoMdAddCircle }
       ]
     },
     {
       label: 'Quản lý khuyến mãi',
       icon: FaGift,
       children: [
-        { label: 'Danh sách khuyến mãi', path: '/admin/promotions_list', icon: HiOutlineClipboardList },
-        { label: 'Thêm khuyến mãi', path: '/admin/promotions_add', icon: IoMdAddCircle }
+        { label: 'Danh sách khuyến mãi', path: '/admin/promotions', icon: HiOutlineClipboardList },
+        { label: 'Thêm khuyến mãi', path: '/admin/promotions/add', icon: IoMdAddCircle }
       ]
     },
     {
-      label: 'Đơn hàng',
-      path: '/admin/orders',
-      icon: RiShoppingBag3Fill
+      label: 'Quản lý đơn hàng',
+      icon: RiShoppingBag3Fill,
+      children: [
+        { label: 'Danh sách đơn hàng', path: '/admin/orders', icon: HiOutlineClipboardList },
+        // { label: '', path: '/admin/promotions/add', icon: IoMdAddCircle }
+      ]
     },
     {
       label: 'Sản phẩm nổi bật',
