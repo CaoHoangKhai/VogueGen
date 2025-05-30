@@ -6,8 +6,8 @@ const Promotions_Add = () => {
         makhuyenmai: "",
         tenkhuyenmai: "",
         nguoitao: "admin",
-        soluong: 0,
-        giamgia: 0,
+        soluong: "",
+        giamgia: "",
         ngaybatdau: "",
         ngayketthuc: "",
         trangthai: "1",
@@ -17,6 +17,7 @@ const Promotions_Add = () => {
         const { name, value } = e.target;
         setForm({ ...form, [name]: value });
     };
+    const today = new Date().toISOString().split("T")[0];
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -84,6 +85,7 @@ const Promotions_Add = () => {
                                     value={form.soluong}
                                     onChange={handleChange}
                                     min="0"
+                                    placeholder="Nhập số lượng khuyến mãi"
                                     required
                                 />
                             </div>
@@ -96,7 +98,7 @@ const Promotions_Add = () => {
                                     value={form.giamgia}
                                     onChange={handleChange}
                                     min="0"
-                                    max="100"
+                                    max="30"
                                     required
                                     placeholder="VD: 15"
                                 />
@@ -113,8 +115,10 @@ const Promotions_Add = () => {
                                     name="ngaybatdau"
                                     value={form.ngaybatdau}
                                     onChange={handleChange}
+                                    min={today}  // khóa các ngày trước hôm nay
                                     required
                                 />
+
                             </div>
                             <div className="col">
                                 <label className="form-label">Ngày Kết Thúc</label>
@@ -127,7 +131,6 @@ const Promotions_Add = () => {
                                     required
                                     min={form.ngaybatdau || ""}  // Khóa ngày kết thúc không được nhỏ hơn ngày bắt đầu
                                 />
-
                             </div>
                         </div>
 

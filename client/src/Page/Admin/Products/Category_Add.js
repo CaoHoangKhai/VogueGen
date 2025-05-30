@@ -13,7 +13,7 @@ const CategoryManager = () => {
 
     const fetchCategories = async () => {
         try {
-            const response = await axios.get("http://localhost:4000/admin/getallcategories");
+            const response = await axios.get("http://localhost:4000/admin/categories");
             setCategories(response.data);
         } catch (error) {
             console.error("Lỗi khi lấy danh mục:", error);
@@ -29,7 +29,7 @@ const CategoryManager = () => {
 
         setLoading(true);
         try {
-            const response = await axios.post("http://localhost:4000/admin/addcategory", {
+            const response = await axios.post("http://localhost:4000/admin/categories", {
                 tendanhmuc: newCategory.trim(),
             });
 
