@@ -17,7 +17,6 @@ class AuthService {
         };
     }
 
-    // 🔒 Đăng ký độc giả mới với mã hóa mật khẩu
     async signup(payload) {
         const user = this.extractAuthData(payload);
 
@@ -45,7 +44,6 @@ class AuthService {
         };
     }
 
-    // 🔓 Đăng nhập bằng email + mật khẩu
     async signin({ email, matkhau }) {
         if (!email || !matkhau) {
             throw new Error("Vui lòng nhập email và mật khẩu.");
@@ -56,7 +54,6 @@ class AuthService {
             throw new Error("Email không tồn tại.");
         }
 
-        // ⚠️ Kiểm tra trạng thái tài khoản
         if (user.TrangThai_id !== 1) {
             throw new Error("Tài khoản đã bị khóa");
         }
@@ -66,7 +63,6 @@ class AuthService {
             throw new Error("Mật khẩu không đúng.");
         }
 
-        // Ẩn mật khẩu trước khi trả về
         delete user.matkhau;
 
         return user;

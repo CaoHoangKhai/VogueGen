@@ -22,12 +22,12 @@ const ProductList = () => {
                     <table className="table table-bordered table-hover text-center">
                         <thead className="table-light">
                             <tr>
-                                <th>Tên sản phẩm</th>
+                                <th>Tên Sản Phẩm</th>
                                 <th>Giá</th>
-                                <th>Thể loại</th>
-                                <th>Mô tả</th>
-                                <th>Ngày thêm</th>
-                                <th>Số lượng</th>
+                                <th>Thể Loại</th>
+                                <th>Mô Tả</th>
+                                <th>Ngày Thêm</th>
+                                <th>Chi Tiết</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -39,11 +39,13 @@ const ProductList = () => {
                                 products.map((product) => (
                                     <tr key={product._id}>
                                         <td>{product.tensanpham}</td>
-                                        <td>{product.giasanpham.toLocaleString()} đ</td>
-                                        <td>{product.tendanhmuc}</td> 
+                                        <td>{product.giasanpham} đ</td>
+                                        <td>{product.theloai}</td> 
                                         <td>{product.mota}</td>
                                         <td>{new Date(product.ngaythem).toLocaleDateString()}</td>
-                                        <td>{product.soluong}</td>
+                                        <td>
+                                        
+                                        </td>
                                     </tr>
                                 ))
                             )}

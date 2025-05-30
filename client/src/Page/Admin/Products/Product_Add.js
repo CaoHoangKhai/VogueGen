@@ -7,21 +7,22 @@ const ProductAdd = () => {
   const [categories, setCategories] = useState([]);
   const [selectedSizes, setSelectedSizes] = useState([]);
   const [selectedColors, setSelectedColors] = useState([]);
+  const [previewData, setPreviewData] = useState(null);
 
   const [form, setForm] = useState({
     tensanpham: "",
     giasanpham: "",
     theloai: "",
     mota: "",
-    soluong: "",
+    giasanphamRaw: "", // giá trị thô (dạng số)
   });
 
-  // Lấy danh sách size và danh mục khi component mount
+  // Lấy dữ liệu size và danh mục khi component mount
   useEffect(() => {
     axios
       .get("http://localhost:4000/admin/products/sizes")
       .then((res) => setAvailableSizes(res.data))
-      .catch((err) => console.error("Lỗi lấy size:", err));
+      .catch((err) => console.error("Lỗi lấy danh sách size:", err));
 
     axios
       .get("http://localhost:4000/admin/getallcategories")
@@ -54,7 +55,21 @@ const ProductAdd = () => {
       prev.map((s) => (s.size === size ? { ...s, quantity } : s))
     );
   };
+  const formatCurrency = (value) => {
+    if (!value) return "";
+    return new Intl.NumberFormat("vi-VN").format(value);
+  };
 
+  // Xử lý khi người dùng nhập giá
+  const handlePriceChange = (e) => {
+    const raw = e.target.value.replace(/\D/g, ""); // loại bỏ tất cả ký tự không phải số
+    const formatted = formatCurrency(raw);
+    setForm((prev) => ({
+      ...prev,
+      giasanpham: formatted,
+      giasanphamRaw: raw,
+    }));
+  };
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -67,11 +82,10 @@ const ProductAdd = () => {
       !form.tensanpham.trim() ||
       !form.giasanpham ||
       !form.theloai ||
-      !form.soluong ||
       selectedSizes.length === 0 ||
       selectedColors.length === 0
     ) {
-      alert("Vui lòng nhập đầy đủ thông tin, chọn ít nhất một size và một màu.");
+      alert("Vui lòng nhập đầy đủ thông tin và chọn ít nhất một size và một màu.");
       return;
     }
 
@@ -87,14 +101,18 @@ const ProductAdd = () => {
       kichthuoc: selectedSizes.map((s) => ({
         size: s.size,
         soluong: s.quantity,
-        mau: "",
-        chatlieu: "",
       })),
       mau: selectedColors,
     };
 
+    setPreviewData(dataToSend);
+  };
+
+  const handleConfirmSend = () => {
+    if (!previewData) return;
+
     axios
-      .post("http://localhost:4000/admin/products", dataToSend)
+      .post("http://localhost:4000/admin/products", previewData)
       .then(() => {
         alert("Thêm sản phẩm thành công!");
         setForm({
@@ -102,14 +120,14 @@ const ProductAdd = () => {
           giasanpham: "",
           theloai: "",
           mota: "",
-          soluong: "",
         });
         setSelectedSizes([]);
         setSelectedColors([]);
+        setPreviewData(null);
       })
       .catch((err) => {
-        console.error("Lỗi thêm sản phẩm:", err);
-        alert("Lỗi khi thêm sản phẩm, vui lòng thử lại.");
+        console.error("Lỗi khi gửi sản phẩm:", err);
+        alert("Thêm sản phẩm thất bại. Vui lòng thử lại.");
       });
   };
 
@@ -119,9 +137,7 @@ const ProductAdd = () => {
       <form onSubmit={handleSubmit}>
         {/* Tên sản phẩm */}
         <div className="mb-3">
-          <label className="form-label">
-            Tên sản phẩm <span className="text-danger">*</span>
-          </label>
+          <label className="form-label">Tên sản phẩm *</label>
           <input
             type="text"
             name="tensanpham"
@@ -134,25 +150,21 @@ const ProductAdd = () => {
 
         {/* Giá sản phẩm */}
         <div className="mb-3">
-          <label className="form-label">
-            Giá sản phẩm <span className="text-danger">*</span>
-          </label>
+          <label className="form-label">Giá sản phẩm *</label>
           <input
-            type="number"
+            type="text"
             name="giasanpham"
             className="form-control"
             value={form.giasanpham}
-            onChange={handleChange}
-            min="0"
-            placeholder="Nhập giá bán cho sản phẩm"
+            onChange={handlePriceChange}
+            placeholder="Nhập giá, ví dụ: 1.000.000"
           />
         </div>
 
-        {/* Thể loại - dropdown */}
+
+        {/* Danh mục */}
         <div className="mb-3">
-          <label className="form-label">
-            Thể loại <span className="text-danger">*</span>
-          </label>
+          <label className="form-label">Danh mục *</label>
           <select
             name="theloai"
             className="form-select"
@@ -181,17 +193,17 @@ const ProductAdd = () => {
           ></textarea>
         </div>
 
-        {/* Chọn size */}
+        {/* Size */}
         <div className="mb-3">
-          <label className="form-label fw-bold mb-2">Chọn Size:</label>
-          <div className="d-flex flex-wrap gap-2 p-3 rounded border">
+          <label className="form-label fw-bold">Chọn Size:</label>
+          <div className="d-flex flex-wrap gap-2 border p-3 rounded">
             {availableSizes.map((size) => {
               const isSelected = selectedSizes.some((s) => s.size === size.size);
               return (
                 <button
-                  key={size._id}
                   type="button"
-                  className={`btn btn-sm rounded border ${isSelected ? "btn-primary" : "btn-outline-secondary"}`}
+                  key={size._id}
+                  className={`btn btn-sm ${isSelected ? "btn-primary" : "btn-outline-secondary"}`}
                   onClick={() => toggleSize(size.size)}
                 >
                   {size.size}
@@ -199,44 +211,38 @@ const ProductAdd = () => {
               );
             })}
           </div>
-          {selectedSizes.length === 0 && (
-            <div className="form-text text-danger mt-1">
-              Vui lòng chọn ít nhất một size.
-            </div>
-          )}
         </div>
 
-        {/* Nhập số lượng theo size */}
+        {/* Số lượng từng size */}
         {selectedSizes.length > 0 && (
           <div className="mb-3">
-            <label className="form-label fw-bold mb-2">Nhập số lượng theo size:</label>
+            <label className="form-label">Số lượng theo size:</label>
             {selectedSizes.map(({ size, quantity }) => (
               <div key={size} className="d-flex align-items-center gap-3 mb-2" style={{ maxWidth: "300px" }}>
-                <span style={{ minWidth: "50px" }}>{size}</span>
+                <span style={{ width: "50px" }}>{size}</span>
                 <input
                   type="number"
-                  min="0"
                   className="form-control"
+                  min="0"
                   value={quantity}
                   onChange={(e) => handleQuantityChange(size, e.target.value)}
-                  placeholder={`Số lượng size ${size}`}
                 />
               </div>
             ))}
           </div>
         )}
 
-        {/* Chọn màu (Tên) */}
+        {/* Màu sắc (theo tên) */}
         <div className="mb-3">
-          <label className="form-label fw-bold mb-2">Chọn Màu (Tên màu):</label>
-          <div className="d-flex flex-wrap gap-2 p-3 rounded border mb-4">
+          <label className="form-label fw-bold">Chọn Màu (Tên):</label>
+          <div className="d-flex flex-wrap gap-2 p-3 border rounded mb-2">
             {colors.map(({ color }) => {
               const isSelected = selectedColors.includes(color);
               return (
                 <button
                   key={color}
                   type="button"
-                  className={`btn btn-sm rounded border ${isSelected ? "btn-primary" : "btn-outline-secondary"}`}
+                  className={`btn btn-sm ${isSelected ? "btn-primary" : "btn-outline-secondary"}`}
                   onClick={() => toggleColor(color)}
                 >
                   {color}
@@ -244,14 +250,11 @@ const ProductAdd = () => {
               );
             })}
           </div>
-          {selectedColors.length === 0 && (
-            <div className="form-text text-danger">Vui lòng chọn ít nhất một màu.</div>
-          )}
         </div>
 
-        {/* Chọn màu (Ô màu) */}
+        {/* Màu sắc (ô màu) */}
         <div className="mb-3">
-          <label className="form-label fw-bold mb-2">Chọn Màu (Ô màu):</label>
+          <label className="form-label fw-bold">Chọn Màu (Ô màu):</label>
           <div className="d-flex flex-wrap gap-3">
             {colors.map(({ color, code }) => {
               const isSelected = selectedColors.includes(color);
@@ -259,28 +262,47 @@ const ProductAdd = () => {
                 <div
                   key={color}
                   onClick={() => toggleColor(color)}
+                  title={color}
                   style={{
                     width: "32px",
                     height: "32px",
                     borderRadius: "4px",
                     backgroundColor: code,
                     cursor: "pointer",
-                    border: isSelected ? "3px solid #000" : "1px solid #ccc",
+                    border: isSelected ? "3px solid #007bff" : "1px solid #ccc",
                   }}
-                  title={color}
                 />
               );
             })}
           </div>
         </div>
 
-        {/* Nút submit */}
-        <div className="text-center">
-          <button type="submit" className="btn btn-success mt-3">
-            Thêm sản phẩm
+        {/* Nút xem trước */}
+        <div className="text-center mt-4">
+          <button type="submit" className="btn btn-success px-5">
+            Xem thông tin sản phẩm
           </button>
         </div>
       </form>
+
+      {/* Hiển thị xem trước sản phẩm */}
+      {previewData && (
+        <div className="mt-4 p-4 bg-light border rounded">
+          <h5>Xem trước dữ liệu gửi:</h5>
+          <pre style={{ backgroundColor: "#f9f9f9", padding: "10px", borderRadius: "4px" }}>
+            {JSON.stringify(previewData, null, 2)}
+          </pre>
+
+          <div className="text-center mt-3">
+            <button className="btn btn-primary me-3" onClick={handleConfirmSend}>
+              Xác nhận gửi
+            </button>
+            <button className="btn btn-secondary" onClick={() => setPreviewData(null)}>
+              Hủy
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

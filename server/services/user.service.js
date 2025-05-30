@@ -42,11 +42,9 @@ class UserService {
 
     async toggleUserStatus(userId) {
         try {
-            // Tìm user hiện tại
             const user = await this.User.findOne({ _id: new ObjectId(userId) });
             if (!user) return false;
 
-            // Đảo trạng thái: nếu là 1 thì thành 0, ngược lại thành 1
             const newStatus = user.TrangThai_id === 1 ? 0 : 1;
 
             const result = await this.User.updateOne(

@@ -105,8 +105,8 @@ const CategoryManager = () => {
                             {categories.length > 0 ? (
                                 categories.map((item, index) => (
                                     <tr key={item._id}>
-                                        <td>{index + 1}</td>
-                                        <td>{item.tendanhmuc}</td>
+                                        <td className="col-1">{index + 1}</td>
+                                        <td className="col">{item.tendanhmuc}</td>
                                         <td></td>
                                         <td></td>
                                     </tr>

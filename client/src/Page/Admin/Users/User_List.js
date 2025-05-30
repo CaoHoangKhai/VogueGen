@@ -8,8 +8,9 @@ const UserList = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const usersPerPage = 8;
+  const usersPerPage = 9;
 
+  // Lấy danh sách người dùng từ server
   const fetchUsers = async () => {
     try {
       const response = await axios.get("http://localhost:4000/admin/user_list");
@@ -20,15 +21,23 @@ const UserList = () => {
     }
   };
 
+  // Chạy 1 lần khi component mount
   useEffect(() => {
     fetchUsers();
   }, []);
 
+  // Reset currentPage về 1 khi searchTerm hoặc statusFilter thay đổi
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter]);
+
+  // Tạo đối tượng Fuse để tìm kiếm mờ
   const fuse = new Fuse(users, {
     keys: ["hoten", "sodienthoai", "email"],
     threshold: 0.3,
   });
 
+  // Lọc người dùng theo từ khóa tìm kiếm và trạng thái
   const filteredUsers = (searchTerm.trim() === ""
     ? users
     : fuse.search(searchTerm).map((result) => result.item)
@@ -36,6 +45,7 @@ const UserList = () => {
     return statusFilter === "" || String(user.TrangThai_id) === statusFilter;
   });
 
+  // Tính toán phân trang
   const indexOfLastUser = currentPage * usersPerPage;
   const indexOfFirstUser = indexOfLastUser - usersPerPage;
   const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
@@ -45,6 +55,7 @@ const UserList = () => {
   const handlePrevPage = () => setCurrentPage((prev) => (prev === 1 ? prev : prev - 1));
   const handleNextPage = () => setCurrentPage((prev) => (prev === totalPages ? prev : prev + 1));
 
+  // Xuất dữ liệu ra file Excel
   const exportToExcel = () => {
     const exportData = filteredUsers.map((user) => ({
       "Họ tên": user.hoten,
@@ -59,6 +70,7 @@ const UserList = () => {
     XLSX.writeFile(workbook, "DanhSachNguoiDung.xlsx");
   };
 
+  // Chuyển trạng thái người dùng (khóa/mở)
   const toggleUserStatus = async (userId) => {
     try {
       const response = await axios.patch(`http://localhost:4000/admin/user/status/${userId}`);
@@ -74,7 +86,6 @@ const UserList = () => {
   return (
     <div className="container mt-4">
       <div className="card p-4 shadow-sm">
-
         <h4 className="text-center mt-2 mb-3">Quản lý Người Dùng</h4>
 
         <div className="d-flex justify-content-between align-items-center mb-3">
@@ -105,11 +116,11 @@ const UserList = () => {
         <table className="table table-bordered table-hover text-center">
           <thead className="table-light">
             <tr>
-              <th>Họ tên</th>
-              <th>Số điện thoại</th>
+              <th>Họ Tên</th>
+              <th>Số Điện Thoại</th>
               <th>Email</th>
-              <th>Trạng thái</th>
-              <th>Thao tác</th>
+              <th>Trạng Thái</th>
+              <th>Thao Tác</th>
             </tr>
           </thead>
           <tbody>

@@ -39,6 +39,7 @@ const Promotions_Add = () => {
                                 value={form.tenKhuyenMai}
                                 onChange={handleChange}
                                 required
+                                placeholder="Nhập tên cho chương trình khuyến mãi"
                             />
                         </div>
 
@@ -51,6 +52,7 @@ const Promotions_Add = () => {
                                 value={form.soLuong}
                                 onChange={handleChange}
                                 min="0"
+                               
                             />
                         </div>
 

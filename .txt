@@ -1,0 +1,18 @@
+Chương trình khuyến mãi:
+Ngày kết thúc > ngày bắt đầu
+C1: So sánh ngày hoặc là khi chọn ngày bắt đầu rồi tắt từ ngày bắt đầu trở về trước
+C2: 
+
+Danh sách Người Dùng:
+bị lỗi khi qua trang 2 và tìm kiếm thì bị ẩn ko hiện về trang 1 thì hiện được.
+
+
+Danh sách sản phẩm:
+lấy code màu ko lấy tên
+giá bị giasanpham và giasanphamRaw bị lộn
+thể loại bị ẩn
+thời gian bị lộn
+ko hiện thị số lượng
+
+
+

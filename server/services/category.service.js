@@ -19,7 +19,6 @@ class CategoryServer {
         };
     }
 
-    // Thêm danh mục mới (nếu chưa tồn tại)
     async addCategory(payload) {
         const categoryData = this.extractCategoryData(payload);
 
@@ -28,19 +27,17 @@ class CategoryServer {
         });
 
         if (existingCategory) {
-            return null; // Trùng tên
+            return null;
         }
 
         const result = await this.Category.insertOne(categoryData);
         return result.insertedId;
     }
 
-    // Lấy tất cả danh mục
     async getAllCategories() {
         return await this.Category.find({}).toArray();
     }
 
-    // Tìm danh mục theo ID
     async getCategoryById(id) {
         return await this.Category.findOne({ _id: new ObjectId(id) });
     }

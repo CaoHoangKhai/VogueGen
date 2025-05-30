@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import 'bootstrap/dist/css/bootstrap.min.css';
-
+import { Link } from 'react-router-dom';
 const Profile = () => {
     const [user, setUser] = useState({
         _id: '',
@@ -66,23 +66,33 @@ const Profile = () => {
             {/* Bốn khối thông tin */}
             <div className="row text-center mb-4">
                 <div className="col-md-3">
-                    <div className="border p-3 rounded shadow-sm">
-                        <strong>Đã tiêu</strong>
-                        <div>{user.tongChiTieu.toLocaleString()}₫</div>
-                    </div>
+                    <Link className="text-decoration-none quick-link text-secondary" to={'/user/location'}>
+                        <div className="border p-3 rounded shadow-sm">
+                            <strong>Đã tiêu</strong>
+                            <div>{user.tongChiTieu.toLocaleString()}₫</div>
+                        </div>
+                    </Link>
                 </div>
+
                 <div className="col-md-3">
-                    <div className="border p-3 rounded shadow-sm">
-                        <strong>Số địa chỉ</strong>
-                        <div>{user.sodiachi}/5</div>
-                    </div>
+                    <Link className="text-decoration-none quick-link text-secondary" to={'/user/location'}>
+                        <div className="border p-3 rounded shadow-sm">
+                            <strong>Số địa chỉ</strong>
+                            <div>{user.sodiachi}/5</div>
+                        </div>
+                    </Link>
+
                 </div>
+
                 <div className="col-md-3">
-                    <div className="border p-3 rounded shadow-sm">
-                        <strong>Số đơn hàng</strong>
-                        <div>{user.soDonHang}</div>
-                    </div>
+                    <Link className="text-decoration-none quick-link text-secondary" to={'/user/orders'}>
+                        <div className="border p-3 rounded shadow-sm">
+                            <strong>Số đơn hàng</strong>
+                            <div>{user.soDonHang}</div>
+                        </div>
+                    </Link>
                 </div>
+
                 <div className="col-md-3">
                     <div className="border p-3 rounded shadow-sm">
                         <strong>Ngày tạo</strong>

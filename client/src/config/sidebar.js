@@ -1,7 +1,8 @@
+// FaCog
 import {
   FaUsers, FaUserPlus, FaBoxOpen,
   FaWarehouse, FaGift, FaHeart,
-  FaCog, FaShoppingCart, FaMapMarkerAlt
+  FaShoppingCart, FaMapMarkerAlt
 } from 'react-icons/fa';
 import { MdDashboard, MdCategory, MdOutlineCampaign } from "react-icons/md";
 import { IoMdAddCircle } from "react-icons/io";
@@ -65,16 +66,16 @@ const sidebarConfig = {
         // { label: '', path: '/admin/promotions/add', icon: IoMdAddCircle }
       ]
     },
-    {
-      label: 'Sản phẩm nổi bật',
-      path: '/admin/highlighted-products',
-      icon: FaHeart
-    },
-    {
-      label: 'Cài đặt hệ thống',
-      path: '/admin/settings',
-      icon: FaCog
-    }
+    // {
+    //   label: 'Sản phẩm nổi bật',
+    //   path: '/admin/highlighted-products',
+    //   icon: FaHeart
+    // },
+    // {
+    //   label: 'Cài đặt hệ thống',
+    //   path: '/admin/settings',
+    //   icon: FaCog
+    // }
   ],
 
   user: [
@@ -104,10 +105,15 @@ const sidebarConfig = {
       icon: FaHeart
     },
     {
-      label: 'Cài đặt',
-      path: '/user/settings',
-      icon: FaCog
-    }
+      label: 'Danh sách đơn hàng',
+      path: '/user/orders',
+      icon: HiOutlineClipboardList
+    },
+    // {
+    //   label: 'Cài đặt',
+    //   path: '/user/settings',
+    //   icon: FaCog
+    // }
   ]
 };
 
