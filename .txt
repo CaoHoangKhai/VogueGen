@@ -1,18 +1,23 @@
-Chương trình khuyến mãi:
-Ngày kết thúc > ngày bắt đầu
-C1: So sánh ngày hoặc là khi chọn ngày bắt đầu rồi tắt từ ngày bắt đầu trở về trước
-C2: 
+Chỗ khuyến mãi kết thúc ko được( tối nhớ chỉnh)
 
-Danh sách Người Dùng:
-bị lỗi khi qua trang 2 và tìm kiếm thì bị ẩn ko hiện về trang 1 thì hiện được.
+Chưa làm tìm kiếm (tên, thể loại, giá tiền)
 
+Xuất file thông tin sản phẩm 
+Xuất file đơn hàng
+Xem danh sách đơn hàng
+Tìm kiếm đơn hàng theo( tên người đặt, theo mã, theo trạng thái)
 
-Danh sách sản phẩm:
-lấy code màu ko lấy tên
-giá bị giasanpham và giasanphamRaw bị lộn
-thể loại bị ẩn
-thời gian bị lộn
-ko hiện thị số lượng
-
-
-
+Bị lỗi
+{
+  "_id": {
+    "$oid": "683976097014f3b109d79dfe"
+  },
+  "tensanpham": "Áo Nam",
+  "giasanpham": 120000000,
+  "theloai": "6836bfcd23b3d164e33fe261",
+  "mota": "Áo Thun Nam",
+  "ngaythem": {
+    "$date": "2025-05-30T09:10:33.046Z"
+  }
+}
+khi insert vào table sanpham

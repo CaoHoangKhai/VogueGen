@@ -3,21 +3,25 @@ import axios from "axios";
 import { colors } from "../../../config/colors";
 
 const ProductAdd = () => {
+  // State lưu trữ các kích thước và danh mục lấy từ server
   const [availableSizes, setAvailableSizes] = useState([]);
   const [categories, setCategories] = useState([]);
+
+  // State lưu kích thước, màu sắc được chọn
   const [selectedSizes, setSelectedSizes] = useState([]);
   const [selectedColors, setSelectedColors] = useState([]);
-  const [previewData, setPreviewData] = useState(null);
 
+  // State form nhập liệu và preview dữ liệu trước khi gửi
   const [form, setForm] = useState({
     tensanpham: "",
-    giasanpham: "",
+    giasanpham: "",      // Giá hiển thị có dấu phân cách
+    giasanphamRaw: "",   // Giá thuần số để gửi server
     theloai: "",
     mota: "",
-    giasanphamRaw: "", // giá trị thô (dạng số)
   });
+  const [previewData, setPreviewData] = useState(null);
 
-  // Lấy dữ liệu size và danh mục khi component mount
+  // Lấy dữ liệu kích thước và danh mục khi component mount
   useEffect(() => {
     axios
       .get("http://localhost:4000/admin/products/sizes")
@@ -25,62 +29,72 @@ const ProductAdd = () => {
       .catch((err) => console.error("Lỗi lấy danh sách size:", err));
 
     axios
-      .get("http://localhost:4000/admin/getallcategories")
+      .get("http://localhost:4000/admin/categories")
       .then((res) => setCategories(res.data))
       .catch((err) => console.error("Lỗi lấy danh mục:", err));
   }, []);
 
+  // Chọn / bỏ chọn size, mặc định quantity 1 khi chọn mới
   const toggleSize = (size) => {
     setSelectedSizes((prev) => {
       const exists = prev.find((s) => s.size === size);
-      return exists
-        ? prev.filter((s) => s.size !== size)
-        : [...prev, { size, quantity: 1 }];
+      if (exists) {
+        // Bỏ chọn size
+        return prev.filter((s) => s.size !== size);
+      } else {
+        // Thêm size với số lượng mặc định 1
+        return [...prev, { size, quantity: 1 }];
+      }
     });
   };
 
+  // Chọn / bỏ chọn màu (theo tên)
   const toggleColor = (color) => {
     setSelectedColors((prev) =>
-      prev.includes(color)
-        ? prev.filter((c) => c !== color)
-        : [...prev, color]
+      prev.includes(color) ? prev.filter((c) => c !== color) : [...prev, color]
     );
   };
 
+  // Thay đổi số lượng theo từng size, chỉ nhận số >= 0
   const handleQuantityChange = (size, value) => {
     const quantity = parseInt(value, 10);
     if (isNaN(quantity) || quantity < 0) return;
-
     setSelectedSizes((prev) =>
       prev.map((s) => (s.size === size ? { ...s, quantity } : s))
     );
   };
+
+  // Format số thành chuỗi định dạng VNĐ có dấu chấm ngăn cách hàng nghìn
   const formatCurrency = (value) => {
     if (!value) return "";
     return new Intl.NumberFormat("vi-VN").format(value);
   };
 
-  // Xử lý khi người dùng nhập giá
+  // Xử lý nhập giá sản phẩm, chỉ giữ số, tự format khi nhập
   const handlePriceChange = (e) => {
-    const raw = e.target.value.replace(/\D/g, ""); // loại bỏ tất cả ký tự không phải số
+    const raw = e.target.value.replace(/\D/g, "");
     const formatted = formatCurrency(raw);
     setForm((prev) => ({
       ...prev,
-      giasanpham: formatted,
-      giasanphamRaw: raw,
+      giasanphamRaw: formatted,
+      giasanpham: raw,
     }));
   };
+
+  // Xử lý thay đổi các trường input khác
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Xử lý submit form để hiển thị preview
   const handleSubmit = (e) => {
     e.preventDefault();
 
+    // Kiểm tra các trường bắt buộc
     if (
       !form.tensanpham.trim() ||
-      !form.giasanpham ||
+      !form.giasanphamRaw ||
       !form.theloai ||
       selectedSizes.length === 0 ||
       selectedColors.length === 0
@@ -89,6 +103,7 @@ const ProductAdd = () => {
       return;
     }
 
+    // Kiểm tra số lượng từng size > 0
     for (const s of selectedSizes) {
       if (s.quantity <= 0) {
         alert(`Số lượng cho size ${s.size} phải lớn hơn 0.`);
@@ -96,6 +111,7 @@ const ProductAdd = () => {
       }
     }
 
+    // Chuẩn bị dữ liệu preview
     const dataToSend = {
       ...form,
       kichthuoc: selectedSizes.map((s) => ({
@@ -108,6 +124,7 @@ const ProductAdd = () => {
     setPreviewData(dataToSend);
   };
 
+  // Xác nhận gửi dữ liệu lên server
   const handleConfirmSend = () => {
     if (!previewData) return;
 
@@ -115,9 +132,11 @@ const ProductAdd = () => {
       .post("http://localhost:4000/admin/products", previewData)
       .then(() => {
         alert("Thêm sản phẩm thành công!");
+        // Reset form và trạng thái
         setForm({
           tensanpham: "",
           giasanpham: "",
+          giasanphamRaw: "",
           theloai: "",
           mota: "",
         });
@@ -155,12 +174,11 @@ const ProductAdd = () => {
             type="text"
             name="giasanpham"
             className="form-control"
-            value={form.giasanpham}
+            value={form.giasanphamRaw}
             onChange={handlePriceChange}
             placeholder="Nhập giá, ví dụ: 1.000.000"
           />
         </div>
-
 
         {/* Danh mục */}
         <div className="mb-3">
@@ -190,10 +208,10 @@ const ProductAdd = () => {
             value={form.mota}
             onChange={handleChange}
             placeholder="Mô tả sản phẩm"
-          ></textarea>
+          />
         </div>
 
-        {/* Size */}
+        {/* Chọn Size */}
         <div className="mb-3">
           <label className="form-label fw-bold">Chọn Size:</label>
           <div className="d-flex flex-wrap gap-2 border p-3 rounded">
@@ -201,8 +219,8 @@ const ProductAdd = () => {
               const isSelected = selectedSizes.some((s) => s.size === size.size);
               return (
                 <button
-                  type="button"
                   key={size._id}
+                  type="button"
                   className={`btn btn-sm ${isSelected ? "btn-primary" : "btn-outline-secondary"}`}
                   onClick={() => toggleSize(size.size)}
                 >
@@ -213,12 +231,16 @@ const ProductAdd = () => {
           </div>
         </div>
 
-        {/* Số lượng từng size */}
+        {/* Nhập số lượng theo size */}
         {selectedSizes.length > 0 && (
           <div className="mb-3">
             <label className="form-label">Số lượng theo size:</label>
             {selectedSizes.map(({ size, quantity }) => (
-              <div key={size} className="d-flex align-items-center gap-3 mb-2" style={{ maxWidth: "300px" }}>
+              <div
+                key={size}
+                className="d-flex align-items-center gap-3 mb-2"
+                style={{ maxWidth: "300px" }}
+              >
                 <span style={{ width: "50px" }}>{size}</span>
                 <input
                   type="number"
@@ -232,7 +254,7 @@ const ProductAdd = () => {
           </div>
         )}
 
-        {/* Màu sắc (theo tên) */}
+        {/* Chọn màu sắc (tên) */}
         <div className="mb-3">
           <label className="form-label fw-bold">Chọn Màu (Tên):</label>
           <div className="d-flex flex-wrap gap-2 p-3 border rounded mb-2">
@@ -252,7 +274,7 @@ const ProductAdd = () => {
           </div>
         </div>
 
-        {/* Màu sắc (ô màu) */}
+        {/* Chọn màu sắc (ô màu) */}
         <div className="mb-3">
           <label className="form-label fw-bold">Chọn Màu (Ô màu):</label>
           <div className="d-flex flex-wrap gap-3">
@@ -277,28 +299,56 @@ const ProductAdd = () => {
           </div>
         </div>
 
-        {/* Nút xem trước */}
+        {/* Nút Xem trước */}
         <div className="text-center mt-4">
           <button type="submit" className="btn btn-success px-5">
-            Xem thông tin sản phẩm
+            Xem Trước
           </button>
         </div>
       </form>
 
-      {/* Hiển thị xem trước sản phẩm */}
+      {/* Bảng xem trước sản phẩm */}
       {previewData && (
-        <div className="mt-4 p-4 bg-light border rounded">
-          <h5>Xem trước dữ liệu gửi:</h5>
-          <pre style={{ backgroundColor: "#f9f9f9", padding: "10px", borderRadius: "4px" }}>
-            {JSON.stringify(previewData, null, 2)}
-          </pre>
+        <div className="mt-5">
+          <h4 className="text-center mb-4">Xem trước sản phẩm</h4>
+          <table className="table table-bordered">
+            <tbody>
+              <tr>
+                <th>Tên sản phẩm</th>
+                <td>{previewData.tensanpham}</td>
+              </tr>
+              <tr>
+                <th>Giá</th>
+                <td>{formatCurrency(previewData.giasanphamRaw)} VNĐ</td>
+              </tr>
+              <tr>
+                <th>Danh mục</th>
+                <td>{categories.find((cat) => cat._id === previewData.theloai)?.tendanhmuc || "Không rõ"}</td>
+              </tr>
+              <tr>
+                <th>Mô tả</th>
+                <td>{previewData.mota || "Không có mô tả"}</td>
+              </tr>
+              <tr>
+                <th>Kích thước và số lượng</th>
+                <td>
+                  {previewData.kichthuoc.map(({ size, soluong }) => (
+                    <div key={size}>
+                      Size {size}: {soluong}
+                    </div>
+                  ))}
+                </td>
+              </tr>
+              <tr>
+                <th>Màu sắc</th>
+                <td>{previewData.mau.join(", ")}</td>
+              </tr>
+            </tbody>
+          </table>
 
-          <div className="text-center mt-3">
-            <button className="btn btn-primary me-3" onClick={handleConfirmSend}>
-              Xác nhận gửi
-            </button>
-            <button className="btn btn-secondary" onClick={() => setPreviewData(null)}>
-              Hủy
+          <div className="text-center">
+            <button className="btn btn-primary" onClick={handleConfirmSend}>
+              Xác nhận gửi sản phẩm
             </button>
           </div>
         </div>
