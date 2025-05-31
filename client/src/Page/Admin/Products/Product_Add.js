@@ -3,25 +3,24 @@ import axios from "axios";
 import { colors } from "../../../config/colors";
 
 const ProductAdd = () => {
-  // State lưu trữ các kích thước và danh mục lấy từ server
   const [availableSizes, setAvailableSizes] = useState([]);
   const [categories, setCategories] = useState([]);
-
-  // State lưu kích thước, màu sắc được chọn
   const [selectedSizes, setSelectedSizes] = useState([]);
   const [selectedColors, setSelectedColors] = useState([]);
-
-  // State form nhập liệu và preview dữ liệu trước khi gửi
   const [form, setForm] = useState({
     tensanpham: "",
-    giasanpham: "",      // Giá hiển thị có dấu phân cách
-    giasanphamRaw: "",   // Giá thuần số để gửi server
+    giasanpham: "",
+    giasanphamRaw: "",
     theloai: "",
     mota: "",
   });
   const [previewData, setPreviewData] = useState(null);
 
-  // Lấy dữ liệu kích thước và danh mục khi component mount
+  // State cho nhiều ảnh
+  const [imagePreviews, setImagePreviews] = useState([]);
+  const [imageNames, setImageNames] = useState([]);
+  const [imageFiles, setImageFiles] = useState([]);
+
   useEffect(() => {
     axios
       .get("http://localhost:4000/admin/products/sizes")
@@ -34,67 +33,91 @@ const ProductAdd = () => {
       .catch((err) => console.error("Lỗi lấy danh mục:", err));
   }, []);
 
-  // Chọn / bỏ chọn size, mặc định quantity 1 khi chọn mới
   const toggleSize = (size) => {
     setSelectedSizes((prev) => {
       const exists = prev.find((s) => s.size === size);
       if (exists) {
-        // Bỏ chọn size
         return prev.filter((s) => s.size !== size);
       } else {
-        // Thêm size với số lượng mặc định 1
         return [...prev, { size, quantity: 1 }];
       }
     });
   };
 
-  // Chọn / bỏ chọn màu (theo tên)
   const toggleColor = (color) => {
     setSelectedColors((prev) =>
       prev.includes(color) ? prev.filter((c) => c !== color) : [...prev, color]
     );
   };
 
-  // Thay đổi số lượng theo từng size, chỉ nhận số >= 0
   const handleQuantityChange = (size, value) => {
+    if (value === "") {
+      setSelectedSizes((prev) =>
+        prev.map((s) => (s.size === size ? { ...s, quantity: "" } : s))
+      );
+      return;
+    }
     const quantity = parseInt(value, 10);
-    if (isNaN(quantity) || quantity < 0) return;
+    if (isNaN(quantity) || quantity < 0) {
+      return;
+    }
     setSelectedSizes((prev) =>
       prev.map((s) => (s.size === size ? { ...s, quantity } : s))
     );
   };
 
-  // Format số thành chuỗi định dạng VNĐ có dấu chấm ngăn cách hàng nghìn
+  const handleQuantityBlur = (size) => {
+    setSelectedSizes((prev) =>
+      prev.map((s) => {
+        if (s.size === size) {
+          if (s.quantity === "" || isNaN(s.quantity) || s.quantity < 1) {
+            return { ...s, quantity: 1 };
+          }
+        }
+        return s;
+      })
+    );
+  };
+
   const formatCurrency = (value) => {
     if (!value) return "";
     return new Intl.NumberFormat("vi-VN").format(value);
   };
 
-  // Xử lý nhập giá sản phẩm, chỉ giữ số, tự format khi nhập
   const handlePriceChange = (e) => {
     const raw = e.target.value.replace(/\D/g, "");
     const formatted = formatCurrency(raw);
     setForm((prev) => ({
       ...prev,
-      giasanphamRaw: formatted,
       giasanpham: raw,
+      giasanphamRaw: formatted,
     }));
   };
 
-  // Xử lý thay đổi các trường input khác
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Xử lý submit form để hiển thị preview
+  // Khi chọn file mới, reset toàn bộ ảnh và tên file (không cộng dồn)
+  const handleImageChange = (e) => {
+    const files = Array.from(e.target.files);
+    setImagePreviews(files.map((file) => URL.createObjectURL(file)));
+    setImageNames(files.map((file) => file.name));
+    setImageFiles(files);
+  };
+
+  // Xóa ảnh theo index
+  const handleRemoveImage = (idx) => {
+    setImagePreviews((prev) => prev.filter((_, i) => i !== idx));
+    setImageNames((prev) => prev.filter((_, i) => i !== idx));
+    setImageFiles((prev) => prev.filter((_, i) => i !== idx));
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    // Kiểm tra các trường bắt buộc
     if (
       !form.tensanpham.trim() ||
-      !form.giasanphamRaw ||
       !form.theloai ||
       selectedSizes.length === 0 ||
       selectedColors.length === 0
@@ -102,52 +125,72 @@ const ProductAdd = () => {
       alert("Vui lòng nhập đầy đủ thông tin và chọn ít nhất một size và một màu.");
       return;
     }
-
-    // Kiểm tra số lượng từng size > 0
     for (const s of selectedSizes) {
       if (s.quantity <= 0) {
         alert(`Số lượng cho size ${s.size} phải lớn hơn 0.`);
         return;
       }
     }
-
-    // Chuẩn bị dữ liệu preview
+    if (imageFiles.length === 0) {
+      alert("Vui lòng chọn ít nhất một ảnh sản phẩm.");
+      return;
+    }
+    const colorsCodeSelected = selectedColors.map((colorName) => {
+      const colorObj = colors.find((c) => c.color === colorName);
+      return colorObj ? colorObj.code : colorName;
+    });
     const dataToSend = {
       ...form,
       kichthuoc: selectedSizes.map((s) => ({
         size: s.size,
         soluong: s.quantity,
       })),
-      mau: selectedColors,
+      mau: colorsCodeSelected,
+      // Không cần trường anh ở đây, sẽ gửi file thực ở bước xác nhận
     };
-
     setPreviewData(dataToSend);
   };
 
-  // Xác nhận gửi dữ liệu lên server
-  const handleConfirmSend = () => {
-    if (!previewData) return;
+  // Gửi sản phẩm, upload file thực
+  const handleConfirmSend = async () => {
+    if (!previewData) {
+      alert("Chưa có dữ liệu để gửi, vui lòng xem trước sản phẩm trước.");
+      return;
+    }
+    const formData = new FormData();
+    formData.append("tensanpham", previewData.tensanpham);
+    formData.append("giasanpham", previewData.giasanpham);
+    formData.append("theloai", previewData.theloai);
+    formData.append("mota", previewData.mota);
+    formData.append("ngaythem", previewData.ngaythem || new Date().toISOString());
+    formData.append("kichthuoc", JSON.stringify(previewData.kichthuoc));
+    formData.append("mau", JSON.stringify(previewData.mau));
+    imageFiles.forEach((file) => {
+      formData.append("files", file);
+    });
 
-    axios
-      .post("http://localhost:4000/admin/products", previewData)
-      .then(() => {
-        alert("Thêm sản phẩm thành công!");
-        // Reset form và trạng thái
-        setForm({
-          tensanpham: "",
-          giasanpham: "",
-          giasanphamRaw: "",
-          theloai: "",
-          mota: "",
-        });
-        setSelectedSizes([]);
-        setSelectedColors([]);
-        setPreviewData(null);
-      })
-      .catch((err) => {
-        console.error("Lỗi khi gửi sản phẩm:", err);
-        alert("Thêm sản phẩm thất bại. Vui lòng thử lại.");
+    try {
+      await axios.post("http://localhost:4000/admin/products", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
+      alert("Thêm sản phẩm thành công!");
+      setForm({
+        tensanpham: "",
+        giasanpham: "",
+        giasanphamRaw: "",
+        theloai: "",
+        mota: "",
+      });
+      setSelectedSizes([]);
+      setSelectedColors([]);
+      setPreviewData(null);
+      setImagePreviews([]);
+      setImageNames([]);
+      setImageFiles([]);
+    } catch (err) {
+      console.error("Lỗi khi gửi sản phẩm:", err);
+      alert("Thêm sản phẩm thất bại. Vui lòng thử lại.");
+    }
   };
 
   return (
@@ -166,7 +209,6 @@ const ProductAdd = () => {
             placeholder="Nhập tên sản phẩm"
           />
         </div>
-
         {/* Giá sản phẩm */}
         <div className="mb-3">
           <label className="form-label">Giá sản phẩm *</label>
@@ -179,7 +221,6 @@ const ProductAdd = () => {
             placeholder="Nhập giá, ví dụ: 1.000.000"
           />
         </div>
-
         {/* Danh mục */}
         <div className="mb-3">
           <label className="form-label">Danh mục *</label>
@@ -197,7 +238,6 @@ const ProductAdd = () => {
             ))}
           </select>
         </div>
-
         {/* Mô tả */}
         <div className="mb-3">
           <label className="form-label">Mô tả</label>
@@ -210,7 +250,55 @@ const ProductAdd = () => {
             placeholder="Mô tả sản phẩm"
           />
         </div>
-
+        {/* Ảnh sản phẩm */}
+        <div className="mb-3">
+          <label className="form-label">Ảnh sản phẩm *</label>
+          <input
+            type="file"
+            accept="image/*"
+            className="form-control"
+            multiple
+            onChange={handleImageChange}
+          />
+          {imagePreviews.length > 0 && (
+            <div className="d-flex gap-2 mt-2 flex-wrap">
+              {imagePreviews.map((src, idx) => (
+                <div key={idx} style={{ position: "relative", display: "inline-block" }}>
+                  <img
+                    src={src}
+                    alt={`Preview ${idx + 1}`}
+                    style={{ width: 80, height: 80, objectFit: "cover", borderRadius: 4 }}
+                  />
+                  <div style={{ fontSize: 12, color: "#555", marginTop: 2, textAlign: "center" }}>
+                    {imageNames[idx]}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveImage(idx)}
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      right: 0,
+                      background: "rgba(255,0,0,0.7)",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "50%",
+                      width: 22,
+                      height: 22,
+                      cursor: "pointer",
+                      fontWeight: "bold",
+                      lineHeight: "18px",
+                      padding: 0,
+                    }}
+                    title="Xóa ảnh"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
         {/* Chọn Size */}
         <div className="mb-3">
           <label className="form-label fw-bold">Chọn Size:</label>
@@ -230,39 +318,41 @@ const ProductAdd = () => {
             })}
           </div>
         </div>
-
         {/* Nhập số lượng theo size */}
         {selectedSizes.length > 0 && (
-          <div className="mb-3">
-            <label className="form-label">Số lượng theo size:</label>
+          <div className="mb-4">
+            <label className="form-label fw-bold mb-3">Số lượng theo size:</label>
             {selectedSizes.map(({ size, quantity }) => (
               <div
                 key={size}
-                className="d-flex align-items-center gap-3 mb-2"
-                style={{ maxWidth: "300px" }}
+                className="d-flex align-items-center mb-3 p-2 border rounded"
+                style={{ maxWidth: "320px", backgroundColor: "#f8f9fa" }}
               >
-                <span style={{ width: "50px" }}>{size}</span>
+                <span className="me-3" style={{ minWidth: "60px" }}>
+                  Size {size}:
+                </span>
                 <input
                   type="number"
-                  className="form-control"
-                  min="0"
+                  min={1}
                   value={quantity}
                   onChange={(e) => handleQuantityChange(size, e.target.value)}
+                  onBlur={() => handleQuantityBlur(size)}
+                  className="form-control"
+                  style={{ maxWidth: "80px" }}
                 />
               </div>
             ))}
           </div>
         )}
-
-        {/* Chọn màu sắc (tên) */}
+        {/* Chọn màu */}
         <div className="mb-3">
-          <label className="form-label fw-bold">Chọn Màu (Tên):</label>
-          <div className="d-flex flex-wrap gap-2 p-3 border rounded mb-2">
-            {colors.map(({ color }) => {
+          <label className="form-label fw-bold">Chọn Màu:</label>
+          <div className="d-flex flex-wrap gap-2">
+            {colors.map(({ color, code }) => {
               const isSelected = selectedColors.includes(color);
               return (
                 <button
-                  key={color}
+                  key={code}
                   type="button"
                   className={`btn btn-sm ${isSelected ? "btn-primary" : "btn-outline-secondary"}`}
                   onClick={() => toggleColor(color)}
@@ -272,17 +362,12 @@ const ProductAdd = () => {
               );
             })}
           </div>
-        </div>
-
-        {/* Chọn màu sắc (ô màu) */}
-        <div className="mb-3">
-          <label className="form-label fw-bold">Chọn Màu (Ô màu):</label>
-          <div className="d-flex flex-wrap gap-3">
+          <div className="d-flex gap-2 mt-3">
             {colors.map(({ color, code }) => {
               const isSelected = selectedColors.includes(color);
               return (
                 <div
-                  key={color}
+                  key={code}
                   onClick={() => toggleColor(color)}
                   title={color}
                   style={{
@@ -298,59 +383,57 @@ const ProductAdd = () => {
             })}
           </div>
         </div>
-
-        {/* Nút Xem trước */}
-        <div className="text-center mt-4">
-          <button type="submit" className="btn btn-success px-5">
-            Xem Trước
-          </button>
-        </div>
+        <button type="submit" className="btn btn-success">
+          Xem trước sản phẩm
+        </button>
       </form>
-
-      {/* Bảng xem trước sản phẩm */}
+      {/* Preview dữ liệu */}
       {previewData && (
-        <div className="mt-5">
-          <h4 className="text-center mb-4">Xem trước sản phẩm</h4>
-          <table className="table table-bordered">
-            <tbody>
-              <tr>
-                <th>Tên sản phẩm</th>
-                <td>{previewData.tensanpham}</td>
-              </tr>
-              <tr>
-                <th>Giá</th>
-                <td>{formatCurrency(previewData.giasanphamRaw)} VNĐ</td>
-              </tr>
-              <tr>
-                <th>Danh mục</th>
-                <td>{categories.find((cat) => cat._id === previewData.theloai)?.tendanhmuc || "Không rõ"}</td>
-              </tr>
-              <tr>
-                <th>Mô tả</th>
-                <td>{previewData.mota || "Không có mô tả"}</td>
-              </tr>
-              <tr>
-                <th>Kích thước và số lượng</th>
-                <td>
-                  {previewData.kichthuoc.map(({ size, soluong }) => (
-                    <div key={size}>
-                      Size {size}: {soluong}
-                    </div>
-                  ))}
-                </td>
-              </tr>
-              <tr>
-                <th>Màu sắc</th>
-                <td>{previewData.mau.join(", ")}</td>
-              </tr>
-            </tbody>
-          </table>
-
-          <div className="text-center">
-            <button className="btn btn-primary" onClick={handleConfirmSend}>
-              Xác nhận gửi sản phẩm
-            </button>
-          </div>
+        <div className="mt-5 p-4 border rounded bg-light">
+          <h4>Thông tin sản phẩm xem trước:</h4>
+          <pre>{JSON.stringify(previewData, null, 2)}</pre>
+          {imagePreviews.length > 0 && (
+            <div className="mb-3 d-flex gap-2 flex-wrap">
+              <strong>Ảnh xem trước:</strong>
+              {imagePreviews.map((src, idx) => (
+                <div key={idx} style={{ position: "relative", display: "inline-block" }}>
+                  <img
+                    src={src}
+                    alt={`Preview ${idx + 1}`}
+                    style={{ width: 80, height: 80, objectFit: "cover", borderRadius: 4 }}
+                  />
+                  <div style={{ fontSize: 12, color: "#555", marginTop: 2, textAlign: "center" }}>
+                    {imageNames[idx]}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveImage(idx)}
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      right: 0,
+                      background: "rgba(255,0,0,0.7)",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "50%",
+                      width: 22,
+                      height: 22,
+                      cursor: "pointer",
+                      fontWeight: "bold",
+                      lineHeight: "18px",
+                      padding: 0,
+                    }}
+                    title="Xóa ảnh"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <button onClick={handleConfirmSend} className="btn btn-primary mt-3">
+            Xác nhận thêm sản phẩm
+          </button>
         </div>
       )}
     </div>

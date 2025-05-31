@@ -1,5 +1,7 @@
 const express = require("express");
 const router = express.Router();
+const multer = require("multer");
+const path = require("path");
 
 const adminController = require("../controllers/admin.controller");
 const categoryController = require("../controllers/categories.controller");
@@ -7,6 +9,23 @@ const productController = require("../controllers/product.controller");
 const sizeController = require("../controllers/sizes.controller");
 const promotionsController = require("../controllers/promotions.controller");
 const message = require("../utils/messages");
+
+// Cấu hình multer để giữ lại đuôi file và lưu vào thư mục uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, path.join(__dirname, "..", "uploads"));
+  },
+  filename: function (req, file, cb) {
+    const ext = path.extname(file.originalname);
+    const baseName = path.basename(file.originalname, ext).replace(/\s+/g, '');
+    const filename = Date.now() + '-' + baseName + ext;
+    cb(null, filename);
+  }
+});
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+});
 
 // Trang chính ví dụ trang đăng nhập
 router.get("/", (req, res) => {
@@ -30,7 +49,7 @@ router.get("/categories", categoryController.getAllCategories);
 router.post("/categories", categoryController.createCategory);
 
 // Quản lý sản phẩm
-router.post("/products", productController.createProduct);
+router.post('/products', upload.array('files', 10), productController.createProduct);
 router.get("/products", productController.getAllProducts);
 
 // Các route tĩnh liên quan đến sản phẩm đặt trước route có param :id

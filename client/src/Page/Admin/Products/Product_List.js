@@ -3,6 +3,13 @@ import axios from 'axios';
 
 const ProductList = () => {
     const [products, setProducts] = useState([]);
+    const formatDate = (dateStr) => {
+        const d = new Date(dateStr);
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const year = d.getFullYear();
+        return `${day}/${month}/${year}`;
+    };
 
     useEffect(() => {
         // Gọi API lấy danh sách sản phẩm
@@ -10,6 +17,14 @@ const ProductList = () => {
             .then(res => setProducts(res.data))
             .catch(err => console.error('Lỗi khi load sản phẩm:', err));
     }, []);
+
+    const formatCurrency = (value) => {
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND',
+            minimumFractionDigits: 0
+        }).format(value);
+    };
 
     return (
         <div className="container mt-5">
@@ -39,12 +54,13 @@ const ProductList = () => {
                                 products.map((product) => (
                                     <tr key={product._id}>
                                         <td>{product.tensanpham}</td>
-                                        <td>{product.giasanpham} đ</td>
-                                        <td>{product.theloai}</td> 
+                                        <td>{formatCurrency(product.giasanpham)}</td>
+                                        <td>{product.tentheloai}</td>
                                         <td>{product.mota}</td>
-                                        <td>{new Date(product.ngaythem).toLocaleDateString()}</td>
+                                        <td>{formatDate(product.ngaythem)}</td>
+
                                         <td>
-                                        
+
                                         </td>
                                     </tr>
                                 ))

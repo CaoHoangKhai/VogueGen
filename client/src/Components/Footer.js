@@ -1,7 +1,7 @@
 import { FaMapMarkerAlt, FaPhoneAlt } from "react-icons/fa";
-import { FaFacebookF, FaGoogle, FaInstagram, FaYoutube } from "react-icons/fa";
+// import { FaFacebookF, FaGoogle, FaInstagram, FaYoutube } from "react-icons/fa";
 import { MdEmail } from "react-icons/md";
-import Button from "@mui/material/Button";
+// import Button from "@mui/material/Button";
 import { Link } from 'react-router-dom';
 
 const Footer = () => {
@@ -9,7 +9,7 @@ const Footer = () => {
         <>
 
 
-            <div className="footer mt-4 py-2 bg-light">
+            <div className="footer mt-2 py-2 bg-light">
                 <div className="container">
                     <div className="row justify-content-start">
                         <div className="col-6">
@@ -96,7 +96,7 @@ const Footer = () => {
                 </div>
             </div>
 
-            <div className="footer mt-5 py-4 bg-dark">
+            {/* <div className="footer mt-5 py-4 bg-dark">
                 <div className="container text-white text-center row">
 
                     <div className="col-8 text-center">
@@ -139,7 +139,7 @@ const Footer = () => {
                         </div>
                     </div>
                 </div>
-            </div>
+            </div> */}
         </>
     );
 };

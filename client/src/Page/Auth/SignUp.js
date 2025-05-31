@@ -82,9 +82,7 @@ const SignUp = () => {
 
     return (
         <section className="section signUpPage">
-            <div className="container mt-4">
-                <h3 className="text-center mb-4">Đăng Ký Tài Khoản</h3>
-                
+            <div className="container">
                 <div className="row justify-content-center">
                     <div className="col-md-6 col-sm-12">
                         <form className="p-4 border rounded bg-light" onSubmit={handleSubmit} noValidate>

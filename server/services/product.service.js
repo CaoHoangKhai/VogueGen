@@ -3,194 +3,188 @@ const { ObjectId } = require("mongodb");
 class ProductServer {
     constructor(client) {
         this.SanPham = client.db().collection("sanpham");
-        this.TheLoai = client.db().collection("theloaisanpham");
-        this.KichThuoc = client.db().collection("chitietsanpham");
+        this.KichThuoc = client.db().collection("kichthuoc");
         this.MauSanPham = client.db().collection("mausanpham");
-        this.ChiTietSanPham = client.db().collection("chitietsanpham");
-        this.HinhAnhSanPham = client.db().collection("hinhanhsanpham");
+        this.HinhAnh = client.db().collection("hinhanhsanpham");
+        this.TheLoai = client.db().collection("theloaisanpham");
     }
 
     extractProductData(payload) {
         return {
-            tensanpham: payload.tensanpham,
-            giasanpham: parseFloat(payload.giasanpham) || 0,
-            theloai: payload.theloai,
-            mota: payload.mota || "",
-            ngaythem: payload.ngaythem ? new Date(payload.ngaythem) : new Date(),
+            tensanpham: payload.tensanpham || '',
+            giasanpham: Number(payload.giasanpham) || 0,  // Chuyển string sang number
+            theloai: payload.theloai || '',
+            mota: payload.mota || '',
+            ngaythem: new Date(),  // hoặc lấy từ payload nếu có
             kichthuoc: Array.isArray(payload.kichthuoc) ? payload.kichthuoc : [],
-            mau: Array.isArray(payload.mau) ? payload.mau : [],
-            hinhanh: Array.isArray(payload.hinhanh) ? payload.hinhanh : []
-        };
+            mau: Array.isArray(payload.mau) ? payload.mau : [], // chú ý trường mau
+            hinhanh: Array.isArray(payload.hinhanh) ? payload.hinhanh : [],
+        }
     }
 
     async createProduct(payload) {
-        const data = this.extractProductData(payload);
+        console.log("Payload nhận được từ client:", payload);
 
-        const productResult = await this.SanPham.insertOne({
-            tensanpham: data.tensanpham,
-            giasanpham: data.giasanpham,
-            theloai: data.theloai,
-            mota: data.mota,
-            ngaythem: data.ngaythem
-        });
+        try {
+            const data = this.extractProductData(payload);
+            console.log("Dữ liệu đã chuẩn hóa:", data);
 
-        const insertedProductId = productResult.insertedId;
+            // Thêm sản phẩm chính vào SanPham
+            const { insertedId: productId } = await this.SanPham.insertOne({
+                tensanpham: data.tensanpham,
+                giasanpham: data.giasanpham,
+                theloai: data.theloai,
+                mota: data.mota,
+                ngaythem: data.ngaythem,
+            });
+            console.log("ID sản phẩm mới:", productId.toString());
 
-        const kichThuocIdMap = {};
-        for (const kt of data.kichthuoc) {
-            let kichThuoc = await this.KichThuoc.findOne({ Size: kt.size });
-            if (!kichThuoc) {
-                const result = await this.KichThuoc.insertOne({
+            // Thêm kích thước nếu có
+            if (data.kichthuoc.length > 0) {
+                const kichThuocDocs = data.kichthuoc.map(kt => ({
+                    MaSanPham: productId.toString(),
                     Size: kt.size,
                     SoLuong: parseInt(kt.soluong) || 0
-                });
-                kichThuocIdMap[kt.size] = result.insertedId;
+                }));
+                console.log("Dữ liệu kichthuoc sẽ insert:", kichThuocDocs);
+                await this.KichThuoc.insertMany(kichThuocDocs);
+            }
+
+            // Thêm màu sản phẩm nếu có
+            if (data.mau.length > 0) {
+                const mauDocs = data.mau.map(ms => ({
+                    masanpham: productId.toString(),
+                    mau: ms
+                }));
+                console.log("Dữ liệu mausanpham sẽ insert:", mauDocs);
+                await this.MauSanPham.insertMany(mauDocs);
             } else {
-                kichThuocIdMap[kt.size] = kichThuoc._id;
+                console.log("Mảng màu rỗng, không thêm màu sản phẩm.");
             }
-        }
 
-        const mauIdMap = {};
-        for (const mau of data.mau) {
-            let mauDoc = await this.MauSanPham.findOne({ Mau: mau });
-            if (!mauDoc) {
-                const result = await this.MauSanPham.insertOne({ Mau: mau });
-                mauIdMap[mau] = result.insertedId;
-            } else {
-                mauIdMap[mau] = mauDoc._id;
+            // Thêm hình ảnh nếu có
+            if (data.hinhanh.length > 0) {
+                const imageDocs = data.hinhanh.map(img => ({
+                    MaSanPham: productId.toString(),
+                    DuLieuHinhAnh: img.duongdan || img.url
+                }));
+                console.log("Dữ liệu hình ảnh sẽ insert:", imageDocs);
+                await this.HinhAnh.insertMany(imageDocs);
             }
-        }
 
-        const chiTietDocs = [];
-        for (const kt of data.kichthuoc) {
-            for (const mau of data.mau) {
-                chiTietDocs.push({
-                    MaSanPham: insertedProductId,
-                    MaKichThuoc: kichThuocIdMap[kt.size],
-                    MaMauSanPham: mauIdMap[mau],
-                    ChatLieu: kt.chatlieu || "Không rõ"
-                });
-            }
+            return { success: true, message: "Tạo sản phẩm thành công", productId };
+        } catch (error) {
+            console.error("Lỗi tạo sản phẩm:", error);
+            return { success: false, message: "Không thể tạo sản phẩm", error: error.message };
         }
-        if (chiTietDocs.length > 0) {
-            await this.ChiTietSanPham.insertMany(chiTietDocs);
-        }
-
-        if (data.hinhanh.length > 0) {
-            const imageDocs = data.hinhanh.map(img => ({
-                MaSanPham: insertedProductId,
-                DuLieuHinhAnh: img
-            }));
-            await this.HinhAnhSanPham.insertMany(imageDocs);
-        }
-
-        return insertedProductId;
     }
 
+
     async getProductById(id) {
-        const objectId = new ObjectId(id);
-        const product = await this.SanPham.findOne({ _id: objectId });
-        if (!product) return null;
+        try {
+            const objectId = new ObjectId(id);
+            const product = await this.SanPham.findOne({ _id: objectId });
+            if (!product) return null;
 
-        const details = await this.ChiTietSanPham.find({ MaSanPham: objectId }).toArray();
-        const images = await this.HinhAnhSanPham.find({ MaSanPham: objectId }).toArray();
+            let tenTheLoai = null;
+            if (product.TheLoai && ObjectId.isValid(product.TheLoai)) {
+                const theloai = await this.TheLoai.findOne({ _id: new ObjectId(product.TheLoai) });
+                tenTheLoai = theloai?.TenTheLoai || theloai?.tendanhmuc || null;
+            }
 
-        let tenTheLoai = null;
-        if (product.theloai && ObjectId.isValid(product.theloai)) {
-            const category = await this.TheLoai.findOne({ _id: new ObjectId(product.theloai) });
-            if (category) tenTheLoai = category.TenTheLoai;
+            const kichthuocList = await this.KichThuoc.find({ MaSanPham: id }).toArray();
+            const mausanphamList = await this.MauSanPham.find({ MaSanPham: id }).toArray();
+            const hinhAnhList = await this.HinhAnh.find({ MaSanPham: objectId }).toArray();
+
+            return {
+                ...product,
+                tentheloai: tenTheLoai,
+                kichthuoc: kichthuocList,
+                mausanpham: mausanphamList,
+                hinhanh: hinhAnhList
+            };
+        } catch (error) {
+            console.error("Lỗi lấy sản phẩm:", error);
+            throw new Error("Không thể lấy sản phẩm.");
         }
-
-        return {
-            ...product,
-            chitiet: details,
-            hinhanh: images,
-            tentheloai: tenTheLoai
-        };
     }
 
     async updateProduct(id, payload) {
-        const objectId = new ObjectId(id);
-        const data = this.extractProductData(payload);
+        try {
+            const objectId = new ObjectId(id);
+            const data = this.extractProductData(payload);
 
-        await this.SanPham.updateOne(
-            { _id: objectId },
-            {
-                $set: {
-                    tensanpham: data.tensanpham,
-                    giasanpham: data.giasanpham,
-                    theloai: data.theloai,
-                    mota: data.mota,
-                    ngaythem: data.ngaythem
+            await this.SanPham.updateOne(
+                { _id: objectId },
+                {
+                    $set: {
+                        TenSanPham: data.tensanpham,
+                        GiaSanPham: data.giasanpham,
+                        TheLoai: data.theloai,
+                        MoTa: data.mota,
+                        NgayThem: data.ngaythem,
+                    }
                 }
-            }
-        );
+            );
 
-        const kichThuocIdMap = {};
-        for (const kt of data.kichthuoc) {
-            let kichThuoc = await this.KichThuoc.findOne({ Size: kt.size });
-            if (!kichThuoc) {
-                const result = await this.KichThuoc.insertOne({
+            await this.KichThuoc.deleteMany({ MaSanPham: id });
+            if (data.kichthuoc.length > 0) {
+                const kichThuocDocs = data.kichthuoc.map(kt => ({
+                    MaSanPham: id,
                     Size: kt.size,
                     SoLuong: parseInt(kt.soluong) || 0
-                });
-                kichThuocIdMap[kt.size] = result.insertedId;
-            } else {
-                kichThuocIdMap[kt.size] = kichThuoc._id;
+                }));
+                await this.KichThuoc.insertMany(kichThuocDocs);
             }
-        }
 
-        const mauIdMap = {};
-        for (const mau of data.mau) {
-            let mauDoc = await this.MauSanPham.findOne({ Mau: mau });
-            if (!mauDoc) {
-                const result = await this.MauSanPham.insertOne({ Mau: mau });
-                mauIdMap[mau] = result.insertedId;
-            } else {
-                mauIdMap[mau] = mauDoc._id;
+            await this.MauSanPham.deleteMany({ MaSanPham: id });
+            if (data.mausanpham.length > 0) {
+                const mauDocs = data.mausanpham.map(ms => ({
+                    MaSanPham: id,
+                    Mau: ms.mau
+                }));
+                await this.MauSanPham.insertMany(mauDocs);
             }
-        }
 
-        await this.ChiTietSanPham.deleteMany({ MaSanPham: objectId });
-        const chiTietDocs = [];
-        for (const kt of data.kichthuoc) {
-            for (const mau of data.mau) {
-                chiTietDocs.push({
+            await this.HinhAnh.deleteMany({ MaSanPham: objectId });
+            if (data.hinhanh.length > 0) {
+                const imageDocs = data.hinhanh.map(img => ({
                     MaSanPham: objectId,
-                    MaKichThuoc: kichThuocIdMap[kt.size],
-                    MaMauSanPham: mauIdMap[mau],
-                    ChatLieu: kt.chatlieu || "Không rõ"
-                });
+                    DuLieuHinhAnh: img.duongdan || img.url
+                }));
+                await this.HinhAnh.insertMany(imageDocs);
             }
-        }
-        if (chiTietDocs.length > 0) {
-            await this.ChiTietSanPham.insertMany(chiTietDocs);
-        }
 
-        await this.HinhAnhSanPham.deleteMany({ MaSanPham: objectId });
-        if (data.hinhanh.length > 0) {
-            const imageDocs = data.hinhanh.map(img => ({
-                MaSanPham: objectId,
-                DuLieuHinhAnh: img
-            }));
-            await this.HinhAnhSanPham.insertMany(imageDocs);
+            return { message: "Cập nhật sản phẩm thành công" };
+        } catch (error) {
+            console.error("Lỗi cập nhật sản phẩm:", error);
+            throw new Error("Không thể cập nhật sản phẩm.");
         }
-
-        return { message: "Cập nhật sản phẩm thành công" };
     }
 
     async deleteProduct(id) {
-        const objectId = new ObjectId(id);
-        await this.SanPham.deleteOne({ _id: objectId });
-        await this.ChiTietSanPham.deleteMany({ MaSanPham: objectId });
-        await this.HinhAnhSanPham.deleteMany({ MaSanPham: objectId });
+        try {
+            const objectId = new ObjectId(id);
+            await this.SanPham.deleteOne({ _id: objectId });
+            await this.KichThuoc.deleteMany({ MaSanPham: id });
+            await this.MauSanPham.deleteMany({ MaSanPham: id });
+            await this.HinhAnh.deleteMany({ MaSanPham: objectId });
 
-        return { message: "Đã xoá sản phẩm và các dữ liệu liên quan" };
+            return { message: "Đã xoá sản phẩm và dữ liệu liên quan" };
+        } catch (error) {
+            console.error("Lỗi xoá sản phẩm:", error);
+            throw new Error("Không thể xoá sản phẩm.");
+        }
     }
 
     async searchProductByName(name) {
-        const regex = new RegExp(name, "i");
-        return await this.SanPham.find({ tensanpham: { $regex: regex } }).toArray();
+        try {
+            const regex = new RegExp(name, "i");
+            return await this.SanPham.find({ TenSanPham: { $regex: regex } }).toArray();
+        } catch (error) {
+            console.error("Lỗi tìm kiếm sản phẩm:", error);
+            throw new Error("Không thể tìm kiếm sản phẩm.");
+        }
     }
 
     async getCategoryNameById(theloaiId) {
@@ -199,38 +193,36 @@ class ProductServer {
         const category = await this.TheLoai.findOne({ _id: new ObjectId(theloaiId) });
         if (!category) return null;
 
-        return category.tendanhmuc || null;  // Hoặc trường tên thể loại đúng trong DB
+        return category.tendanhmuc || null;
     }
 
     async getAllProducts() {
-        const products = await this.SanPham.find({}).toArray();
+        try {
+            const products = await this.SanPham.find({}).toArray();
 
-        for (const product of products) {
-            product.theloai = await this.getCategoryNameById(product.theloai);
+            for (const product of products) {
+                const productId = product._id.toString();
 
-            const productId = product._id;
+                // Lấy tên thể loại qua hàm tái sử dụng
+                product.tentheloai = await this.getCategoryNameById(product.theloai);
 
-            const images = await this.HinhAnhSanPham.find({ MaSanPham: productId }).toArray();
-            product.hinhanh = images;
+                // Lấy danh sách kích thước
+                product.kichthuoc = await this.KichThuoc.find({ MaSanPham: productId }).toArray();
 
-            const details = await this.ChiTietSanPham.find({ MaSanPham: productId }).toArray();
+                // Lấy danh sách màu sắc
+                product.mausanpham = await this.MauSanPham.find({ MaSanPham: productId }).toArray();
 
-            for (let i = 0; i < details.length; i++) {
-                const chiTiet = details[i];
-                if (chiTiet.MaKichThuoc && ObjectId.isValid(chiTiet.MaKichThuoc)) {
-                    const kichThuoc = await this.KichThuoc.findOne({ _id: new ObjectId(chiTiet.MaKichThuoc) });
-                    if (kichThuoc) {
-                        details[i].kichthuoc = kichThuoc.Size;
-                        details[i].soluong = kichThuoc.SoLuong;
-                    }
-                }
+                // Lấy danh sách hình ảnh
+                product.hinhanh = await this.HinhAnh.find({ MaSanPham: product._id }).toArray();
             }
 
-            product.chitiet = details;
+            return products;
+        } catch (error) {
+            console.error("Lỗi lấy tất cả sản phẩm:", error);
+            throw new Error("Không thể lấy danh sách sản phẩm.");
         }
-
-        return products;
     }
+
 
 }
 

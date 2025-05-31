@@ -6,18 +6,8 @@ Xuất file thông tin sản phẩm
 Xuất file đơn hàng
 Xem danh sách đơn hàng
 Tìm kiếm đơn hàng theo( tên người đặt, theo mã, theo trạng thái)
-
-Bị lỗi
-{
-  "_id": {
-    "$oid": "683976097014f3b109d79dfe"
-  },
-  "tensanpham": "Áo Nam",
-  "giasanpham": 120000000,
-  "theloai": "6836bfcd23b3d164e33fe261",
-  "mota": "Áo Thun Nam",
-  "ngaythem": {
-    "$date": "2025-05-30T09:10:33.046Z"
-  }
-}
-khi insert vào table sanpham
+Sản phẩm:
++ bị lỗi khi thêm vào số lượng khi bấm chọn size đã có số mặc định là 1 mà khi xóa.
++ Không thêm được màu
++ 
+Viết lại hàm tạo sản phẩm
