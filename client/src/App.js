@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { MyProvider } from './Context/AppContext';
 import Layout from './Components/Layout';
 import routes from './Router/routes';
+import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 
 function App() {
   return (
