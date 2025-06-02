@@ -1,39 +1,36 @@
 import { FaMapMarkerAlt, FaPhoneAlt } from "react-icons/fa";
-// import { FaFacebookF, FaGoogle, FaInstagram, FaYoutube } from "react-icons/fa";
 import { MdEmail } from "react-icons/md";
-// import Button from "@mui/material/Button";
 import { Link } from 'react-router-dom';
 
 const Footer = () => {
     return (
         <>
-
-
-            <div className="footer mt-2 py-2 bg-light">
+            <div className="footer mt-2 py-3"            >
                 <div className="container">
                     <div className="row justify-content-start">
                         <div className="col-6">
-                            <strong className="d-block mb-2" style={{ textTransform: 'uppercase' }}>
+                            <strong className="d-block mb-2" style={{ textTransform: 'uppercase', color: "#0097a7" }}>
                                 CÔNG TY TNHH THỜI TRANG SHOPIFY
                             </strong>
-
                             <ul className="list-unstyled">
-                                <li className="mb-1">Shopify đặt mục tiêu kinh doanh với chiến lược phát triển toàn diện, trong đó giá trị cộng đồng là yếu tố cốt lõi mà chúng tôi muốn hướng tới.</li>
+                                <li className="mb-1" style={{ color: "#00695c" }}>
+                                    Shopify đặt mục tiêu kinh doanh với chiến lược phát triển toàn diện, trong đó giá trị cộng đồng là yếu tố cốt lõi mà chúng tôi muốn hướng tới.
+                                </li>
                                 <li className="mb-1"></li>
                                 <hr />
                             </ul>
                             <ul className="list-unstyled">
-                                <li className="d-flex align-items-center mb-2 gap-2">
+                                <li className="d-flex align-items-center mb-2 gap-2" style={{ color: "#00838f" }}>
                                     <FaMapMarkerAlt />
                                     <b>VPGD:</b>
                                     <span>Số 11 LK 11A KĐT Mỗ Lao, Q. Hà Đông, TP. Hà Nội</span>
                                 </li>
-                                <li className="d-flex align-items-center mb-2 gap-2">
+                                <li className="d-flex align-items-center mb-2 gap-2" style={{ color: "#0288d1" }}>
                                     <MdEmail />
                                     <b>Email:</b>
                                     <span>khaib2106839@student.ctu.edu.vn</span>
                                 </li>
-                                <li className="d-flex align-items-center mb-1 gap-2">
+                                <li className="d-flex align-items-center mb-1 gap-2" style={{ color: "#43A047" }}>
                                     <FaPhoneAlt />
                                     <b>Hotline:</b>
                                     <span>0834477131</span>
@@ -42,104 +39,64 @@ const Footer = () => {
                         </div>
 
                         <div className="col-2">
-                            <strong className="d-block mb-2" style={{ textTransform: 'uppercase' }}>
+                            <strong className="d-block mb-2" style={{ textTransform: 'uppercase', color: "#0097a7" }}>
                                 VỀ Shopify
                             </strong>
                             <ul className="list-unstyled mb-4">
-                                <li className="mb-1">Giới thiệu Shopify</li>
-                                <li className="mb-1">Tuyển dụng</li>
-                                <li className="mb-1">Hệ thống cửa hàng</li>
-                                <li className="mb-1">Liên hệ</li>
+                                <li className="mb-1"><Link className="text-decoration-none" style={{ color: "#00838f" }} to="#">Giới thiệu Shopify</Link></li>
+                                <li className="mb-1"><Link className="text-decoration-none" style={{ color: "#00838f" }} to="#">Tuyển dụng</Link></li>
+                                <li className="mb-1"><Link className="text-decoration-none" style={{ color: "#00838f" }} to="#">Hệ thống cửa hàng</Link></li>
+                                <li className="mb-1"><Link className="text-decoration-none" style={{ color: "#00838f" }} to="#">Liên hệ</Link></li>
                             </ul>
                         </div>
 
                         <div className="col-2">
-
-                            <strong className="d-block mb-2" style={{ textTransform: 'uppercase' }}>
+                            <strong className="d-block mb-2" style={{ textTransform: 'uppercase', color: "#0097a7" }}>
                                 HƯỚNG DẪN
                             </strong>
                             <ul className="list-unstyled mb-4">
-                                <li className="mb-1">Hướng dẫn mua hàng</li>
-                                <li className="mb-1">Quy trình đổi trả hàng</li>
-                                <li className="mb-1">Điều khoản mua hàng</li>
-                                <li className="mb-1"></li>
+                                <li className="mb-1"><Link className="text-decoration-none" style={{ color: "#0288d1" }} to="#">Hướng dẫn mua hàng</Link></li>
+                                <li className="mb-1"><Link className="text-decoration-none" style={{ color: "#0288d1" }} to="#">Quy trình đổi trả hàng</Link></li>
+                                <li className="mb-1"><Link className="text-decoration-none" style={{ color: "#0288d1" }} to="#">Điều khoản mua hàng</Link></li>
                             </ul>
-
                         </div>
 
                         <div className="col-2">
-                            <strong className="d-block mb-2" style={{ textTransform: 'uppercase' }}>
+                            <strong className="d-block mb-2" style={{ textTransform: 'uppercase', color: "#0097a7" }}>
                                 Chính sách
                             </strong>
                             <ul className="list-unstyled mb-4">
-
-                                <Link className="text-decoration-none quick-link text-secondary" to={'/phuong_thu_thanh_toan'}>
-                                    <li className="mb-1">Phương thức thanh toán</li>
-                                </Link>
-
-                                <Link className="text-decoration-none quick-link text-secondary" to={'/phuong_thu_giao_hang'}>
-                                    <li className="mb-1">Phương thức giao hàng</li>
-                                </Link>
-
-                                <Link className="text-decoration-none quick-link text-secondary" to={'/chinh_sach_doi_tra'}>
-                                    <li className="mb-1">Chính sách đổi trả</li>
-                                </Link>
-
-                                <Link className="text-decoration-none quick-link text-secondary" to={'/chinh_sach_bao_mat'}>
-                                    <li className="mb-1">Chính sách bảo mật</li>
-                                </Link>
-
+                                <li className="mb-1">
+                                    <Link className="text-decoration-none" style={{ color: "#43A047" }} to={'/phuong_thu_thanh_toan'}>
+                                        Phương thức thanh toán
+                                    </Link>
+                                </li>
+                                <li className="mb-1">
+                                    <Link className="text-decoration-none" style={{ color: "#43A047" }} to={'/phuong_thu_giao_hang'}>
+                                        Phương thức giao hàng
+                                    </Link>
+                                </li>
+                                <li className="mb-1">
+                                    <Link className="text-decoration-none" style={{ color: "#43A047" }} to={'/chinh_sach_doi_tra'}>
+                                        Chính sách đổi trả
+                                    </Link>
+                                </li>
+                                <li className="mb-1">
+                                    <Link className="text-decoration-none" style={{ color: "#43A047" }} to={'/chinh_sach_bao_mat'}>
+                                        Chính sách bảo mật
+                                    </Link>
+                                </li>
                             </ul>
                         </div>
-
+                    </div>
+                    <hr style={{ borderTop: "1px solid #0097a7" }} />
+                    <div className="row">
+                        <div className="col-12 text-center" style={{ color: "#00838f", fontWeight: 500 }}>
+                            © 2025 Shopify Fashion. All rights reserved.
+                        </div>
                     </div>
                 </div>
             </div>
-
-            {/* <div className="footer mt-5 py-4 bg-dark">
-                <div className="container text-white text-center row">
-
-                    <div className="col-8 text-center">
-                        © 2025
-                    </div>
-
-                    <div className="col-4 d-flex justify-content-center">
-                        <div className="d-flex gap-3">
-                            <Button
-                                variant="outlined"
-                                className="btn btn-outline-primary"
-                                style={{ borderRadius: "50%", padding: "10px" }}
-                            >
-                                <FaFacebookF style={{ fontSize: '20px' }} />
-                            </Button>
-
-                            <Button
-                                variant="outlined"
-                                className="btn btn-outline-danger"
-                                style={{ borderRadius: "50%", padding: "10px" }}
-                            >
-                                <FaGoogle style={{ fontSize: '20px' }} />
-                            </Button>
-
-                            <Button
-                                variant="outlined"
-                                className="btn btn-outline-secondary"
-                                style={{ borderRadius: "50%", padding: "10px" }}
-                            >
-                                <FaInstagram style={{ fontSize: '20px' }} />
-                            </Button>
-
-                            <Button
-                                variant="outlined"
-                                className="btn btn-outline-danger"
-                                style={{ borderRadius: "50%", padding: "10px" }}
-                            >
-                                <FaYoutube style={{ fontSize: '20px' }} />
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            </div> */}
         </>
     );
 };

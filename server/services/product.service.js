@@ -234,6 +234,36 @@ class ProductServer {
         }
     }
 
+    async getAllProductsHome() {
+        try {
+            const products = await this.SanPham.find({}).toArray();
+
+            for (const product of products) {
+                const productId = product._id.toString();
+
+                // Lấy tên thể loại
+                product.tentheloai = await this.getCategoryNameById(product.theloai);
+
+                // Lấy kích thước
+                product.kichthuoc = await this.KichThuoc.find({ MaSanPham: productId }).toArray();
+
+                // Lấy màu sắc
+                product.mausanpham = await this.MauSanPham.find({ masanpham: productId }).toArray();
+
+                // Lấy hình ảnh và trả về url đúng cho client
+                const hinhAnhList = await this.HinhAnh.find({ MaSanPham: productId }).toArray();
+                product.hinhanh = hinhAnhList.map(img => ({
+                    ...img,
+                    url: img.TenFile ? `/public/images/${img.TenFile}` : null
+                }));
+            }
+
+            return products;
+        } catch (error) {
+            console.error("Lỗi lấy tất cả sản phẩm (home):", error);
+            throw new Error("Không thể lấy danh sách sản phẩm.");
+        }
+    }
 
 }
 

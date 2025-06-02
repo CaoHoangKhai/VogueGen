@@ -11,3 +11,19 @@ Sản phẩm:
 + Không thêm được màu
 + 
 Viết lại hàm tạo sản phẩm
+
+
+
+
+
+
+
+
+customink
+printdoors
+printful
+
+
+
+
+

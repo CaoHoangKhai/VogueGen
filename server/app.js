@@ -6,7 +6,7 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
-app.use('/images', express.static(path.join(__dirname, 'public/images')));
+app.use('/images', require('express').static(path.join(__dirname, 'public/images')));
 // Gọi tất cả route đã gộp lại
 routes(app);
 

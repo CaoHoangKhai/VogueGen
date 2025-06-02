@@ -13,7 +13,7 @@ const message = require("../utils/messages");
 // Cấu hình multer để giữ lại đuôi file và lưu vào thư mục uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, "..", "uploads"));
+    cb(null, path.join(__dirname, "..", "public/images"));
   },
   filename: function (req, file, cb) {
     const ext = path.extname(file.originalname);

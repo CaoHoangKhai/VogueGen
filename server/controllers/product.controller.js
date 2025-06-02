@@ -97,6 +97,16 @@ exports.getAllProducts = async (req, res) => {
   }
 }
 
+exports.getAllProductsHome = async (req, res) => {
+  try {
+    const productService = new ProductServer(MongoDB.client);
+    const products = await productService.getAllProductsHome();
+    res.json(products);
+  } catch (error) {
+    console.error("Lỗi khi lấy danh sách sản phẩm:", error);
+    res.status(500).json({ error: "Lỗi server khi lấy sản phẩm" });
+  }
+}
 
 exports.getProductById = async (req, res) => {
   try {
