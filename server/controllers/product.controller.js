@@ -25,10 +25,18 @@ exports.createProduct = async (req, res, next) => {
       }
     }
 
-    // Parse ảnh
-    let imageList = [];
+    // Parse hinhanh: gom file theo từng màu
+    let hinhanh = {};
     if (req.files && Array.isArray(req.files)) {
-      imageList = req.files.map(file => ({ duongdan: file.filename }));
+      req.files.forEach(file => {
+        // file.fieldname: ví dụ "files_#FFFFFF"
+        const match = file.fieldname.match(/^files_(.+)$/);
+        if (match) {
+          const colorCode = match[1];
+          if (!hinhanh[colorCode]) hinhanh[colorCode] = [];
+          hinhanh[colorCode].push(file.filename);
+        }
+      });
     }
 
     // Parse giá
@@ -43,24 +51,22 @@ exports.createProduct = async (req, res, next) => {
       ngaythem: req.body.ngaythem || new Date(),
       kichthuoc: kichthuocParsed,
       mau: mauParsed,
-      hinhanh: imageList,
+      hinhanh: hinhanh,
     };
 
     // Tạo sản phẩm
     const productService = new ProductServer(MongoDB.client);
     const result = await productService.createProduct(newProductData);
 
-    // Di chuyển file ảnh vào public/images SAU khi lưu thành công
+    // Di chuyển file ảnh vào public/images
     if (req.files && Array.isArray(req.files)) {
       const destDir = path.join(__dirname, "..", "public", "images");
       if (!fs.existsSync(destDir)) {
         fs.mkdirSync(destDir, { recursive: true });
       }
-
       for (const file of req.files) {
         const oldPath = file.path;
         const newPath = path.join(destDir, file.filename);
-
         try {
           await fs.promises.rename(oldPath, newPath);
           console.log(`Đã di chuyển ${oldPath} -> ${newPath}`);

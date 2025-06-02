@@ -26,49 +26,61 @@ class ProductServer {
         console.log("Payload nhận được từ client:", payload);
 
         try {
-            const data = this.extractProductData(payload);
-            console.log("Dữ liệu đã chuẩn hóa:", data);
+            // Lấy dữ liệu từ payload
+            const tensanpham = payload.tensanpham || '';
+            const giasanpham = Number(payload.giasanpham) || 0;
+            const theloai = payload.theloai || '';
+            const mota = payload.mota || '';
+            const ngaythem = payload.ngaythem ? new Date(payload.ngaythem) : new Date();
+            const kichthuoc = Array.isArray(payload.kichthuoc) ? payload.kichthuoc : [];
+            const mau = Array.isArray(payload.mau) ? payload.mau : [];
+            // hinhanh là object: { colorCode: [filename, ...], ... }
+            const hinhanh = typeof payload.hinhanh === "object" && payload.hinhanh !== null ? payload.hinhanh : {};
 
-            // Thêm sản phẩm chính vào SanPham
+            // Thêm sản phẩm chính vào collection SanPham
             const { insertedId: productId } = await this.SanPham.insertOne({
-                tensanpham: data.tensanpham,
-                giasanpham: data.giasanpham,
-                theloai: data.theloai,
-                mota: data.mota,
-                ngaythem: data.ngaythem,
+                tensanpham,
+                giasanpham,
+                theloai,
+                mota,
+                ngaythem,
             });
             console.log("ID sản phẩm mới:", productId.toString());
 
             // Thêm kích thước nếu có
-            if (data.kichthuoc.length > 0) {
-                const kichThuocDocs = data.kichthuoc.map(kt => ({
+            if (kichthuoc.length > 0) {
+                const kichThuocDocs = kichthuoc.map(kt => ({
                     MaSanPham: productId.toString(),
                     Size: kt.size,
                     SoLuong: parseInt(kt.soluong) || 0
                 }));
-                console.log("Dữ liệu kichthuoc sẽ insert:", kichThuocDocs);
                 await this.KichThuoc.insertMany(kichThuocDocs);
             }
 
             // Thêm màu sản phẩm nếu có
-            if (data.mau.length > 0) {
-                const mauDocs = data.mau.map(ms => ({
+            if (mau.length > 0) {
+                const mauDocs = mau.map(ms => ({
                     masanpham: productId.toString(),
                     mau: ms
                 }));
-                console.log("Dữ liệu mausanpham sẽ insert:", mauDocs);
                 await this.MauSanPham.insertMany(mauDocs);
-            } else {
-                console.log("Mảng màu rỗng, không thêm màu sản phẩm.");
             }
 
-            // Thêm hình ảnh nếu có
-            if (data.hinhanh.length > 0) {
-                const imageDocs = data.hinhanh.map(img => ({
-                    MaSanPham: productId.toString(),
-                    DuLieuHinhAnh: img.duongdan || img.url
-                }));
-                console.log("Dữ liệu hình ảnh sẽ insert:", imageDocs);
+            // Thêm hình ảnh theo từng màu
+            // hinhanh: { colorCode: [filename, ...], ... }
+            const imageDocs = [];
+            Object.entries(hinhanh).forEach(([colorCode, fileArr]) => {
+                if (Array.isArray(fileArr)) {
+                    fileArr.forEach(filename => {
+                        imageDocs.push({
+                            MaSanPham: productId.toString(),
+                            Mau: colorCode,
+                            TenFile: filename
+                        });
+                    });
+                }
+            });
+            if (imageDocs.length > 0) {
                 await this.HinhAnh.insertMany(imageDocs);
             }
 
@@ -78,7 +90,6 @@ class ProductServer {
             return { success: false, message: "Không thể tạo sản phẩm", error: error.message };
         }
     }
-
 
     async getProductById(id) {
         try {

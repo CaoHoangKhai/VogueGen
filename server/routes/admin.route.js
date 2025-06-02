@@ -49,7 +49,7 @@ router.get("/categories", categoryController.getAllCategories);
 router.post("/categories", categoryController.createCategory);
 
 // Quản lý sản phẩm
-router.post('/products', upload.array('files', 10), productController.createProduct);
+router.post('/products', upload.any(), productController.createProduct);
 router.get("/products", productController.getAllProducts);
 
 // Các route tĩnh liên quan đến sản phẩm đặt trước route có param :id

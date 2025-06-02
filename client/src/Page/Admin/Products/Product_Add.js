@@ -16,10 +16,8 @@ const ProductAdd = () => {
   });
   const [previewData, setPreviewData] = useState(null);
 
-  // State cho nhiều ảnh
-  const [imagePreviews, setImagePreviews] = useState([]);
-  const [imageNames, setImageNames] = useState([]);
-  const [imageFiles, setImageFiles] = useState([]);
+  // Ảnh cho từng màu: { colorCode: { files: [], previews: [], names: [] } }
+  const [colorImages, setColorImages] = useState({});
 
   useEffect(() => {
     axios
@@ -48,6 +46,48 @@ const ProductAdd = () => {
     setSelectedColors((prev) =>
       prev.includes(color) ? prev.filter((c) => c !== color) : [...prev, color]
     );
+    // Nếu bỏ chọn màu thì xóa ảnh của màu đó
+    const colorObj = colors.find((c) => c.color === color);
+    if (colorImages[colorObj.code]) {
+      setColorImages((prev) => {
+        const newObj = { ...prev };
+        delete newObj[colorObj.code];
+        return newObj;
+      });
+    }
+  };
+
+  // Chọn ảnh cho từng màu (cộng dồn, không ghi đè)
+  const handleColorImageChange = (colorCode, e) => {
+    const files = Array.from(e.target.files);
+    setColorImages((prev) => {
+      const prevFiles = prev[colorCode]?.files || [];
+      const prevPreviews = prev[colorCode]?.previews || [];
+      const prevNames = prev[colorCode]?.names || [];
+      return {
+        ...prev,
+        [colorCode]: {
+          files: prevFiles.concat(files),
+          previews: prevPreviews.concat(files.map((file) => URL.createObjectURL(file))),
+          names: prevNames.concat(files.map((file) => file.name)),
+        },
+      };
+    });
+  };
+
+  // Xóa ảnh của một màu theo index
+  const handleRemoveColorImage = (colorCode, idx) => {
+    setColorImages((prev) => {
+      const { files, previews, names } = prev[colorCode];
+      return {
+        ...prev,
+        [colorCode]: {
+          files: files.filter((_, i) => i !== idx),
+          previews: previews.filter((_, i) => i !== idx),
+          names: names.filter((_, i) => i !== idx),
+        },
+      };
+    });
   };
 
   const handleQuantityChange = (size, value) => {
@@ -99,21 +139,6 @@ const ProductAdd = () => {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Khi chọn file mới, reset toàn bộ ảnh và tên file (không cộng dồn)
-  const handleImageChange = (e) => {
-    const files = Array.from(e.target.files);
-    setImagePreviews(files.map((file) => URL.createObjectURL(file)));
-    setImageNames(files.map((file) => file.name));
-    setImageFiles(files);
-  };
-
-  // Xóa ảnh theo index
-  const handleRemoveImage = (idx) => {
-    setImagePreviews((prev) => prev.filter((_, i) => i !== idx));
-    setImageNames((prev) => prev.filter((_, i) => i !== idx));
-    setImageFiles((prev) => prev.filter((_, i) => i !== idx));
-  };
-
   const handleSubmit = (e) => {
     e.preventDefault();
     if (
@@ -131,27 +156,36 @@ const ProductAdd = () => {
         return;
       }
     }
-    if (imageFiles.length === 0) {
-      alert("Vui lòng chọn ít nhất một ảnh sản phẩm.");
-      return;
+    for (const color of selectedColors) {
+      const colorObj = colors.find((c) => c.color === color);
+      if (!colorImages[colorObj.code] || colorImages[colorObj.code].files.length === 0) {
+        alert(`Vui lòng chọn ít nhất một ảnh cho màu ${color}.`);
+        return;
+      }
     }
     const colorsCodeSelected = selectedColors.map((colorName) => {
       const colorObj = colors.find((c) => c.color === colorName);
       return colorObj ? colorObj.code : colorName;
     });
-    const dataToSend = {
+    // Chuẩn bị dữ liệu xem trước (không gửi file, chỉ gửi tên file)
+    const preview = {
       ...form,
       kichthuoc: selectedSizes.map((s) => ({
         size: s.size,
         soluong: s.quantity,
       })),
       mau: colorsCodeSelected,
-      // Không cần trường anh ở đây, sẽ gửi file thực ở bước xác nhận
+      hinhanh: Object.fromEntries(
+        colorsCodeSelected.map((code) => [
+          code,
+          colorImages[code]?.names || [],
+        ])
+      ),
     };
-    setPreviewData(dataToSend);
+    setPreviewData(preview);
   };
 
-  // Gửi sản phẩm, upload file thực
+  // Gửi sản phẩm, upload file thực cho từng màu
   const handleConfirmSend = async () => {
     if (!previewData) {
       alert("Chưa có dữ liệu để gửi, vui lòng xem trước sản phẩm trước.");
@@ -165,8 +199,11 @@ const ProductAdd = () => {
     formData.append("ngaythem", previewData.ngaythem || new Date().toISOString());
     formData.append("kichthuoc", JSON.stringify(previewData.kichthuoc));
     formData.append("mau", JSON.stringify(previewData.mau));
-    imageFiles.forEach((file) => {
-      formData.append("files", file);
+    // Thêm file ảnh cho từng màu
+    Object.entries(colorImages).forEach(([colorCode, { files }]) => {
+      files.forEach((file) => {
+        formData.append(`files_${colorCode}`, file);
+      });
     });
 
     try {
@@ -184,9 +221,7 @@ const ProductAdd = () => {
       setSelectedSizes([]);
       setSelectedColors([]);
       setPreviewData(null);
-      setImagePreviews([]);
-      setImageNames([]);
-      setImageFiles([]);
+      setColorImages({});
     } catch (err) {
       console.error("Lỗi khi gửi sản phẩm:", err);
       alert("Thêm sản phẩm thất bại. Vui lòng thử lại.");
@@ -249,55 +284,6 @@ const ProductAdd = () => {
             onChange={handleChange}
             placeholder="Mô tả sản phẩm"
           />
-        </div>
-        {/* Ảnh sản phẩm */}
-        <div className="mb-3">
-          <label className="form-label">Ảnh sản phẩm *</label>
-          <input
-            type="file"
-            accept="image/*"
-            className="form-control"
-            multiple
-            onChange={handleImageChange}
-          />
-          {imagePreviews.length > 0 && (
-            <div className="d-flex gap-2 mt-2 flex-wrap">
-              {imagePreviews.map((src, idx) => (
-                <div key={idx} style={{ position: "relative", display: "inline-block" }}>
-                  <img
-                    src={src}
-                    alt={`Preview ${idx + 1}`}
-                    style={{ width: 80, height: 80, objectFit: "cover", borderRadius: 4 }}
-                  />
-                  <div style={{ fontSize: 12, color: "#555", marginTop: 2, textAlign: "center" }}>
-                    {imageNames[idx]}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveImage(idx)}
-                    style={{
-                      position: "absolute",
-                      top: 0,
-                      right: 0,
-                      background: "rgba(255,0,0,0.7)",
-                      color: "#fff",
-                      border: "none",
-                      borderRadius: "50%",
-                      width: 22,
-                      height: 22,
-                      cursor: "pointer",
-                      fontWeight: "bold",
-                      lineHeight: "18px",
-                      padding: 0,
-                    }}
-                    title="Xóa ảnh"
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
         {/* Chọn Size */}
         <div className="mb-3">
@@ -383,6 +369,63 @@ const ProductAdd = () => {
             })}
           </div>
         </div>
+        {/* Chọn ảnh cho từng màu */}
+        {selectedColors.map((color) => {
+          const colorObj = colors.find((c) => c.color === color);
+          const colorCode = colorObj.code;
+          return (
+            <div key={colorCode} className="mb-3">
+              <label className="form-label">
+                Ảnh cho màu <span>{color}</span> *
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                className="form-control"
+                multiple
+                onChange={(e) => handleColorImageChange(colorCode, e)}
+              />
+              {colorImages[colorCode] && colorImages[colorCode].previews.length > 0 && (
+                <div className="d-flex gap-2 mt-2 flex-wrap">
+                  {colorImages[colorCode].previews.map((src, idx) => (
+                    <div key={idx} style={{ position: "relative", display: "inline-block" }}>
+                      <img
+                        src={src}
+                        alt={`Preview ${idx + 1}`}
+                        style={{ width: 80, height: 80, objectFit: "cover", borderRadius: 4 }}
+                      />
+                      <div style={{ fontSize: 12, color: "#555", marginTop: 2, textAlign: "center" }}>
+                        {colorImages[colorCode].names[idx]}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveColorImage(colorCode, idx)}
+                        style={{
+                          position: "absolute",
+                          top: 0,
+                          right: 0,
+                          background: "rgba(255,0,0,0.7)",
+                          color: "#fff",
+                          border: "none",
+                          borderRadius: "50%",
+                          width: 22,
+                          height: 22,
+                          cursor: "pointer",
+                          fontWeight: "bold",
+                          lineHeight: "18px",
+                          padding: 0,
+                        }}
+                        title="Xóa ảnh"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
         <button type="submit" className="btn btn-success">
           Xem trước sản phẩm
         </button>
@@ -390,47 +433,35 @@ const ProductAdd = () => {
       {/* Preview dữ liệu */}
       {previewData && (
         <div className="mt-5 p-4 border rounded bg-light">
-          <h4>Thông tin sản phẩm xem trước:</h4>
-          <pre>{JSON.stringify(previewData, null, 2)}</pre>
-          {imagePreviews.length > 0 && (
-            <div className="mb-3 d-flex gap-2 flex-wrap">
-              <strong>Ảnh xem trước:</strong>
-              {imagePreviews.map((src, idx) => (
-                <div key={idx} style={{ position: "relative", display: "inline-block" }}>
-                  <img
-                    src={src}
-                    alt={`Preview ${idx + 1}`}
-                    style={{ width: 80, height: 80, objectFit: "cover", borderRadius: 4 }}
-                  />
-                  <div style={{ fontSize: 12, color: "#555", marginTop: 2, textAlign: "center" }}>
-                    {imageNames[idx]}
+          <h4>Thông tin sản phẩm xem trước (JSON):</h4>
+          <pre style={{ background: "#222", color: "#fff", padding: 12, borderRadius: 6 }}>
+            {JSON.stringify(previewData, null, 2)}
+          </pre>
+          {selectedColors.map((color) => {
+            const colorObj = colors.find((c) => c.color === color);
+            const colorCode = colorObj.code;
+            return (
+              <div key={colorCode} className="mb-2">
+                <strong>Ảnh màu {color}:</strong>
+                {colorImages[colorCode] && colorImages[colorCode].previews.length > 0 && (
+                  <div className="d-flex gap-2 flex-wrap">
+                    {colorImages[colorCode].previews.map((src, idx) => (
+                      <div key={idx} style={{ position: "relative", display: "inline-block" }}>
+                        <img
+                          src={src}
+                          alt={`Preview ${idx + 1}`}
+                          style={{ width: 80, height: 80, objectFit: "cover", borderRadius: 4 }}
+                        />
+                        <div style={{ fontSize: 12, color: "#555", marginTop: 2, textAlign: "center" }}>
+                          {colorImages[colorCode].names[idx]}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveImage(idx)}
-                    style={{
-                      position: "absolute",
-                      top: 0,
-                      right: 0,
-                      background: "rgba(255,0,0,0.7)",
-                      color: "#fff",
-                      border: "none",
-                      borderRadius: "50%",
-                      width: 22,
-                      height: 22,
-                      cursor: "pointer",
-                      fontWeight: "bold",
-                      lineHeight: "18px",
-                      padding: 0,
-                    }}
-                    title="Xóa ảnh"
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
+                )}
+              </div>
+            );
+          })}
           <button onClick={handleConfirmSend} className="btn btn-primary mt-3">
             Xác nhận thêm sản phẩm
           </button>
