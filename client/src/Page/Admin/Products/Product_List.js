@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import { Link } from 'react-router-dom';
+import { getAllProductsAdmin } from '../../../api/products.api'; // ← Import API
 
 const ProductList = () => {
     const [products, setProducts] = useState([]);
+
     const formatDate = (dateStr) => {
         const d = new Date(dateStr);
         const day = String(d.getDate()).padStart(2, '0');
@@ -11,13 +13,6 @@ const ProductList = () => {
         return `${day}/${month}/${year}`;
     };
 
-    useEffect(() => {
-        // Gọi API lấy danh sách sản phẩm
-        axios.get('http://localhost:4000/admin/products')
-            .then(res => setProducts(res.data))
-            .catch(err => console.error('Lỗi khi load sản phẩm:', err));
-    }, []);
-
     const formatCurrency = (value) => {
         return new Intl.NumberFormat('vi-VN', {
             style: 'currency',
@@ -25,6 +20,14 @@ const ProductList = () => {
             minimumFractionDigits: 0
         }).format(value);
     };
+
+    useEffect(() => {
+        const fetchData = async () => {
+            const data = await getAllProductsAdmin();
+            setProducts(data);
+        };
+        fetchData();
+    }, []);
 
     return (
         <div className="container mt-5">
@@ -40,7 +43,7 @@ const ProductList = () => {
                                 <th>Tên Sản Phẩm</th>
                                 <th>Giá</th>
                                 <th>Thể Loại</th>
-                                <th>Mô Tả</th>
+                                {/* <th>Mô Tả</th> */}
                                 <th>Ngày Thêm</th>
                                 <th>Chi Tiết</th>
                             </tr>
@@ -56,11 +59,15 @@ const ProductList = () => {
                                         <td>{product.tensanpham}</td>
                                         <td>{formatCurrency(product.giasanpham)}</td>
                                         <td>{product.tentheloai}</td>
-                                        <td>{product.mota}</td>
+                                        {/* <td>{product.mota}</td> */}
                                         <td>{formatDate(product.ngaythem)}</td>
-
                                         <td>
-
+                                            <Link
+                                                to={`/admin/products/detail/${product._id}`}
+                                                className="btn btn-sm btn-primary"
+                                            >
+                                                Xem
+                                            </Link>
                                         </td>
                                     </tr>
                                 ))

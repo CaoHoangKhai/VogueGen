@@ -94,29 +94,43 @@ class ProductServer {
     async getProductById(id) {
         try {
             const objectId = new ObjectId(id);
+
+            // Lấy thông tin sản phẩm chính
             const product = await this.SanPham.findOne({ _id: objectId });
             if (!product) return null;
 
+            // Lấy tên thể loại nếu có
             let tenTheLoai = null;
-            if (product.TheLoai && ObjectId.isValid(product.TheLoai)) {
-                const theloai = await this.TheLoai.findOne({ _id: new ObjectId(product.TheLoai) });
-                tenTheLoai = theloai?.TenTheLoai || theloai?.tendanhmuc || null;
+            if (product.theloai && ObjectId.isValid(product.theloai)) {
+                const theloai = await this.TheLoai.findOne({ _id: new ObjectId(product.theloai) });
+                tenTheLoai = theloai?.tentheloai || theloai?.tendanhmuc || null;
             }
 
+            // Lấy danh sách kích thước
             const kichthuocList = await this.KichThuoc.find({ MaSanPham: id }).toArray();
-            const mausanphamList = await this.MauSanPham.find({ MaSanPham: id }).toArray();
-            const hinhAnhList = await this.HinhAnh.find({ MaSanPham: objectId }).toArray();
 
+            // Lấy danh sách màu
+            const mausanphamList = await this.MauSanPham.find({ masanpham: id }).toArray();
+
+            // Lấy danh sách hình ảnh
+            const hinhAnhList = await this.HinhAnh.find({ MaSanPham: id }).toArray();
+
+            // Gộp dữ liệu vào sản phẩm
             return {
-                ...product,
+                _id: product._id,
+                tensanpham: product.tensanpham,
+                giasanpham: product.giasanpham,
+                mota: product.mota,
+                ngaythem: product.ngaythem,
+                theloai: product.theloai,
                 tentheloai: tenTheLoai,
                 kichthuoc: kichthuocList,
                 mausanpham: mausanphamList,
                 hinhanh: hinhAnhList
             };
         } catch (error) {
-            console.error("Lỗi lấy sản phẩm:", error);
-            throw new Error("Không thể lấy sản phẩm.");
+            console.error("Lỗi khi lấy sản phẩm theo ID:", error);
+            throw new Error("Không thể lấy sản phẩm theo ID.");
         }
     }
 

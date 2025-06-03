@@ -4,7 +4,7 @@ import {
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { signIn } from '../../api/auth.api';  // <-- import API
 
 const SignIn = () => {
     const [email, setEmail] = useState('');
@@ -31,20 +31,17 @@ const SignIn = () => {
             return;
         }
 
-        const payload = { email, matkhau: password };
         setLoading(true);
 
         try {
-            const response = await axios.post('http://localhost:4000/auth/signin', payload);
+            const response = await signIn(email, password);
 
             if (response.status === 200) {
                 setMessage({ type: 'success', content: response.data.message || 'Đăng nhập thành công!' });
 
                 localStorage.setItem('user', JSON.stringify(response.data.user));
 
-
                 window.dispatchEvent(new Event('loginSuccess'));
-
 
                 setTimeout(() => navigate('/'), 1000);
             }

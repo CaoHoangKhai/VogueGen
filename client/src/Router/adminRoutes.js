@@ -5,6 +5,7 @@ import UserList from "../Page/Admin/Users/User_List";
 
 import ProductList from "../Page/Admin/Products/Product_List";
 import ProductAdd from "../Page/Admin/Products/Product_Add";
+import ProductDetail from "../Page/Admin/Products/Product_Detail";
 import CategoryAdd from "../Page/Admin/Products/Category_Add";
 
 import NewsList from "../Page/Admin/News/News_List";
@@ -47,6 +48,7 @@ const adminRoutes = [
 
   { path: '/admin/products', element: <ProductList /> },
   { path: '/admin/products/add', element: <ProductAdd /> },
+  { path: '/admin/products/detail/:id', element: <ProductDetail /> },
   { path: '/admin/products/category_add', element: <CategoryAdd /> },
 
   { path: '/admin/news', element: <NewsList /> },

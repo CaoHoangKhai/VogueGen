@@ -8,7 +8,7 @@ import {
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import { signUp } from '../../api/auth.api';  // import hàm gọi API đăng ký
 
 const SignUp = () => {
     const [formData, setFormData] = useState({
@@ -30,26 +30,26 @@ const SignUp = () => {
 
     // Kiểm tra đầu vào
     const validateForm = () => {
-        if (!formData.hoten) {
+        if (!formData.hoten.trim()) {
             setMessage({ type: 'error', content: 'Vui lòng nhập Họ và Tên.' });
             return false;
         }
-        if (!formData.email) {
+        if (!formData.email.trim()) {
             setMessage({ type: 'error', content: 'Vui lòng nhập Email.' });
             return false;
         }
-        if (!formData.sodienthoai) {
+        if (!formData.sodienthoai.trim()) {
             setMessage({ type: 'error', content: 'Vui lòng nhập Số điện thoại.' });
             return false;
         }
-        if (!formData.matkhau) {
+        if (!formData.matkhau.trim()) {
             setMessage({ type: 'error', content: 'Vui lòng nhập Mật khẩu.' });
             return false;
         }
         return true;
     };
 
-    // Submit form
+    // Xử lý submit form đăng ký
     const handleSubmit = async (e) => {
         e.preventDefault();
         setMessage({ type: '', content: '' });
@@ -58,7 +58,7 @@ const SignUp = () => {
         setLoading(true);
 
         try {
-            const response = await axios.post('http://localhost:4000/auth/signup', formData);
+            const response = await signUp(formData);
 
             if (response.status === 201 || response.status === 200) {
                 setMessage({
@@ -87,11 +87,13 @@ const SignUp = () => {
                     <div className="col-md-6 col-sm-12">
                         <form className="p-4 border rounded bg-light" onSubmit={handleSubmit} noValidate>
                             <h4 className="mb-3">Thông tin cá nhân</h4>
+
                             {message.content && (
                                 <Alert severity={message.type} className="mb-3">
                                     {message.content}
                                 </Alert>
                             )}
+
                             <div className="mb-3">
                                 <TextField
                                     fullWidth
@@ -143,6 +145,7 @@ const SignUp = () => {
                                                 <IconButton
                                                     onClick={() => setShowPassword(!showPassword)}
                                                     edge="end"
+                                                    aria-label="toggle password visibility"
                                                 >
                                                     {showPassword ? <VisibilityOff /> : <Visibility />}
                                                 </IconButton>
@@ -164,7 +167,12 @@ const SignUp = () => {
                             </Button>
 
                             <div className="text-center mt-3">
-                                <span>Đã có tài khoản? <Link to="/signin" className="text-decoration-none quick-link text-secondary">Đăng nhập</Link></span>
+                                <span>
+                                    Đã có tài khoản?{' '}
+                                    <Link to="/signin" className="text-decoration-none quick-link text-secondary">
+                                        Đăng nhập
+                                    </Link>
+                                </span>
                             </div>
                         </form>
                     </div>
