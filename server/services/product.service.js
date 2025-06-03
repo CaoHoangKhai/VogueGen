@@ -254,7 +254,7 @@ class ProductServer {
                 const hinhAnhList = await this.HinhAnh.find({ MaSanPham: productId }).toArray();
                 product.hinhanh = hinhAnhList.map(img => ({
                     ...img,
-                    url: img.TenFile ? `/public/images/${img.TenFile}` : null
+                    url: img.TenFile ? `/images/${img.TenFile}` : null
                 }));
             }
 
@@ -264,7 +264,6 @@ class ProductServer {
             throw new Error("Không thể lấy danh sách sản phẩm.");
         }
     }
-
 }
 
 module.exports = ProductServer;

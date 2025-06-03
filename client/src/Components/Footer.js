@@ -23,7 +23,7 @@ const Footer = () => {
                                 <li className="d-flex align-items-center mb-2 gap-2" style={{ color: "#00838f" }}>
                                     <FaMapMarkerAlt />
                                     <b>VPGD:</b>
-                                    <span>Số 11 LK 11A KĐT Mỗ Lao, Q. Hà Đông, TP. Hà Nội</span>
+                                    <span>Trường Đại Học Cần Thơ</span>
                                 </li>
                                 <li className="d-flex align-items-center mb-2 gap-2" style={{ color: "#0288d1" }}>
                                     <MdEmail />
