@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { colors } from "../../../config/colors";
-
+import { getAllSizes, getAllCategories } from "../../../api/Admin/products.api";
 const ProductAdd = () => {
   const [availableSizes, setAvailableSizes] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -20,16 +20,12 @@ const ProductAdd = () => {
   const [colorImages, setColorImages] = useState({});
 
   useEffect(() => {
-    axios
-      .get("http://localhost:4000/admin/products/sizes")
-      .then((res) => setAvailableSizes(res.data))
-      .catch((err) => console.error("Lỗi lấy danh sách size:", err));
-
-    axios
-      .get("http://localhost:4000/admin/categories")
-      .then((res) => setCategories(res.data))
-      .catch((err) => console.error("Lỗi lấy danh mục:", err));
+    getAllSizes().then(setAvailableSizes);
+    getAllCategories().then(setCategories);
   }, []);
+
+
+
 
   const toggleSize = (size) => {
     setSelectedSizes((prev) => {
