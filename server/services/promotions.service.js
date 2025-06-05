@@ -34,15 +34,7 @@ class PromotionsService {
         if (existingCode) {
             throw new Error("Mã khuyến mãi đã tồn tại, vui lòng chọn mã khác.");
         }
-
-        // const existingPromotion = await this.Promotions.findOne({ tenkhuyenmai: promotion.tenkhuyenmai });
-        // if (existingPromotion) {
-        //     const now = new Date();
-        //     if (existingPromotion.ngayketthuc && existingPromotion.ngayketthuc > now) {
-        //         throw new Error("Khuyến mãi với tên này đang còn hiệu lực, không thể tạo trùng.");
-        //     }
-        // }
-
+        
         const result = await this.Promotions.insertOne(promotion);
         promotion._id = result.insertedId;
         return promotion;

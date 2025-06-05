@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { colors } from "../../../config/colors";
 import { getAllSizes, getAllCategories } from "../../../api/Admin/products.api";
+
 const ProductAdd = () => {
   const [availableSizes, setAvailableSizes] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -24,9 +25,6 @@ const ProductAdd = () => {
     getAllCategories().then(setCategories);
   }, []);
 
-
-
-
   const toggleSize = (size) => {
     setSelectedSizes((prev) => {
       const exists = prev.find((s) => s.size === size);
@@ -44,7 +42,7 @@ const ProductAdd = () => {
     );
     // Nếu bỏ chọn màu thì xóa ảnh của màu đó
     const colorObj = colors.find((c) => c.color === color);
-    if (colorImages[colorObj.code]) {
+    if (colorObj && colorImages[colorObj.code]) {
       setColorImages((prev) => {
         const newObj = { ...prev };
         delete newObj[colorObj.code];
@@ -154,7 +152,7 @@ const ProductAdd = () => {
     }
     for (const color of selectedColors) {
       const colorObj = colors.find((c) => c.color === color);
-      if (!colorImages[colorObj.code] || colorImages[colorObj.code].files.length === 0) {
+      if (!colorObj || !colorImages[colorObj.code] || colorImages[colorObj.code].files.length === 0) {
         alert(`Vui lòng chọn ít nhất một ảnh cho màu ${color}.`);
         return;
       }
@@ -163,14 +161,14 @@ const ProductAdd = () => {
       const colorObj = colors.find((c) => c.color === colorName);
       return colorObj ? colorObj.code : colorName;
     });
-    // Chuẩn bị dữ liệu xem trước (không gửi file, chỉ gửi tên file)
+    // Đổi key từ "mau" thành "mausanpham"
     const preview = {
       ...form,
       kichthuoc: selectedSizes.map((s) => ({
         size: s.size,
         soluong: s.quantity,
       })),
-      mau: colorsCodeSelected,
+      mausanpham: colorsCodeSelected,
       hinhanh: Object.fromEntries(
         colorsCodeSelected.map((code) => [
           code,
@@ -194,7 +192,7 @@ const ProductAdd = () => {
     formData.append("mota", previewData.mota);
     formData.append("ngaythem", previewData.ngaythem || new Date().toISOString());
     formData.append("kichthuoc", JSON.stringify(previewData.kichthuoc));
-    formData.append("mau", JSON.stringify(previewData.mau));
+    formData.append("mausanpham", JSON.stringify(previewData.mausanpham));
     // Thêm file ảnh cho từng màu
     Object.entries(colorImages).forEach(([colorCode, { files }]) => {
       files.forEach((file) => {

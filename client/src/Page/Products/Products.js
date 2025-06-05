@@ -162,7 +162,7 @@ const Products = () => {
                                     }}>
                                         {product.kichthuoc?.length > 0 ? (
                                             product.kichthuoc.map((sz, idx) => (
-                                                <span key={sz._id || idx} style={{ marginRight: 8 }}>{sz.Size}</span>
+                                                <span key={sz._id || idx} style={{ marginRight: 8 }}>{sz.size}</span>
                                             ))
                                         ) : (
                                             <span>Không có</span>

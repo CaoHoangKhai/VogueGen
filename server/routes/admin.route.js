@@ -10,7 +10,7 @@ const sizeController = require("../controllers/sizes.controller");
 const promotionsController = require("../controllers/promotions.controller");
 const message = require("../utils/messages");
 
-// Cấu hình multer để giữ lại đuôi file và lưu vào thư mục uploads
+// Cấu hình multer
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, path.join(__dirname, "..", "public/images"));
@@ -29,7 +29,7 @@ const upload = multer({
 
 // Trang chính ví dụ trang đăng nhập
 router.get("/", (req, res) => {
-   res.json({ message: message.info.SIGNIN_PAGE });
+  res.json({ message: message.info.SIGNIN_PAGE });
 });
 
 // Dashboard admin
@@ -59,7 +59,11 @@ router.get("/products/sizes", sizeController.getAllSizes);
 // Route lấy sản phẩm theo ID, đặt cuối cùng để tránh nhầm lẫn với các route trên
 router.get("/products/:id", productController.getProductById);
 
-router.put("/products/:id", productController.updateProduct);
+// ⚠️ Cần upload.any() để nhận ảnh
+
 router.delete("/products/:id", productController.deleteProduct);
+
+// Cần đặt các route khác trước route /:id để tránh nhầm
+router.put("/products/:id", upload.any(), productController.updateProduct);
 
 module.exports = router;

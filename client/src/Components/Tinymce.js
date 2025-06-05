@@ -9,6 +9,7 @@ const Tinymce = ({ value, onChange, id = "tinymce-editor", height = 300 }) => {
             window.tinymce.init({
                 selector: `#${id}`,
                 height,
+                forced_root_block: false, // Bỏ auto bọc thẻ p
                 plugins: "lists link image table code",
                 toolbar:
                     "undo redo | formatselect | bold italic underline | alignleft aligncenter alignright | bullist numlist | link image | code",
@@ -21,6 +22,7 @@ const Tinymce = ({ value, onChange, id = "tinymce-editor", height = 300 }) => {
                     });
                 },
             });
+
             editorRef.current = window.tinymce.get(id);
         }
 

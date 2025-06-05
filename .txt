@@ -6,7 +6,12 @@ Xuất file thông tin sản phẩm
 Xuất file đơn hàng
 Xem danh sách đơn hàng
 Tìm kiếm đơn hàng theo( tên người đặt, theo mã, theo trạng thái)
-Lỗi ko thể cập nhật sản phẩm
+
+
+Cập nhật bị sai
+ko thể cập nhật hình ảnh
+sửa:
+chọn màu và hình ảnh và màu tự tách nhau ra
 
 
 

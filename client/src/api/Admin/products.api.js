@@ -72,3 +72,16 @@ export const deleteProduct = async (id) => {
         return false;
     }
 };
+export const updateProductById = async (id, formData) => {
+    try {
+        const response = await fetch(`${BASE_URL_ADMIN}/products/${id}`, {
+            method: "PUT",
+            body: formData,
+        });
+        if (!response.ok) throw new Error("Lỗi khi cập nhật sản phẩm");
+        return await response.json();
+    } catch (error) {
+        console.error("Lỗi PUT /products/:id:", error);
+        return null;
+    }
+};

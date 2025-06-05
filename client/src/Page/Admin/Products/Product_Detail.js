@@ -4,8 +4,8 @@ import { colors } from "../../../config/colors";
 import {
   getAllSizes,
   getAllCategories,
-  getAllProducts,
-  updateProduct
+  getProductById,
+  updateProductById
 } from "../../../api/Admin/products.api";
 import Tinymce from "../../../Components/Tinymce";
 
@@ -25,6 +25,7 @@ const ProductDetail = () => {
   });
   const [colorImages, setColorImages] = useState({});
   const [product, setProduct] = useState(null);
+  const [showPreview, setShowPreview] = useState(false);
 
   useEffect(() => {
     getAllSizes().then(setAvailableSizes);
@@ -33,8 +34,7 @@ const ProductDetail = () => {
 
   useEffect(() => {
     const fetchProduct = async () => {
-      const allProducts = await getAllProducts();
-      const found = allProducts.find((p) => p._id === id);
+      const found = await getProductById(id);
       if (found) {
         setProduct(found);
         setForm({
@@ -50,17 +50,15 @@ const ProductDetail = () => {
             quantity: sz.soluong || sz.SoLuong,
           })) || []
         );
-        // selectedColors là mã màu (code)
         setSelectedColors(
           (found.mausanpham && found.mausanpham.length > 0)
             ? found.mausanpham.map((c) => c.mau)
             : [
-                ...new Set(
-                  (found.hinhanh || []).map(img => img.mau || img.Mau)
-                )
-              ]
+              ...new Set(
+                (found.hinhanh || []).map(img => img.mau || img.Mau)
+              )
+            ]
         );
-        // Images theo mã màu
         const imgs = {};
         if (found.hinhanh && found.hinhanh.length > 0) {
           const colorCodes = (found.mausanpham && found.mausanpham.length > 0)
@@ -92,7 +90,6 @@ const ProductDetail = () => {
     });
   };
 
-  // Toggle color theo mã màu (code)
   const toggleColor = (code) => {
     setSelectedColors((prev) =>
       prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]
@@ -211,9 +208,8 @@ const ProductDetail = () => {
         return;
       }
     }
-    // selectedColors là mã màu (code)
-    const colorsCodeSelected = selectedColors;
 
+    // Tạo FormData và append đúng tên trường
     const formData = new FormData();
     formData.append("tensanpham", form.tensanpham);
     formData.append("giasanpham", form.giasanpham);
@@ -221,21 +217,20 @@ const ProductDetail = () => {
     formData.append("mota", form.mota);
     formData.append(
       "kichthuoc",
-      JSON.stringify(selectedSizes.map((s) => ({
+      JSON.stringify(selectedSizes.map(s => ({
         size: s.size,
         soluong: s.quantity,
       })))
     );
-    formData.append("mau", JSON.stringify(colorsCodeSelected));
-    // Thêm file ảnh cho từng màu
+    formData.append("mausanpham", JSON.stringify(selectedColors));
     Object.entries(colorImages).forEach(([colorCode, { files }]) => {
       files.forEach((file) => {
-        formData.append(`files_${colorCode}`, file);
+        formData.append(`{colorCode}`, file); // tên trường phải đúng với backend
       });
     });
 
     try {
-      await updateProduct(id, formData);
+      await updateProductById(id, formData);
       alert("Cập nhật sản phẩm thành công!");
       navigate("/admin/products");
     } catch (err) {
@@ -244,9 +239,44 @@ const ProductDetail = () => {
     }
   };
 
+  // Xem trước JSON
+  const previewData = {
+    ...form,
+    kichthuoc: selectedSizes,
+    mausanpham: selectedColors,
+    hinhanh: Object.fromEntries(
+      Object.entries(colorImages).map(([code, obj]) => [
+        code,
+        obj.names || [],
+      ])
+    ),
+  };
+
   return (
     <div className="container mt-4">
       <h3 className="text-center">Chỉnh Sửa Sản Phẩm</h3>
+      <button
+        type="button"
+        className="btn btn-secondary mb-3"
+        onClick={() => setShowPreview((prev) => !prev)}
+      >
+        {showPreview ? "Ẩn xem trước JSON" : "Xem trước JSON"}
+      </button>
+      {showPreview && (
+        <pre
+          style={{
+            background: "#f6f8fa",
+            border: "1px solid #ddd",
+            borderRadius: 6,
+            padding: 16,
+            maxHeight: 400,
+            overflow: "auto",
+            marginBottom: 24,
+          }}
+        >
+          {JSON.stringify(previewData, null, 2)}
+        </pre>
+      )}
       {!product ? (
         <div>Đang tải chi tiết sản phẩm...</div>
       ) : (

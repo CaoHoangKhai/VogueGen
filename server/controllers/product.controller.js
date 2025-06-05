@@ -126,15 +126,66 @@ exports.getProductById = async (req, res) => {
 
 exports.updateProduct = async (req, res) => {
   try {
+    // Parse kích thước
+    let kichthuocParsed = [];
+    if (req.body.kichthuoc) {
+      try {
+        kichthuocParsed = JSON.parse(req.body.kichthuoc);
+      } catch {
+        return res.status(400).json({ error: "Dữ liệu kích thước không hợp lệ" });
+      }
+    }
+
+    // Parse màu
+    let mauParsed = [];
+    if (req.body.mausanpham) {
+      try {
+        mauParsed = JSON.parse(req.body.mausanpham);
+      } catch {
+        return res.status(400).json({ error: "Dữ liệu màu không hợp lệ" });
+      }
+    }
+
+    // Parse hình ảnh: gom theo mã màu
+    let hinhanh = {};
+    if (req.files && Array.isArray(req.files)) {
+      req.files.forEach(file => {
+        const match = file.fieldname.match(/^files_(.+)$/);
+        if (match) {
+          const colorCode = match[1];
+          if (!hinhanh[colorCode]) hinhanh[colorCode] = [];
+          hinhanh[colorCode].push({
+            tenfile: file.filename,
+            duongdan: `/${file.filename}`,
+            mau: colorCode
+          });
+        }
+      });
+    }
+
+    // Parse giá
+    const giaSanPham = parseInt(req.body.giasanpham?.toString().replace(/\D/g, ""), 10) || 0;
+
+    // Tạo payload
+    const updateData = {
+      tensanpham: req.body.tensanpham,
+      giasanpham: giaSanPham,
+      theloai: req.body.theloai,
+      mota: req.body.mota,
+      kichthuoc: kichthuocParsed,
+      mausanpham: mauParsed,
+      hinhanh: Object.values(hinhanh).flat() // Mảng hình ảnh
+    };
+
     const productService = new ProductServer(MongoDB.client);
-    const result = await productService.updateProduct(req.params.id, req.body);
+    const result = await productService.updateProduct(req.params.id, updateData);
+
     res.json(result);
   } catch (error) {
-    console.error("Lỗi khi cập nhật sản phẩm:", error);
+    console.error("❌ Lỗi khi cập nhật sản phẩm:", error);
     res.status(500).json({ error: "Lỗi server khi cập nhật sản phẩm" });
   }
-}
-
+};
 
 exports.deleteProduct = async (req, res) => {
   try {
