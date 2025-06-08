@@ -64,6 +64,6 @@ router.get("/products/:id", productController.getProductById);
 router.delete("/products/:id", productController.deleteProduct);
 
 // Cần đặt các route khác trước route /:id để tránh nhầm
-router.put("/products/:id", upload.any(), productController.updateProduct);
+router.put('/products/:id', upload.any(), productController.updateProduct);
 
 module.exports = router;

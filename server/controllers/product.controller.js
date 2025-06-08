@@ -135,68 +135,101 @@ exports.getProductById = async (req, res) => {
   }
 };
 
-
-
 exports.updateProduct = async (req, res) => {
   try {
-    // Parse kích thước
+    console.log("📦 DỮ LIỆU CLIENT GỬI LÊN:");
+    console.log("Body:", req.body);
+    console.log("Files:", req.files);
+
+    // 1. Parse kích thước
     let kichthuocParsed = [];
     if (req.body.kichthuoc) {
       try {
-        kichthuocParsed = JSON.parse(req.body.kichthuoc);
+        kichthuocParsed = typeof req.body.kichthuoc === 'string'
+          ? JSON.parse(req.body.kichthuoc)
+          : req.body.kichthuoc;
       } catch {
-        return res.status(400).json({ error: "Dữ liệu kích thước không hợp lệ" });
+        return res.status(400).json({ error: "❌ Dữ liệu kích thước không hợp lệ" });
       }
     }
 
-    // Parse màu
+    // 2. Parse màu sắc
     let mauParsed = [];
     if (req.body.mausanpham) {
       try {
-        mauParsed = JSON.parse(req.body.mausanpham);
+        mauParsed = typeof req.body.mausanpham === 'string'
+          ? JSON.parse(req.body.mausanpham)
+          : req.body.mausanpham;
       } catch {
-        return res.status(400).json({ error: "Dữ liệu màu không hợp lệ" });
+        return res.status(400).json({ error: "❌ Dữ liệu màu sắc không hợp lệ" });
       }
     }
 
-    // Parse hình ảnh: gom theo mã màu
-    let hinhanh = {};
-    if (req.files && Array.isArray(req.files)) {
-      req.files.forEach(file => {
-        const match = file.fieldname.match(/^files_(.+)$/);
-        if (match) {
-          const colorCode = match[1];
-          if (!hinhanh[colorCode]) hinhanh[colorCode] = [];
-          hinhanh[colorCode].push({
-            tenfile: file.filename,
-            duongdan: `/${file.filename}`,
-            mau: colorCode
-          });
+    // 3. Parse hình ảnh (giữ ảnh cũ, thêm ảnh mới)
+    let hinhanh = [];
+    let imagesObj = req.body.images;
+    if (imagesObj) {
+      try {
+        if (typeof imagesObj === "string") {
+          imagesObj = JSON.parse(imagesObj);
         }
-      });
+        // Ảnh cũ
+        if (Array.isArray(imagesObj.old)) {
+          hinhanh = imagesObj.old.map(filename => ({ tenfile: filename }));
+        }
+      } catch {
+        return res.status(400).json({ error: "Dữ liệu hình ảnh không hợp lệ" });
+      }
     }
 
-    // Parse giá
-    const giaSanPham = parseInt(req.body.giasanpham?.toString().replace(/\D/g, ""), 10) || 0;
+    // Thêm ảnh mới từ req.files
+    if (req.files && Array.isArray(req.files) && req.files.length > 0) {
+      const destDir = path.join(__dirname, "..", "public", "images");
+      if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
 
-    // Tạo payload
+      for (const file of req.files) {
+        const oldPath = file.path;
+        const newPath = path.join(destDir, file.filename);
+        try {
+          await fs.promises.rename(oldPath, newPath);
+          console.log(`✅ Đã di chuyển: ${file.originalname} -> ${file.filename}`);
+          hinhanh.push({ tenfile: file.filename });
+        } catch (err) {
+          console.error("❌ Lỗi khi di chuyển ảnh:", err);
+        }
+      }
+    }
+    // 4. Parse giá sản phẩm
+    const giaSanPham = parseInt(
+      req.body.giasanpham?.toString().replace(/[^\d]/g, ""),
+      10
+    ) || 0;
+
+    // 5. Parse ngày thêm sản phẩm (nếu có)
+    const ngayThem = req.body.ngaythem
+      ? new Date(req.body.ngaythem)
+      : new Date();
+
+    // 6. Tạo payload sạch sẽ
     const updateData = {
       tensanpham: req.body.tensanpham,
       giasanpham: giaSanPham,
       theloai: req.body.theloai,
       mota: req.body.mota,
+      ngaythem: ngayThem,
       kichthuoc: kichthuocParsed,
       mausanpham: mauParsed,
-      hinhanh: Object.values(hinhanh).flat() // Mảng hình ảnh
+      hinhanh: hinhanh
     };
 
+    // 7. Gọi service xử lý
     const productService = new ProductServer(MongoDB.client);
     const result = await productService.updateProduct(req.params.id, updateData);
 
-    res.json(result);
+    return res.status(200).json({ success: true, message: result.message });
+
   } catch (error) {
-    console.error("❌ Lỗi khi cập nhật sản phẩm:", error);
-    res.status(500).json({ error: "Lỗi server khi cập nhật sản phẩm" });
+    return res.status(500).json({ success: false, message: result.message });
   }
 };
 

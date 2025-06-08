@@ -59,7 +59,16 @@ export const createProduct = async (formData) => {
     }
 };
 
-export const updateProduct = (id, data) => callAPI(`/products/${id}`, "PUT", data);
+export const updateProduct = (id, formData) => {
+  return fetch(`${BASE_URL_ADMIN}/products/${id}`, {
+    method: "PUT",
+    body: formData, // formData chứa cả dữ liệu và file ảnh
+  }).then(res => {
+    if (!res.ok) throw new Error("Lỗi khi cập nhật sản phẩm");
+    return res.json();
+  });
+};
+
 
 export const deleteProduct = async (id) => {
     try {

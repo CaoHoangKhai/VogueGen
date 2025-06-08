@@ -23,58 +23,61 @@ class ProductServer {
     }
 
     async createProduct(payload) {
+        const productData = this.extractProductData(payload);
+
         try {
-            // 1. Tạo sản phẩm chính
-            const newProduct = await sanphamModel.create({
-                tensanpham: payload.tensanpham,
-                giasanpham: payload.giasanpham,
-                theloai: payload.theloai,
-                mota: payload.mota,
-                ngaythem: payload.ngaythem,
-                // Nếu có trường nào khác thì thêm ở đây
+            // 1. Tạo sản phẩm chính trong collection "sanpham"
+            const result = await this.sanpham.insertOne({
+                tensanpham: productData.tensanpham,
+                giasanpham: productData.giasanpham,
+                theloai: productData.theloai,
+                mota: productData.mota,
+                ngaythem: productData.ngaythem,
             });
 
-            const productId = newProduct._id;
+            const productId = result.insertedId;
 
-            // 2. Tạo dữ liệu màu sắc
-            const mausac = Array.isArray(payload.mausanpham) ? payload.mausanpham : [];
-            const mauDocs = mausac.map(mau => ({
+            // 2. Tạo danh sách màu sắc
+            const mauDocs = productData.mausanpham.map(mau => ({
                 masanpham: productId,
                 mau: mau.trim()
             }));
 
-            // 3. Tạo dữ liệu kích thước
-            const kichthuocArr = Array.isArray(payload.kichthuoc) ? payload.kichthuoc : [];
-            const kichthuocDocs = kichthuocArr.map(item => ({
+            // 3. Tạo danh sách kích thước
+            const kichthuocDocs = productData.kichthuoc.map(item => ({
                 masanpham: productId,
                 size: item.size,
                 soluong: item.soluong
             }));
 
-            // 4. Tạo dữ liệu hình ảnh
-            const hinhanhArr = Array.isArray(payload.hinhanh) ? payload.hinhanh : [];
-            const hinhanhDocs = hinhanhArr.map(img => ({
+            // 4. Tạo danh sách hình ảnh
+            const hinhanhDocs = productData.hinhanh.map(img => ({
                 masanpham: productId,
                 tenfile: img.tenfile
             }));
 
-            // 5. Lưu màu sắc, kích thước, hình ảnh vào DB
+            // 5. Lưu vào các collection phụ nếu có dữ liệu
             if (mauDocs.length > 0) {
-                await mausanphamModel.insertMany(mauDocs);
+                await this.mausanpham.insertMany(mauDocs);
             }
             if (kichthuocDocs.length > 0) {
-                await kichthuocModel.insertMany(kichthuocDocs);
+                await this.kichthuoc.insertMany(kichthuocDocs);
             }
             if (hinhanhDocs.length > 0) {
-                await hinhanhModel.insertMany(hinhanhDocs);
+                await this.hinhanhsanpham.insertMany(hinhanhDocs);
             }
 
-            return newProduct; // trả về sản phẩm vừa tạo
+            // 6. Trả về sản phẩm đã tạo
+            return {
+                _id: productId,
+                ...productData
+            };
         } catch (error) {
             console.error("❌ Lỗi khi tạo sản phẩm:", error);
             throw error;
         }
     }
+
 
     async getProductById(id) {
         try {
@@ -114,6 +117,7 @@ class ProductServer {
             // Lấy hình ảnh (dùng ObjectId để query)
             const hinhanh = await this.hinhanhsanpham.find({ masanpham: objectId }).toArray();
             product.hinhanh = hinhanh.map(img => ({
+                _id: img._id, // thêm dòng này
                 tenfile: img.tenfile,
                 url: `http://localhost:${port}/images/${img.tenfile}`
             }));
@@ -132,122 +136,124 @@ class ProductServer {
         }
     }
 
-    async updateProduct(id, payload) {
+    async updateProduct(id, payload, files) {
         try {
-            const objectId = new ObjectId(id);
-            const oldProduct = await this.getProductById(id);
+            // 1. Parse các trường JSON (nếu gửi dạng chuỗi)
+            const kichthuoc = Array.isArray(payload.kichthuoc)
+                ? payload.kichthuoc
+                : JSON.parse(payload.kichthuoc || "[]");
 
-            if (!oldProduct) {
-                return { success: false, message: "Không tìm thấy sản phẩm để cập nhật." };
-            }
+            const mausanpham = Array.isArray(payload.mausanpham)
+                ? payload.mausanpham
+                : JSON.parse(payload.mausanpham || "[]");
 
-            const {
-                tensanpham = '',
-                giasanpham = 0,
-                theloai = '',
-                mota = '',
-                ngaythem = new Date(),
-                kichthuoc = [],
-                mausanpham = [],
-                hinhanh = {}
-            } = payload;
+            const hinhanhCu = Array.isArray(payload.hinhanhCu)
+                ? payload.hinhanhCu
+                : JSON.parse(payload.hinhanhCu || "[]");
 
-            // ======= CẬP NHẬT BẢNG SANPHAM =======
-            const updatedFields = {};
-            if (oldProduct.tensanpham !== tensanpham) updatedFields.tensanpham = tensanpham;
-            if (Number(oldProduct.giasanpham) !== Number(giasanpham)) updatedFields.giasanpham = Number(giasanpham);
-            if (oldProduct.theloai !== theloai) updatedFields.theloai = theloai;
-            if (oldProduct.mota !== mota) updatedFields.mota = mota;
-
-            const inputDate = new Date(ngaythem);
-            if (new Date(oldProduct.ngaythem).toISOString() !== inputDate.toISOString()) {
-                updatedFields.ngaythem = inputDate;
-            }
-
-            if (Object.keys(updatedFields).length > 0) {
-                await this.sanpham.updateOne({ _id: objectId }, { $set: updatedFields });
-            }
-
-            // ======= CẬP NHẬT KÍCH THƯỚC =======
-            const existingSizes = (oldProduct.kichthuoc || []).map(item => `${item.size}-${item.soluong}`).sort();
-            const newSizes = (kichthuoc || []).map(item => `${item.size}-${parseInt(item.soluong || item.quantity) || 0}`).sort();
-
-            if (JSON.stringify(existingSizes) !== JSON.stringify(newSizes)) {
-                await this.kichthuoc.deleteMany({ masanpham: id });
-                const kichThuocDocs = kichthuoc.map(kt => ({
-                    masanpham: id,
-                    size: kt.size,
-                    soluong: parseInt(kt.soluong || kt.quantity) || 0
-                }));
-                if (kichThuocDocs.length > 0) {
-                    await this.kichthuoc.insertMany(kichThuocDocs);
+            // 2. Cập nhật thông tin sản phẩm chính
+            await this.sanpham.updateOne(
+                { _id: new ObjectId(id) },
+                {
+                    $set: {
+                        tensanpham: payload.tensanpham,
+                        giasanpham: payload.giasanpham,
+                        theloai: payload.theloai,
+                        mota: payload.mota,
+                        ngaythem: payload.ngaythem,
+                    },
                 }
+            );
+
+            // 3. Cập nhật màu sắc: xóa hết rồi thêm mới
+            await this.mausanpham.deleteMany({ masanpham: new ObjectId(id) });
+
+            const mauDocs = mausanpham.map(mau => ({
+                masanpham: new ObjectId(id),
+                mau: mau.trim(),
+            }));
+            if (mauDocs.length > 0) {
+                await this.mausanpham.insertMany(mauDocs);
             }
 
-            // ======= CẬP NHẬT MÀU SẮC =======
-            const existingColors = (oldProduct.mausanpham || []).map(ms => ms.mau).sort();
-            const newColors = (mausanpham || []).map(ms => typeof ms === "string" ? ms : ms.mau).sort();
+            // 4. Cập nhật kích thước thông minh
+            const existingSizes = await this.kichthuoc.find({ masanpham: new ObjectId(id) }).toArray();
+            const existingSizeMap = new Map(existingSizes.map(s => [s.size, s]));
 
-            if (JSON.stringify(existingColors) !== JSON.stringify(newColors)) {
-                await this.mausanpham.deleteMany({ masanpham: id });
-                const mauDocs = newColors.map(mau => ({ masanpham: id, mau }));
-                if (mauDocs.length > 0) {
-                    await this.mausanpham.insertMany(mauDocs);
-                }
-            }
+            const newSizeSet = new Set();
 
-            // ======= CẬP NHẬT HÌNH ẢNH =======
-            const oldImages = (oldProduct.hinhanh || []).map(img => `${img.mau}-${img.tenfile}`).sort();
-            const newImages = [];
+            for (const sizeObj of kichthuoc) {
+                const sizeKey = sizeObj.size;
+                newSizeSet.add(sizeKey);
 
-            Object.entries(hinhanh).forEach(([colorCode, files]) => {
-                if (Array.isArray(files)) {
-                    files.forEach(filename => {
-                        newImages.push(`${colorCode}-${filename}`);
+                if (existingSizeMap.has(sizeKey)) {
+                    await this.kichthuoc.updateOne(
+                        { _id: existingSizeMap.get(sizeKey)._id },
+                        { $set: { soluong: sizeObj.soluong } }
+                    );
+                } else {
+                    await this.kichthuoc.insertOne({
+                        masanpham: new ObjectId(id),
+                        size: sizeObj.size,
+                        soluong: sizeObj.soluong,
                     });
                 }
-            });
+            }
 
-            newImages.sort();
-
-            if (JSON.stringify(oldImages) !== JSON.stringify(newImages)) {
-                console.log("🧼 Xoá hình ảnh cũ...");
-                await this.hinhanhsanpham.deleteMany({ masanpham: id });
-
-                const imageDocs = [];
-                Object.entries(hinhanh).forEach(([colorCode, files]) => {
-                    if (Array.isArray(files)) {
-                        files.forEach(filename => {
-                            console.log(`📸 Chuẩn bị thêm ảnh: ${filename} (màu: ${colorCode})`);
-                            imageDocs.push({
-                                masanpham: id,
-                                mau: colorCode,
-                                tenfile: filename
-                            });
-                        });
-                    } else {
-                        console.warn(`⚠️ Không phải mảng: hinhanh[${colorCode}] =`, files);
-                    }
-                });
-
-                console.log("📦 Danh sách ảnh sẽ insert:", imageDocs);
-
-                if (imageDocs.length > 0) {
-                    const result = await this.hinhanhsanpham.insertMany(imageDocs);
-                    console.log(`✅ Đã insert ${result.length} hình ảnh.`);
-                } else {
-                    console.warn("⚠️ Không có ảnh nào được thêm.");
+            for (const [oldSize, oldDoc] of existingSizeMap.entries()) {
+                if (!newSizeSet.has(oldSize)) {
+                    await this.kichthuoc.deleteOne({ _id: oldDoc._id });
                 }
             }
 
-            return { success: true, message: "Cập nhật sản phẩm thành công (nếu có thay đổi)." };
+            // 5. Cập nhật hình ảnh thông minh
+            // Kết hợp hình ảnh cũ và hình ảnh mới (files)
+            const newImages = [
+                ...hinhanhCu.map(img => ({ tenfile: img.tenfile })),
+                ... (Array.isArray(files) ? files.map(file => ({ tenfile: file.filename })) : [])
+            ];
 
+            // Lấy hình ảnh hiện có trong DB
+            const existingImages = await this.hinhanhsanpham.find({ masanpham: new ObjectId(id) }).toArray();
+
+            const existingImgSet = new Set(existingImages.map(img => img.tenfile));
+            const newImgSet = new Set(newImages.map(img => img.tenfile));
+
+            // Thêm hình mới chưa có trong DB
+            for (const img of newImages) {
+                if (!existingImgSet.has(img.tenfile)) {
+                    await this.hinhanhsanpham.insertOne({
+                        masanpham: new ObjectId(id),
+                        tenfile: img.tenfile,
+                    });
+                }
+            }
+
+            // Xóa hình cũ không còn trong danh sách mới
+            for (const oldImg of existingImages) {
+                if (!newImgSet.has(oldImg.tenfile)) {
+                    await this.hinhanhsanpham.deleteOne({ _id: oldImg._id });
+
+                    // Nếu muốn xóa file vật lý trên server:
+                    // const fs = require('fs');
+                    // const path = require('path');
+                    // const filePath = path.join(__dirname, 'public/images', oldImg.tenfile);
+                    // fs.unlink(filePath, err => { if (err) console.error(err); });
+                }
+            }
+
+            return {
+                success: true,
+                message: "Cập nhật sản phẩm thành công.",
+            };
         } catch (error) {
-            console.error("❌ Lỗi cập nhật sản phẩm:", error);
-            return { success: false, message: "Không thể cập nhật sản phẩm", error: error.message };
+            console.error("❌ Lỗi khi cập nhật sản phẩm:", error);
+            return {
+                success: false,
+                message: "Cập nhật sản phẩm thất bại: " + error.message,
+            };
         }
     }
-
 
 
     async deleteProduct(id) {
