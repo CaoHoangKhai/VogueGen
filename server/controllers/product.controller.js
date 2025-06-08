@@ -5,86 +5,95 @@ const MongoDB = require("../utils/mongodb.util");
 
 exports.createProduct = async (req, res, next) => {
   try {
-    // Parse kichthuoc
+    console.log("📦 DỮ LIỆU CLIENT GỬI LÊN:");
+    console.log("Body:", req.body);
+
+    // Xử lý kichthuoc
+    // Kích thước có thể nằm trong req.body.kichthuoc hoặc req.body.sizes
     let kichthuocParsed = [];
-    if (req.body.kichthuoc) {
+    const kichthuocRaw = req.body.kichthuoc || req.body.sizes || "[]";
+    try {
+      kichthuocParsed = typeof kichthuocRaw === "string" ? JSON.parse(kichthuocRaw) : kichthuocRaw;
+    } catch {
+      return res.status(400).json({ error: "Dữ liệu kích thước không hợp lệ" });
+    }
+
+    // Màu sắc có thể nằm trong req.body.mausac hoặc req.body.colors
+    let mausacParsed = [];
+    const mausacRaw = req.body.mausac || req.body.colors || "[]";
+    try {
+      mausacParsed = typeof mausacRaw === "string" ? JSON.parse(mausacRaw) : mausacRaw;
+    } catch {
+      return res.status(400).json({ error: "Dữ liệu màu sắc không hợp lệ" });
+    }
+
+
+    // Xử lý images
+    let images = [];
+    if (req.files && Array.isArray(req.files) && req.files.length > 0) {
+      images = req.files.map((file) => ({
+        tenfile: file.filename,
+      }));
+    } else if (Array.isArray(req.body.images)) {
+      images = req.body.images;
+    } else if (typeof req.body.images === "string") {
       try {
-        kichthuocParsed = JSON.parse(req.body.kichthuoc);
-      } catch (err) {
-        return res.status(400).json({ error: "Dữ liệu kích thước không hợp lệ" });
+        images = JSON.parse(req.body.images);
+      } catch {
+        return res.status(400).json({ error: "Dữ liệu hình ảnh không hợp lệ" });
       }
     }
 
-    // Parse mau
-    let mauParsed = [];
-    if (req.body.mau) {
-      try {
-        mauParsed = JSON.parse(req.body.mau);
-      } catch (err) {
-        return res.status(400).json({ error: "Dữ liệu màu không hợp lệ" });
-      }
-    }
+    // Parse giá sản phẩm chuẩn (chỉ số nguyên)
+    const giaSanPham = Number(req.body.giasanpham) || 0;
 
-    // Parse hinhanh: gom file theo từng màu
-    let hinhanh = {};
-    if (req.files && Array.isArray(req.files)) {
-      req.files.forEach(file => {
-        // file.fieldname: ví dụ "files_#FFFFFF"
-        const match = file.fieldname.match(/^files_(.+)$/);
-        if (match) {
-          const colorCode = match[1];
-          if (!hinhanh[colorCode]) hinhanh[colorCode] = [];
-          hinhanh[colorCode].push(file.filename);
-        }
-      });
-    }
-
-    // Parse giá
-    const giaSanPham = parseInt(req.body.giasanpham?.toString().replace(/\D/g, ''), 10) || 0;
-
-    // Object sản phẩm
+    // Tạo object để gọi service
     const newProductData = {
-      tensanpham: req.body.tensanpham,
+      tensanpham: req.body.tensanpham || "",
       giasanpham: giaSanPham,
-      theloai: req.body.theloai,
-      mota: req.body.mota,
-      ngaythem: req.body.ngaythem || new Date(),
+      theloai: req.body.theloai || "",
+      mota: req.body.mota || "",
+      ngaythem: new Date(),
       kichthuoc: kichthuocParsed,
-      mau: mauParsed,
-      hinhanh: hinhanh,
+      mausanpham: mausacParsed, // Đã đổi tên trường cho đồng bộ
+      hinhanh: images,          // Đã đổi tên trường cho đồng bộ
     };
 
-    // Tạo sản phẩm
+    // Gọi service tạo sản phẩm
     const productService = new ProductServer(MongoDB.client);
     const result = await productService.createProduct(newProductData);
 
-    // Di chuyển file ảnh vào public/images
-    if (req.files && Array.isArray(req.files)) {
+    // Di chuyển file ảnh nếu có upload
+    if (req.files && Array.isArray(req.files) && req.files.length > 0) {
       const destDir = path.join(__dirname, "..", "public", "images");
-      if (!fs.existsSync(destDir)) {
-        fs.mkdirSync(destDir, { recursive: true });
-      }
+      if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
+
       for (const file of req.files) {
         const oldPath = file.path;
         const newPath = path.join(destDir, file.filename);
         try {
           await fs.promises.rename(oldPath, newPath);
-          console.log(`Đã di chuyển ${oldPath} -> ${newPath}`);
+          console.log(`✅ Đã di chuyển: ${file.originalname} -> ${file.filename}`);
         } catch (err) {
           console.error("❌ Lỗi khi di chuyển ảnh:", err);
         }
       }
     }
 
-    res.status(201).json({
-      message: "Tạo sản phẩm thành công",
-      id: result.productId || result.id,
-    });
+    if (result.success) {
+      res.status(201).json({
+        message: "Tạo sản phẩm thành công",
+        id: result.productId || result.id,
+      });
+    } else {
+      res.status(400).json({ error: result.message || "Không thể tạo sản phẩm" });
+    }
   } catch (error) {
     console.error("❌ Lỗi khi tạo sản phẩm:", error);
     res.status(500).json({ error: "Lỗi server khi tạo sản phẩm" });
   }
 };
+
 
 exports.getAllProducts = async (req, res) => {
   try {
@@ -111,17 +120,21 @@ exports.getAllProductsHome = async (req, res) => {
 exports.getProductById = async (req, res) => {
   try {
     console.log("Product ID nhận được:", req.params.id);
+
     const productService = new ProductServer(MongoDB.client);
-    const product = await productService.getProductById(req.params.id);
-    if (!product) {
-      return res.status(404).json({ message: "Không tìm thấy sản phẩm" });
+    const result = await productService.getProductById(req.params.id);
+
+    if (!result.success) {
+      return res.status(404).json({ message: result.message || "Không tìm thấy sản phẩm" });
     }
-    res.json(product);
+
+    return res.status(200).json(result.data);
   } catch (error) {
     console.error("Lỗi khi lấy sản phẩm theo ID:", error);
     res.status(500).json({ error: "Lỗi server khi lấy sản phẩm" });
   }
 };
+
 
 
 exports.updateProduct = async (req, res) => {
