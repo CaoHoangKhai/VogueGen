@@ -495,7 +495,7 @@ const ProductAdd = () => {
 
 
   return (
-    <div className="container mt-4">
+    <div className="container">
       <h3 className="text-center">Thêm Sản Phẩm</h3>
       <form onSubmit={handleSubmit}>
         {inputNameProduct()}

@@ -95,7 +95,7 @@ function BannerSection() {
                 {/* Bên phải: Hình ảnh minh họa */}
                 <div className="col-md-6 d-flex justify-content-center">
                     <img
-                        src="http://localhost:4000/images/1748857643657-download.png"
+                        src="http://localhost:4000/images/home/download.png"
                         alt="Shopify"
                         style={{ maxWidth: "80%", height: "auto", borderRadius: 16, boxShadow: "0 4px 24px #e1bee7" }}
                     />

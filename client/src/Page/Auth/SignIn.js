@@ -122,7 +122,7 @@ const SignIn = () => {
                             </Button>
 
                             <div className="text-center mt-3 ">
-                                <span>Bạn chưa có tài khoản? <Link to="/signup" className="text-decoration-none quick-link text-secondary">Đăng ký tại đây</Link></span>
+                                <span>Bạn chưa có tài khoản? <Link to="/auth/signup" className="text-decoration-none quick-link text-secondary">Đăng ký tại đây</Link></span>
                             </div>
                         </form>
                     </div>

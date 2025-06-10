@@ -19,6 +19,12 @@ export const getFavoritesByUser = async (manguoidung) => {
 // Kiểm tra sản phẩm đã được yêu thích chưa
 export const checkIsFavorite = async (manguoidung, masanpham) => {
     const payload = { manguoidung, masanpham };
-    const response = await axios.post(`${API_BASE_URL}/check`, payload);
+    const response = await axios.post(`${API_BASE_URL}/is-favorite`, payload);
+    return response.data;
+};
+
+// Xóa sản phẩm yêu thích theo mayeuthich (id bản ghi yêu thích)
+export const deleteFavoriteById = async (mayeuthich) => {
+    const response = await axios.delete(`${API_BASE_URL}/${mayeuthich}`);
     return response.data;
 };

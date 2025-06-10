@@ -54,13 +54,20 @@ class FavoriteService {
 
         for (const fav of favorites) {
             const productDetail = await this.productServer.getProductById(fav.masanpham.toString());
-            if (productDetail) {
-                result.push(productDetail);
+            if (productDetail && productDetail.success) {
+                // Gắn thêm _id của bản ghi yeuthich vào kết quả
+                result.push({
+                    mayeuthich: fav._id, // _id của bảng yeuthich
+                    masanpham: fav.masanpham,
+                    manguoidung: fav.manguoidung,
+                    ...productDetail.data // dữ liệu sản phẩm
+                });
             }
         }
 
         return result;
     }
+
 
     async isFavorite(payload) {
         const data = this.extractFavoriData(payload);
@@ -69,6 +76,29 @@ class FavoriteService {
             masanpham: data.masanpham,
         });
         return !!exists;
+    }
+    
+    async checkFavorite(manguoidung, masanpham) {
+        if (!ObjectId.isValid(manguoidung) || !ObjectId.isValid(masanpham)) {
+            throw new Error("ID không hợp lệ.");
+        }
+        const exists = await this.favorite.findOne({
+            manguoidung: new ObjectId(manguoidung),
+            masanpham: new ObjectId(masanpham),
+        });
+        return !!exists;
+    }
+
+    async deleteFavoriteById(favoriteId) {
+        if (!ObjectId.isValid(favoriteId)) {
+            throw new Error("ID yêu thích không hợp lệ.");
+        }
+        const result = await this.favorite.deleteOne({ _id: new ObjectId(favoriteId) });
+        if (result.deletedCount === 1) {
+            return { success: true, message: "Đã xóa bản ghi yêu thích." };
+        } else {
+            return { success: false, message: "Không tìm thấy bản ghi yêu thích để xóa." };
+        }
     }
 }
 

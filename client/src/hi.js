@@ -8,9 +8,6 @@ import {
 import { colors } from "../../config/colors";
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import Toast from "../../Components/Toast";
-// Nếu chưa có file này, hãy tạo src/api/cart.api.js với hàm addToCart
-import { addToCart } from '../../api/User/cart.api';
 
 const ProductDetail = () => {
     const { id } = useParams();
@@ -20,11 +17,6 @@ const ProductDetail = () => {
     const [user, setUser] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const colorRef = useRef();
-    const [selectedColor, setSelectedColor] = useState(null);
-    const [selectedSizes, setSelectedSizes] = useState([]);
-    const [toast, setToast] = useState({ show: false, message: "", type: "" });
-
-    const availableSizes = product?.kichthuoc || [];
 
     useEffect(() => {
         const userData = localStorage.getItem('user');
@@ -90,49 +82,18 @@ const ProductDetail = () => {
             const res = await checkIsFavoriteApi(userId, id);
             setIsFavorite(!!res?.isFavorite);
         } catch (err) {
-            setToast({ show: true, message: "Có lỗi khi cập nhật yêu thích!", type: "error" });
+            console.error("toggleFavoriteApi error:", err);
+            alert("Có lỗi khi cập nhật yêu thích!");
         }
     };
 
-    // Xử lý khi bấm Thêm vào giỏ hàng (mở modal)
+    // Xử lý khi bấm Thêm vào giỏ hàng
     const handleAddToCart = () => {
         setShowModal(true);
+        // Thực hiện logic thêm vào giỏ hàng ở đây nếu cần
     };
 
     const handleCloseModal = () => setShowModal(false);
-
-    // Gửi dữ liệu lên backend khi bấm Thêm vào giỏ hàng trong modal
-    const handleSubmitAddToCart = async () => {
-        if (!selectedColor) {
-            setToast({ show: true, message: "Vui lòng chọn màu!", type: "error" });
-            return;
-        }
-        if (!selectedSizes.length) {
-            setToast({ show: true, message: "Vui lòng chọn size và số lượng!", type: "error" });
-            return;
-        }
-        let hasError = false;
-        for (const { size, soluong } of selectedSizes) {
-            const data = {
-                manguoidung: user?._id,
-                masanpham: product._id,
-                soluong,
-                size,
-                mausac: selectedColor
-            };
-            try {
-                await addToCart(data);
-            } catch (err) {
-                hasError = true;
-            }
-        }
-        if (hasError) {
-            setToast({ show: true, message: "Có lỗi khi thêm vào giỏ hàng!", type: "error" });
-        } else {
-            setToast({ show: true, message: "Đã thêm vào giỏ hàng!", type: "success" });
-            setShowModal(false);
-        }
-    };
 
     if (!product) {
         return <div className="container mt-4">Đang tải chi tiết sản phẩm...</div>;
@@ -212,7 +173,7 @@ const ProductDetail = () => {
                                 lineHeight: 1.5
                             }}
                         >
-                            {sz.size}
+                            {sz.size} ({sz.soluong})
                         </span>
                     ))}
                 </div>
@@ -309,130 +270,6 @@ const ProductDetail = () => {
         </div>
     );
 
-    // Chọn màu trong modal
-    const inputColors = () => (
-        product.mausanpham?.length > 0 ? (
-            <div ref={colorRef} style={{ display: "flex", gap: 6, marginTop: 4, flexWrap: "wrap" }}>
-                {product.mausanpham.map((mau, index) => (
-                    <div key={index} style={{ textAlign: "center" }}>
-                        <span
-                            data-bs-toggle="tooltip"
-                            data-bs-placement="top"
-                            title={getColorName(mau)}
-                            style={{
-                                width: 24,
-                                height: 24,
-                                background: mau,
-                                border: selectedColor === mau ? "2px solid #007bff" : "1px solid #333",
-                                borderRadius: "4px",
-                                display: "inline-block",
-                                cursor: "pointer",
-                                transition: "border 0.2s"
-                            }}
-                            onClick={() => setSelectedColor(mau)}
-                        />
-                    </div>
-                ))}
-            </div>
-        ) : <span>Không có</span>
-    );
-
-    // Chọn size và số lượng trong modal
-    function inputSizeProduct() {
-        const handleQuantityChange = (size, value) => {
-            setSelectedSizes((prev) =>
-                prev.map((s) =>
-                    s.size === size
-                        ? { ...s, soluong: value === "" ? "" : parseInt(value, 10) }
-                        : s
-                )
-            );
-        };
-
-        const toggleSize = (size) => {
-            setSelectedSizes((prev) => {
-                const exists = prev.find((s) => s.size === size);
-                if (exists) {
-                    return prev.filter((s) => s.size !== size);
-                } else {
-                    return [...prev, { size, soluong: 1 }];
-                }
-            });
-        };
-
-        const handleQuantityBlur = (size) => {
-            setSelectedSizes((prev) =>
-                prev.map((s) => {
-                    if (s.size === size) {
-                        const validNumber = parseInt(s.soluong, 10);
-                        if (isNaN(validNumber) || validNumber < 1) {
-                            return { ...s, soluong: 1 };
-                        }
-                        // Giới hạn số lượng không vượt quá tồn kho
-                        const max = availableSizes.find(sz => sz.size === size)?.soluong || 1;
-                        return { ...s, soluong: Math.min(validNumber, max) };
-                    }
-                    return s;
-                })
-            );
-        };
-
-        return (
-            <>
-                <div className="mb-3">
-                    <label className="form-label fw-bold">Chọn Size:</label>
-                    <div className="d-flex flex-wrap gap-2 border p-3 rounded">
-                        {availableSizes.map((size) => {
-                            const isSelected = selectedSizes.some((s) => s.size === size.size);
-                            return (
-                                <button
-                                    key={size._id}
-                                    type="button"
-                                    className={`btn btn-sm ${isSelected ? "btn-primary" : "btn-outline-secondary"}`}
-                                    onClick={() => toggleSize(size.size)}
-                                    disabled={size.soluong === 0}
-                                >
-                                    {size.size} {size.soluong === 0 && "(Hết hàng)"}
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-
-                {selectedSizes.length > 0 && (
-                    <div className="mb-4">
-                        <label className="form-label fw-bold mb-3">Số lượng theo size:</label>
-                        {selectedSizes.map(({ size, soluong }) => {
-                            const max = availableSizes.find(sz => sz.size === size)?.soluong || 1;
-                            return (
-                                <div
-                                    key={size}
-                                    className="d-flex align-items-center mb-3 p-2 border rounded"
-                                    style={{ maxWidth: "320px", backgroundColor: "#f8f9fa" }}
-                                >
-                                    <span className="me-3" style={{ minWidth: "60px" }}>
-                                        Size {size}:
-                                    </span>
-                                    <input
-                                        type="number"
-                                        min={1}
-                                        max={max}
-                                        value={soluong === "" ? "" : soluong}
-                                        onChange={(e) => handleQuantityChange(size, e.target.value)}
-                                        onBlur={() => handleQuantityBlur(size)}
-                                        className="form-control"
-                                        style={{ maxWidth: "80px" }}
-                                    />
-                                    <span className="ms-2 text-muted">(Còn {max})</span>
-                                </div>
-                            );
-                        })}
-                    </div>
-                )}
-            </>
-        );
-    }
-
     return (
         <div className="container mt-5">
             <div className="row">
@@ -446,7 +283,7 @@ const ProductDetail = () => {
 
                 {/* Phần thông tin sản phẩm */}
                 <div className="col-md-7">
-                    <h2 style={{ fontWeight: 600 }}>{product.tensanpham}</h2>  {renderFavoriteIcon()}
+                    <h2 style={{ fontWeight: 600 }}>{product.tensanpham}</h2>
                     <div style={{ fontSize: 24, color: "#e53935", margin: "12px 0" }}>
                         <strong>{product.giasanpham?.toLocaleString("vi-VN") || "0"} đ</strong>
                     </div>
@@ -485,32 +322,18 @@ const ProductDetail = () => {
                                 <button type="button" className="btn-close" onClick={handleCloseModal}></button>
                             </div>
                             <div className="modal-body">
-                                <div style={{ marginBottom: 12 }}>
-                                    <span style={{ color: "#888" }}></span> {inputSizeProduct()}
-                                </div>
-                                <div style={{ marginBottom: 12 }}>
-                                    <span style={{ color: "#888" }}></span> {inputColors()}
-                                </div>
+
                             </div>
                             <div className="modal-footer">
-                                <button
-                                    type="button"
-                                    className="btn btn-primary"
-                                    onClick={handleSubmitAddToCart}
-                                >
-                                    Thêm vào giỏ hàng
-                                </button>
                                 <button type="button" className="btn btn-secondary" onClick={handleCloseModal}>
                                     Đóng
                                 </button>
+
                             </div>
                         </div>
                     </div>
                 </div>
             )}
-
-            {/* Hiển thị Toast */}
-            <Toast show={toast.show} message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />
 
             {/* Phần tab mô tả và thông tin thêm */}
             <div className="modal-body mt-4">

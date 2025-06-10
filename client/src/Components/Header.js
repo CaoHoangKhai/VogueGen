@@ -88,17 +88,17 @@ const Header = () => {
                                         <FaUser />
                                     </Link>
                                 ) : (
-                                    <Link className="btn btn-outline-primary d-flex align-items-center gap-2" to={'/signin'}>
+                                    <Link className="btn btn-outline-primary d-flex align-items-center gap-2" to={'/auth/signin'}>
                                         <FaUser /> Đăng Nhập
                                     </Link>
                                 )
                             ) : (
-                                <Link className="btn btn-outline-primary d-flex align-items-center gap-2" to={'/signin'}>
+                                <Link className="btn btn-outline-primary d-flex align-items-center gap-2" to={'/auth/signin'}>
                                     <FaUser /> Đăng Nhập
                                 </Link>
                             )}
 
-                            <Link className="btn btn-outline-success d-flex align-items-center gap-2" to={'/cart'}>
+                            <Link className="btn btn-outline-success d-flex align-items-center gap-2" to={'/auth/cart'}>
                                 <FaShoppingCart /> Giỏ Hàng
                             </Link>
                         </div>
