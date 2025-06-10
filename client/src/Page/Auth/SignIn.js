@@ -4,7 +4,7 @@ import {
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { Link, useNavigate } from 'react-router-dom';
-import { signIn } from '../../api/auth.api';  // <-- import API
+import { signIn } from '../../api/auth.api';
 
 const SignIn = () => {
     const [email, setEmail] = useState('');

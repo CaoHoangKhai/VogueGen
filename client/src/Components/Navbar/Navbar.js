@@ -8,8 +8,8 @@ const Navbar = () => {
                 <nav>
                     <ul className="ps-0 m-0 list-unstyled">
                         {navbarItems.map((item, index) => (
-                            <div key={index} className="mb-2">
-                                <hr className="mt-2 mb-2" />
+                            <div key={index} >
+                                <hr className="mt-2" />
                                 {item.label && (
                                     <li
                                         className="px-2 py-2 fw-bold"

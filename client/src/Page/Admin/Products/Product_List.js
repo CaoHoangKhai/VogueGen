@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getAllProductsAdmin } from '../../../api/products.api'; // ← Import API
+import { getAllProducts } from '../../../api/Admin/products.api';
 
 const ProductList = () => {
     const [products, setProducts] = useState([]);
@@ -23,11 +23,23 @@ const ProductList = () => {
 
     useEffect(() => {
         const fetchData = async () => {
-            const data = await getAllProductsAdmin();
-            setProducts(data);
+            try {
+                const res = await getAllProducts();
+                console.log('Dữ liệu sản phẩm:', res); // Debug
+                if (res?.data && Array.isArray(res.data)) {
+                    setProducts(res.data);
+                } else {
+                    console.error('Dữ liệu không hợp lệ:', res);
+                    setProducts([]);
+                }
+            } catch (error) {
+                console.error('Lỗi khi lấy danh sách sản phẩm:', error);
+                setProducts([]);
+            }
         };
         fetchData();
     }, []);
+
 
     return (
         <div className="container mt-5">
@@ -51,7 +63,7 @@ const ProductList = () => {
                         <tbody>
                             {products.length === 0 ? (
                                 <tr>
-                                    <td colSpan="6">Không có sản phẩm nào</td>
+                                    <td colSpan="5">Không có sản phẩm nào</td>
                                 </tr>
                             ) : (
                                 products.map((product) => (

@@ -457,7 +457,7 @@ const ProductDetail = () => {
           </div>
         )}
         {/* Ảnh đã chọn xóa */}
-        {deletedImageIds.length > 0 && (
+        {/* {deletedImageIds.length > 0 && (
           <div style={{ marginTop: 16 }}>
             <label className="form-label fw-semibold mb-2 text-danger">Ảnh sẽ xóa khi lưu:</label>
             <div>
@@ -468,9 +468,9 @@ const ProductDetail = () => {
               ))}
             </div>
           </div>
-        )}
+        )} */}
         {/* Input thêm ảnh mới */}
-        <input
+        {/* <input
           id="fileInput"
           type="file"
           multiple
@@ -480,7 +480,7 @@ const ProductDetail = () => {
         />
         <label htmlFor="fileInput" className="btn btn-outline-primary mt-3">
           Thêm ảnh mới
-        </label>
+        </label> */}
       </div>
     );
   }
@@ -488,7 +488,12 @@ const ProductDetail = () => {
   // Chuẩn hóa dữ liệu trước khi gửi (preview)
   function getNormalizedProductData() {
     const newImages = images.map(img => img.file?.name || "");
-    const oldImages = productImages.map(img => img.tenfile || img.url || img);
+    // Đảm bảo mỗi ảnh cũ còn lại đều có tenfile
+    const oldImages = productImages.map(img => ({
+      _id: img._id,
+      url: img.url,
+      tenfile: img.tenfile,
+    }));
     return {
       tensanpham: form.tensanpham,
       giasanpham: Number(form.giasanpham),
@@ -558,7 +563,13 @@ const ProductDetail = () => {
       formData.append("mota", form.mota);
       formData.append("kichthuoc", JSON.stringify(kichthuoc));
       formData.append("mausanpham", JSON.stringify(mausanpham));
-      formData.append("hinhanhCu", JSON.stringify(productImages)); // Ảnh cũ còn lại
+      formData.append("hinhanhCu", JSON.stringify(
+        productImages.map(img => ({
+          _id: img._id,
+          url: img.url,
+          tenfile: img.tenfile,
+        }))
+      ));
       formData.append("hinhanhXoa", JSON.stringify(deletedImageIds)); // Ảnh cũ bị xóa
 
       images.forEach(({ file }) => {

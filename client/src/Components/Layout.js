@@ -13,14 +13,14 @@ const Layout = ({ children }) => {
     <>
       {!isAdmin && !isUser && <Header />}
 
-      <div style={{ display: 'flex' }}>
+      <div>
         {isAdmin && <CommonSidebar role="admin" />}
         {isUser && <CommonSidebar role="user" />}
 
         <div style={{
           marginLeft: isAdmin || isUser ? '250px' : '50px',
           marginTop: isAdmin || isUser ? '0px' : '60px',
-          width: '100%'
+          // width: '100%'
         }}>
           {children}
         </div>

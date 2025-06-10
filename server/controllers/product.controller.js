@@ -165,24 +165,31 @@ exports.updateProduct = async (req, res) => {
       }
     }
 
-    // 3. Parse hình ảnh (giữ ảnh cũ, thêm ảnh mới)
-    let hinhanh = [];
-    let imagesObj = req.body.images;
-    if (imagesObj) {
+    // 3. Parse hình ảnh cũ (giữ lại)
+    let hinhanhCu = [];
+    if (req.body.hinhanhCu) {
       try {
-        if (typeof imagesObj === "string") {
-          imagesObj = JSON.parse(imagesObj);
-        }
-        // Ảnh cũ
-        if (Array.isArray(imagesObj.old)) {
-          hinhanh = imagesObj.old.map(filename => ({ tenfile: filename }));
-        }
+        hinhanhCu = typeof req.body.hinhanhCu === "string"
+          ? JSON.parse(req.body.hinhanhCu)
+          : req.body.hinhanhCu;
       } catch {
-        return res.status(400).json({ error: "Dữ liệu hình ảnh không hợp lệ" });
+        return res.status(400).json({ error: "❌ Dữ liệu hình ảnh cũ không hợp lệ" });
       }
     }
 
-    // Thêm ảnh mới từ req.files
+    // 4. Parse danh sách _id ảnh cần xóa
+    let hinhanhXoa = [];
+    if (req.body.hinhanhXoa) {
+      try {
+        hinhanhXoa = typeof req.body.hinhanhXoa === "string"
+          ? JSON.parse(req.body.hinhanhXoa)
+          : req.body.hinhanhXoa;
+      } catch {
+        return res.status(400).json({ error: "❌ Dữ liệu hình ảnh xóa không hợp lệ" });
+      }
+    }
+
+    // 5. Thêm ảnh mới từ req.files (nếu có upload)
     if (req.files && Array.isArray(req.files) && req.files.length > 0) {
       const destDir = path.join(__dirname, "..", "public", "images");
       if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
@@ -193,24 +200,22 @@ exports.updateProduct = async (req, res) => {
         try {
           await fs.promises.rename(oldPath, newPath);
           console.log(`✅ Đã di chuyển: ${file.originalname} -> ${file.filename}`);
-          hinhanh.push({ tenfile: file.filename });
         } catch (err) {
           console.error("❌ Lỗi khi di chuyển ảnh:", err);
         }
       }
     }
-    // 4. Parse giá sản phẩm
+
+    // 6. Parse giá sản phẩm
     const giaSanPham = parseInt(
       req.body.giasanpham?.toString().replace(/[^\d]/g, ""),
       10
     ) || 0;
 
-    // 5. Parse ngày thêm sản phẩm (nếu có)
-    const ngayThem = req.body.ngaythem
-      ? new Date(req.body.ngaythem)
-      : new Date();
+    // 7. Parse ngày thêm sản phẩm (nếu có)
+    const ngayThem = req.body.ngaythem ? new Date(req.body.ngaythem) : new Date();
 
-    // 6. Tạo payload sạch sẽ
+    // 8. Tạo payload truyền sang service
     const updateData = {
       tensanpham: req.body.tensanpham,
       giasanpham: giaSanPham,
@@ -219,17 +224,19 @@ exports.updateProduct = async (req, res) => {
       ngaythem: ngayThem,
       kichthuoc: kichthuocParsed,
       mausanpham: mauParsed,
-      hinhanh: hinhanh
+      hinhanhCu: hinhanhCu,   // Ảnh giữ lại
+      hinhanhXoa: hinhanhXoa  // _id ảnh cần xóa
     };
 
-    // 7. Gọi service xử lý
+    // 9. Gọi service xử lý cập nhật
     const productService = new ProductServer(MongoDB.client);
-    const result = await productService.updateProduct(req.params.id, updateData);
+    const result = await productService.updateProduct(req.params.id, updateData, req.files);
 
-    return res.status(200).json({ success: true, message: result.message });
+    return res.status(result.success ? 200 : 400).json(result);
 
   } catch (error) {
-    return res.status(500).json({ success: false, message: result.message });
+    console.error("❌ Lỗi server khi cập nhật sản phẩm:", error);
+    return res.status(500).json({ success: false, message: "Cập nhật sản phẩm thất bại." });
   }
 };
 

@@ -11,15 +11,17 @@ const Products = () => {
 
     useEffect(() => {
         const loadProducts = async () => {
-            const allProducts = await getAllProducts();
+            const res = await getAllProducts();
+            const allProducts = Array.isArray(res?.data) ? res.data : [];
 
-            const k = searchParams.get("keyword") || "";
-            setInput(k);
+            const keyword = searchParams.get("keyword") || "";
+            setInput(keyword);
 
             const filtered = allProducts.filter(p =>
-                p.tensanpham.toLowerCase().includes(k.toLowerCase()) ||
-                p.mota.toLowerCase().includes(k.toLowerCase())
+                p.tensanpham.toLowerCase().includes(keyword.toLowerCase()) ||
+                p.mota.toLowerCase().includes(keyword.toLowerCase())
             );
+
             setFilteredProducts(filtered);
         };
 
@@ -35,6 +37,7 @@ const Products = () => {
         <div className="container" style={{ display: "flex", flexDirection: "row" }}>
             <Navbar />
             <div style={{ flex: 1, padding: "24px" }}>
+                {/* Search Form */}
                 <form onSubmit={handleSubmit} style={{ marginBottom: 24, display: 'flex', gap: 8 }}>
                     <input
                         type="text"
@@ -65,6 +68,7 @@ const Products = () => {
                     </button>
                 </form>
 
+                {/* Product Grid */}
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "24px" }}>
                     {filteredProducts.map(product => (
                         <Link
@@ -86,7 +90,7 @@ const Products = () => {
                                     overflow: "hidden"
                                 }}
                             >
-                                {/* Ảnh full màn hình phần trên */}
+                                {/* Product Image */}
                                 <div style={{
                                     width: "100%",
                                     height: "60%",
@@ -97,7 +101,7 @@ const Products = () => {
                                     borderBottom: "1px solid #eee"
                                 }}>
                                     <img
-                                        src={`http://localhost:4000${product.hinhanh[0]?.url}`}
+                                        src={product.hinhanh[0]?.url}
                                         alt={product.tensanpham}
                                         style={{
                                             width: "100%",
@@ -107,8 +111,7 @@ const Products = () => {
                                     />
                                 </div>
 
-
-                                {/* Thông tin sản phẩm */}
+                                {/* Product Info */}
                                 <div style={{
                                     width: "100%",
                                     height: "40%",
@@ -118,7 +121,6 @@ const Products = () => {
                                     justifyContent: "space-between",
                                     overflow: "hidden"
                                 }}>
-                                    {/* Tên sản phẩm - tự động xuống dòng tại khoảng trắng */}
                                     <h5 style={{
                                         margin: "0 0 6px 0",
                                         fontSize: "14px",
@@ -129,25 +131,25 @@ const Products = () => {
                                         {product.tensanpham}
                                     </h5>
 
-                                    {/* Màu sắc - tự xuống dòng nếu nhiều */}
+                                    {/* Colors */}
                                     <div style={{
                                         display: "flex",
                                         flexWrap: "wrap",
                                         gap: 4,
                                         marginBottom: 6
                                     }}>
-                                        {product.mausanpham?.length > 0 ? (
+                                        {Array.isArray(product.mausanpham) && product.mausanpham.length > 0 ? (
                                             product.mausanpham.map((color, idx) => (
                                                 <span
-                                                    key={color._id || idx}
+                                                    key={idx}
                                                     style={{
                                                         width: 20,
                                                         height: 20,
                                                         borderRadius: 6,
-                                                        backgroundColor: color.mau,
+                                                        backgroundColor: color,
                                                         border: "1px solid #ccc"
                                                     }}
-                                                    title={color.mau}
+                                                    title={color}
                                                 ></span>
                                             ))
                                         ) : (
@@ -155,12 +157,12 @@ const Products = () => {
                                         )}
                                     </div>
 
-                                    {/* Kích thước */}
+                                    {/* Sizes */}
                                     <div style={{
                                         fontSize: "13px",
                                         marginBottom: 6
                                     }}>
-                                        {product.kichthuoc?.length > 0 ? (
+                                        {Array.isArray(product.kichthuoc) && product.kichthuoc.length > 0 ? (
                                             product.kichthuoc.map((sz, idx) => (
                                                 <span key={sz._id || idx} style={{ marginRight: 8 }}>{sz.size}</span>
                                             ))
@@ -169,7 +171,7 @@ const Products = () => {
                                         )}
                                     </div>
 
-                                    {/* Giá sản phẩm */}
+                                    {/* Price */}
                                     <p style={{
                                         fontWeight: "bold",
                                         color: "#d0021b",
@@ -183,7 +185,6 @@ const Products = () => {
                         </Link>
                     ))}
                 </div>
-
             </div>
         </div>
     );
