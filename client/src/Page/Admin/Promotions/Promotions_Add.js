@@ -39,7 +39,7 @@ const Promotions_Add = () => {
     };
 
     return (
-        <div className="container mt-3">
+        <div className="container">
             <div className="card shadow-sm">
                 <div className="card-header text-dark text-center">
                     <h4>Thêm Mã Khuyến Mãi</h4>

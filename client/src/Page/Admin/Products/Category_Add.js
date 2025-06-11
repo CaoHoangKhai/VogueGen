@@ -49,7 +49,7 @@ const CategoryManager = () => {
     };
 
     return (
-        <div className="container mt-5">
+        <div className="container">
             <div className="card shadow-sm">
                 <div className="card-header text-dark text-center">
                     <h4>Quản lý Danh Mục Sản Phẩm</h4>

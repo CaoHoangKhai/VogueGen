@@ -60,7 +60,7 @@ const Profile = () => {
     };
 
     return (
-        <div className="container mt-4">
+        <div className="container">
             <h3 className="text-center mb-4">Thông tin người dùng</h3>
 
             {/* Bốn khối thông tin */}

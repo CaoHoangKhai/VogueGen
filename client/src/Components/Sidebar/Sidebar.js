@@ -14,7 +14,7 @@ const Sidebar = ({ role }) => {
   const handleLogout = () => {
     localStorage.removeItem('user');
     window.dispatchEvent(new Event('storage'));
-    navigate('/signin');
+    navigate('/auth/signin');
   };
 
   const toggleMenu = (index) => {

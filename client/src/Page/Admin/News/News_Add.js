@@ -85,7 +85,7 @@ const NewAdd = () => {
     };
 
     return (
-        <div className="container mt-4">
+        <div className="container">
             <div className="card">
                 <div className="card-header">
                     <h3 className="text-center mb-3 mt-3">THÊM TIN TỨC</h3>

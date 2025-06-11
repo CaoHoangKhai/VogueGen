@@ -22,6 +22,62 @@ class ProductServer {
         }
     }
 
+    async createProduct(payload) {
+        const productData = this.extractProductData(payload);
+
+        try {
+            // 1. Tạo sản phẩm chính trong collection "sanpham"
+            const result = await this.sanpham.insertOne({
+                tensanpham: productData.tensanpham,
+                giasanpham: productData.giasanpham,
+                theloai: productData.theloai,
+                mota: productData.mota,
+                ngaythem: productData.ngaythem,
+            });
+
+            const productId = result.insertedId;
+
+            // 2. Tạo danh sách màu sắc
+            const mauDocs = productData.mausanpham.map(mau => ({
+                masanpham: productId,
+                mau: mau.trim()
+            }));
+
+            // 3. Tạo danh sách kích thước
+            const kichthuocDocs = productData.kichthuoc.map(item => ({
+                masanpham: productId,
+                size: item.size,
+                soluong: item.soluong
+            }));
+
+            // 4. Tạo danh sách hình ảnh
+            const hinhanhDocs = productData.hinhanh.map(img => ({
+                masanpham: productId,
+                tenfile: img.tenfile
+            }));
+
+            // 5. Lưu vào các collection phụ nếu có dữ liệu
+            if (mauDocs.length > 0) {
+                await this.mausanpham.insertMany(mauDocs);
+            }
+            if (kichthuocDocs.length > 0) {
+                await this.kichthuoc.insertMany(kichthuocDocs);
+            }
+            if (hinhanhDocs.length > 0) {
+                await this.hinhanhsanpham.insertMany(hinhanhDocs);
+            }
+
+            // 6. Trả về sản phẩm đã tạo
+            return {
+                _id: productId,
+                ...productData
+            };
+        } catch (error) {
+            console.error("❌ Lỗi khi tạo sản phẩm:", error);
+            throw error;
+        }
+    }
+
     async getCategoryNameById(theloaiId) {
         try {
             // Nếu là ObjectId dạng chuỗi thì convert
@@ -311,7 +367,7 @@ class ProductServer {
                 hinhAnhMap[pid].push({
                     _id: img._id,
                     tenfile: img.tenfile,
-                   url: `http://localhost:${port}/images/${img.tenfile}`
+                    url: `http://localhost:${port}/images/${img.tenfile}`
                 });
             }
 

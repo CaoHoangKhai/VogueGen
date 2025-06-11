@@ -46,7 +46,7 @@ const AdminPage = () => {
   }
 
   return (
-    <div className="container mt-4">
+    <div className="container">
       <div className="card p-4 shadow-sm">
         <h2 className="text-center mb-4">Trang Quản Trị Admin</h2>
 

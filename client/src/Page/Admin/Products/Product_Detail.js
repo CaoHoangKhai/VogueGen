@@ -592,7 +592,7 @@ const ProductDetail = () => {
   };
 
   return (
-    <div className="container mt-4">
+    <div className="container">
       <Toast
         show={toast.show}
         message={toast.message}

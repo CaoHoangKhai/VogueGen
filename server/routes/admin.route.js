@@ -8,6 +8,8 @@ const categoryController = require("../controllers/categories.controller");
 const productController = require("../controllers/product.controller");
 const sizeController = require("../controllers/sizes.controller");
 const promotionsController = require("../controllers/promotions.controller");
+
+const orderController = require("../controllers/order.controller");
 const message = require("../utils/messages");
 
 // Cấu hình multer
@@ -55,6 +57,9 @@ router.get("/products", productController.getAllProducts);
 // Các route tĩnh liên quan đến sản phẩm đặt trước route có param :id
 router.get("/products/search", productController.searchProducts);
 router.get("/products/sizes", sizeController.getAllSizes);
+
+// Quản lý đơn hàng
+router.get("/orders", orderController.getAllOrdersSorted);
 
 // Route lấy sản phẩm theo ID, đặt cuối cùng để tránh nhầm lẫn với các route trên
 router.get("/products/:id", productController.getProductById);

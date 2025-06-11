@@ -1,14 +1,12 @@
-// Import các thư viện cần thiết
 import { useState } from "react";
 import { FaCheckCircle, FaUserFriends, FaRegMoneyBillAlt, FaBoxOpen, FaTags, FaStore, FaTruck } from "react-icons/fa";
 import Button from "@mui/material/Button";
 import { Link } from 'react-router-dom';
 import Carousel from 'react-bootstrap/Carousel';
-// import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import React from "react";
+import Toast from "../Components/Toast";
 
-// Danh sách ảnh cho carousel sản phẩm nổi bật
 const images = [
     { src: "http://localhost:4000/images/home/body_1.png" },
     { src: "http://localhost:4000/images/home/body_2.png" },
@@ -17,7 +15,6 @@ const images = [
     { src: "http://localhost:4000/images/home/body_5.png" }
 ];
 
-// Danh sách các bước "How it works" với ảnh, tiêu đề và mô tả
 const howItWorksImages = [
     {
         step: "Connect Your Store",
@@ -41,7 +38,6 @@ const howItWorksImages = [
     }
 ];
 
-// Hàm tạo các slide kiểu nối đuôi (mỗi slide 4 ảnh, trượt 1 ảnh mỗi lần)
 const getSlides = (arr, size) => {
     const slides = [];
     for (let i = 0; i < arr.length; i++) {
@@ -54,12 +50,10 @@ const getSlides = (arr, size) => {
     return slides;
 };
 
-// Banner Section: Phần banner đầu trang với thông tin chào mừng và nút chuyển đến trang sản phẩm
-function BannerSection() {
+function BannerSection({ showToast }) {
     return (
         <div className="container">
             <div className="row align-items-center" style={{ minHeight: "50vh" }}>
-                {/* Bên trái: Nội dung */}
                 <div className="col-md-6 mb-4 mb-md-0">
                     <h1 className="mt-2 mb-4" style={{ color: "#C2185B" }}>
                         <strong>Welcome to Shopify</strong>
@@ -67,14 +61,27 @@ function BannerSection() {
                     <h3 style={{ color: "#7B1FA2" }}>Your One-Stop Print-on-Demand</h3>
                     <h3 style={{ color: "#512DA8" }}>and Dropshipping Platform</h3>
                     <ul className="mt-4 list list-unstyled" style={{ fontSize: "1.1rem" }}>
-                        {/* Các lợi ích nổi bật */}
                         <li><FaCheckCircle style={{ color: "#43A047" }} className="me-2" />No Minimum Order</li>
                         <li><FaUserFriends style={{ color: "#3949AB" }} className="me-2" />One-on-One Services</li>
                         <li><FaRegMoneyBillAlt style={{ color: "#FBC02D" }} className="me-2" />100% Free to use</li>
                         <li><FaBoxOpen style={{ color: "#00ACC1" }} className="me-2" />1000+ Products Available</li>
                         <li><FaTags style={{ color: "#E91E63" }} className="me-2" />Best Price Guarantee</li>
                     </ul>
-                    {/* Nút chuyển đến trang sản phẩm */}
+                    <Button
+                        variant="contained"
+                        style={{
+                            background: "linear-gradient(90deg, #C2185B 0%, #7B1FA2 100%)",
+                            color: "#fff",
+                            marginTop: 16,
+                            fontWeight: 600,
+                            letterSpacing: 1
+                        }}
+                        size="large"
+                        fullWidth
+                        onClick={() => showToast("Welcome to Shopify!", "success")}
+                    >
+                        Show Toast
+                    </Button>
                     <Link to="/products" style={{ textDecoration: "none" }}>
                         <Button
                             variant="contained"
@@ -92,7 +99,6 @@ function BannerSection() {
                         </Button>
                     </Link>
                 </div>
-                {/* Bên phải: Hình ảnh minh họa */}
                 <div className="col-md-6 d-flex justify-content-center">
                     <img
                         src="http://localhost:4000/images/home/download.png"
@@ -105,7 +111,6 @@ function BannerSection() {
     );
 }
 
-// Shipping Info Section: Thông tin số lượng đơn hàng đã giao
 function ShippingInfoSection() {
     return (
         <div
@@ -130,7 +135,6 @@ function ShippingInfoSection() {
     );
 }
 
-// Carousel Section: Carousel hiển thị các sản phẩm nổi bật
 function CarouselSection({ images }) {
     const [index, setIndex] = useState(0);
     const slides = getSlides(images, 4);
@@ -187,7 +191,6 @@ function CarouselSection({ images }) {
     );
 }
 
-// How it works Section (3 icon blocks): Hiển thị 3 bước chính với icon minh họa
 function HowItWorksIconSection() {
     return (
         <div className="container my-5 text-center">
@@ -197,7 +200,6 @@ function HowItWorksIconSection() {
                 </strong>
             </h1>
             <div className="row align-items-stretch justify-content-center">
-                {/* Khối 1 */}
                 <div className="col-12 col-md-4 mb-4 mb-md-0 d-flex">
                     <div className="d-flex flex-column align-items-center w-100 h-100">
                         <div
@@ -230,7 +232,6 @@ function HowItWorksIconSection() {
                         <p style={{ color: "#444" }}>Khám phá kho sản phẩm đa dạng và chọn mặt hàng bạn muốn kinh doanh.</p>
                     </div>
                 </div>
-                {/* Khối 2 */}
                 <div className="col-12 col-md-4 mb-4 mb-md-0 d-flex">
                     <div className="d-flex flex-column align-items-center w-100 h-100">
                         <div
@@ -263,7 +264,6 @@ function HowItWorksIconSection() {
                         <p style={{ color: "#444" }}>Thiết kế theo ý tưởng riêng và đăng bán sản phẩm lên cửa hàng của bạn.</p>
                     </div>
                 </div>
-                {/* Khối 3 */}
                 <div className="col-12 col-md-4 d-flex">
                     <div className="d-flex flex-column align-items-center w-100 h-100">
                         <div
@@ -301,7 +301,6 @@ function HowItWorksIconSection() {
     );
 }
 
-// HowItWorksCarouselScrollspy: Phần scrollspy các bước với hình ảnh và mô tả, có border cho cả khung, ảnh và mô tả
 function HowItWorksCarouselScrollspy() {
     const [activeIndex, setActiveIndex] = useState(0);
 
@@ -312,7 +311,6 @@ function HowItWorksCarouselScrollspy() {
     return (
         <div className="container my-5 mb-4" style={{ overflowX: "hidden" }}>
             <div className="row g-0">
-                {/* Scrollspy Steps: Danh sách các bước bên trái */}
                 <div
                     className="col-12 col-md-4 d-flex flex-column justify-content-center align-items-stretch"
                     style={{
@@ -351,7 +349,6 @@ function HowItWorksCarouselScrollspy() {
                         ))}
                     </nav>
                 </div>
-                {/* Carousel: Hiển thị ảnh và mô tả từng bước bên phải */}
                 <div className="col-12 col-md-8 d-flex justify-content-center align-items-center mb-4"
                     style={{
                         paddingLeft: 0,
@@ -385,7 +382,6 @@ function HowItWorksCarouselScrollspy() {
                         >
                             {howItWorksImages.map((img, idx) => (
                                 <Carousel.Item key={idx}>
-                                    {/* Khung ngoài có border */}
                                     <div
                                         style={{
                                             width: "100%",
@@ -394,11 +390,10 @@ function HowItWorksCarouselScrollspy() {
                                             background: "#fff",
                                             borderRadius: 20,
                                             boxShadow: "0 4px 16px #e1bee7",
-                                            border: "2px solid #7B1FA2", // border cho khung ngoài
+                                            border: "2px solid #7B1FA2",
                                             padding: 12
                                         }}
                                     >
-                                        {/* Ảnh cũng có border riêng */}
                                         <img
                                             src={img.src}
                                             className="d-block"
@@ -410,11 +405,10 @@ function HowItWorksCarouselScrollspy() {
                                                 height: "auto",
                                                 objectFit: "contain",
                                                 margin: "0 auto",
-                                                border: "2px solid #FBC02D" // border cho ảnh bên trong
+                                                border: "2px solid #FBC02D"
                                             }}
                                         />
                                     </div>
-                                    {/* Mô tả nằm ngoài hình, có border riêng */}
                                     <div
                                         style={{
                                             textAlign: "center",
@@ -441,7 +435,6 @@ function HowItWorksCarouselScrollspy() {
 }
 
 function WhyChooseSection() {
-    // Hàm render lục giác với icon ở giữa
     const HexagonIcon = ({ children, bg = "#fff", border = "#7B1FA2" }) => (
         <div
             style={{
@@ -467,9 +460,7 @@ function WhyChooseSection() {
             <p className="text-center" style={{ color: "#555" }}>
                 We provide the best services to help you grow your business.
             </p>
-            {/* 6 khối: 3 trên, 3 dưới */}
             <div className="row g-4 mt-4">
-                {/* Hàng trên */}
                 <div className="col-12 col-md-6">
                     <div className="bg-light p-4 h-100 shadow rounded text-center">
                         <HexagonIcon bg="#e8f5e9" border="#43A047">
@@ -503,7 +494,6 @@ function WhyChooseSection() {
                         </p>
                     </div>
                 </div>
-                {/* Hàng dưới */}
                 <div className="col-12 col-md-6">
                     <div className="bg-light p-4 h-100 shadow rounded text-center">
                         <HexagonIcon bg="#fffde7" border="#FBC02D">
@@ -542,8 +532,7 @@ function WhyChooseSection() {
     );
 }
 
-function Design() {
-
+function Design({ showToast }) {
     const designBlocks = [
         {
             img: "http://localhost:4000/images/designs/men_wear.png",
@@ -575,7 +564,6 @@ function Design() {
                 {designBlocks.map((block, idx) => (
                     <div className="col-12 col-md-3" key={idx}>
                         <div className="bg-white h-100 shadow rounded overflow-hidden d-flex flex-column">
-                            {/* Hình ảnh full khối */}
                             <div style={{ width: "100%", aspectRatio: "1/1", overflow: "hidden" }}>
                                 <img
                                     src={block.img}
@@ -583,7 +571,6 @@ function Design() {
                                     style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
                                 />
                             </div>
-                            {/* Tên phía dưới khối */}
                             <div style={{ fontWeight: 600, color: "#7B1FA2", fontSize: 16, padding: 16 }}>
                                 {block.label}
                             </div>
@@ -591,10 +578,8 @@ function Design() {
                     </div>
                 ))}
             </div>
-            {/* Nút Show more */}
             <div className="mt-5">
-                <a
-                    href="/products"
+                <button
                     className="btn btn-primary"
                     style={{
                         background: "linear-gradient(90deg, #C2185B 0%, #7B1FA2 100%)",
@@ -603,26 +588,37 @@ function Design() {
                         fontSize: "1.1rem",
                         padding: "10px 32px"
                     }}
+                    onClick={() => showToast("Show more products coming soon!", "info")}
                 >
                     Show more
-                </a>
+                </button>
             </div>
         </div>
     );
 }
 
-// Component Home: Kết hợp tất cả các section lại thành trang chủ
 const Home = () => {
+    const [toast, setToast] = useState({ show: false, message: "", type: "success" });
+
+    const showToast = (message, type = "success") => {
+        setToast({ show: true, message, type });
+    };
+
     return (
         <>
-            <BannerSection />
+            <Toast
+                show={toast.show}
+                message={toast.message}
+                type={toast.type}
+                onClose={() => setToast({ ...toast, show: false })}
+            />
+            <BannerSection showToast={showToast} />
             <ShippingInfoSection />
             <CarouselSection images={images} />
             <HowItWorksIconSection />
             <HowItWorksCarouselScrollspy />
-            <Design />
+            <Design showToast={showToast} />
             <WhyChooseSection />
-
         </>
     );
 };

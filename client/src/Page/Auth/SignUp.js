@@ -169,7 +169,7 @@ const SignUp = () => {
                             <div className="text-center mt-3">
                                 <span>
                                     Đã có tài khoản?{' '}
-                                    <Link to="/signin" className="text-decoration-none quick-link text-secondary">
+                                    <Link to="/auth/signin" className="text-decoration-none quick-link text-secondary">
                                         Đăng nhập
                                     </Link>
                                 </span>

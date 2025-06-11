@@ -81,6 +81,7 @@ export const deleteProduct = async (id) => {
         return false;
     }
 };
+
 export const updateProductById = async (id, formData) => {
     try {
         const response = await fetch(`${BASE_URL_ADMIN}/products/${id}`, {

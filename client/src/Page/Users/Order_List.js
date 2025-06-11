@@ -2,10 +2,10 @@ const OrderList = () => {
     return (
         <>
             <div>
-                <div className="container mt-4">
+                <div className="container">
                     <div className="card p-4 shadow-sm">
 
-                        <h4 className="text-center mt-2 mb-3">Danh Sách Đơn Hàng</h4>
+                        <h4 className="text-center mb-3">Danh Sách Đơn Hàng</h4>
 
                         <table className="table table-bordered table-hover text-center">
                             <thead className="table-light">

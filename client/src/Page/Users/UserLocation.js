@@ -4,7 +4,9 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import diachiData from '../../assets/data/vietnam_administrative_data.json';
 
 const UserLocation = () => {
-    const manguoidung = '682eca37fbebecabe93b033a'; // Lấy từ localStorage hoặc context nếu cần
+    // Lấy manguoidung từ localStorage
+    const userData = localStorage.getItem('user');
+    const manguoidung = userData ? JSON.parse(userData)._id : '';
 
     const [cityList, setCityList] = useState([]);
     const [districtList, setDistrictList] = useState([]);
@@ -62,9 +64,9 @@ const UserLocation = () => {
             });
     };
 
-    useEffect(() => {
-        fetchAddressList();
-    }, [manguoidung]);
+    // useEffect(() => {
+    //     if (manguoidung) fetchAddressList();
+    // }, [manguoidung]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -112,7 +114,7 @@ const UserLocation = () => {
     };
 
     return (
-        <div className="mt-4">
+        <div >
             <h5 className='text-center'>THÊM ĐỊA CHỈ</h5>
             <form className="card container p-4 mb-4" onSubmit={handleSubmit}>
                 <div className="row mb-3">

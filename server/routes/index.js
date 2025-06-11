@@ -4,6 +4,7 @@ const adminRouter = require("./admin.route");
 const homeRouter = require("./home.route");
 const favoriteRouter = require("./favorite.route");
 const cartRouter = require("./cart.route");
+const designRouter = require("./design.route");
 module.exports = function (app) {
     app.use("/auth", authRouter);
     app.use("/user", userRouter);
@@ -11,4 +12,5 @@ module.exports = function (app) {
     app.use("/home", homeRouter);
     app.use("/favorite", favoriteRouter);
     app.use("/cart", cartRouter);
+    app.use("/design", designRouter);
 };

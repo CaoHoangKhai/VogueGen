@@ -33,3 +33,18 @@ export const signUp = async (userData) => {
     throw error;
   }
 };
+
+
+/**
+ * Gửi yêu cầu đặt hàng
+ * @param {Object} orderData - Dữ liệu đơn hàng (xem ví dụ trong prompt)
+ * @returns {Promise} Promise trả về response từ server
+ */
+export const createOrder = async (orderData) => {
+  try {
+    const response = await axios.post(`${BASE_URL_AUTH}/order`, orderData);
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};

@@ -5,11 +5,13 @@ import {
     increaseCartQuantity,
     decreaseCartQuantity
 } from '../../api/User/cart.api';
-
+import Toast from "../../Components/Toast";
+import { Link } from 'react-router-dom';
 const Cart = () => {
     const [cartItems, setCartItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [inputValues, setInputValues] = useState({});
+    const [toast, setToast] = useState({ show: false, message: "", type: "" });
 
     // Lưu userId để dùng lại
     const userData = localStorage.getItem('user');
@@ -61,31 +63,80 @@ const Cart = () => {
 
     // Khi blur hoặc Enter mới gọi API cập nhật số lượng
     const handleInputBlur = (item) => {
-        let val = parseInt(inputValues[item._id], 10);
+        let raw = inputValues[item._id];
+        let val = parseInt(raw, 10);
+
         if (isNaN(val) || val < 1) val = 1;
-        // Chỉ gửi { soluong: val }
+
+        // Nếu giá trị không đổi thì không gọi API
+        if (val === item.soluong) return;
+
         updateCartQuantity(item._id, { soluong: val })
-            .then(() => fetchCart())
-            .catch(() => fetchCart());
+            .then(() => {
+                setToast({
+                    show: true,
+                    message: "Cập nhật số lượng thành công!",
+                    type: "success"
+                });
+                fetchCart();
+            })
+            .catch(() => {
+                setToast({
+                    show: true,
+                    message: "Cập nhật số lượng thất bại!",
+                    type: "error"
+                });
+                fetchCart();
+            });
     };
+
 
     // Tăng số lượng
     const handleIncrease = (item) => {
         increaseCartQuantity(item._id)
-            .then(() => fetchCart())
-            .catch(() => fetchCart());
+            .then(() => {
+                setToast({ show: true, message: "Tăng số lượng thành công!", type: "success" });
+                fetchCart();
+            })
+            .catch(() => {
+                setToast({ show: true, message: "Tăng số lượng thất bại!", type: "error" });
+                fetchCart();
+            });
     };
 
     // Giảm số lượng
     const handleDecrease = (item) => {
-        // Cho phép giảm về 0 để backend xóa sản phẩm
         decreaseCartQuantity(item._id)
-            .then(() => fetchCart())
-            .catch(() => fetchCart());
+            .then(() => {
+                setToast({ show: true, message: "Giảm số lượng thành công!", type: "success" });
+                fetchCart();
+            })
+            .catch(() => {
+                setToast({ show: true, message: "Giảm số lượng thất bại!", type: "error" });
+                fetchCart();
+            });
+    };
+
+    const handleRemoveItem = (item) => {
+        updateCartQuantity(item._id, { soluong: 0 })
+            .then(() => {
+                setToast({ show: true, message: "Đã xóa sản phẩm khỏi giỏ hàng!", type: "success" });
+                fetchCart();
+            })
+            .catch(() => {
+                setToast({ show: true, message: "Xóa sản phẩm thất bại!", type: "error" });
+                fetchCart();
+            });
     };
 
     return (
         <div className="container mt-4">
+            <Toast
+                show={toast.show}
+                message={toast.message}
+                type={toast.type}
+                onClose={() => setToast({ ...toast, show: false })}
+            />
             <div className="row">
                 {/* Bên trái: 9 cột */}
                 <div className="col-md-9">
@@ -97,8 +148,8 @@ const Cart = () => {
                             ) : cartItems.length === 0 ? (
                                 <p>Chưa có sản phẩm nào trong giỏ hàng.</p>
                             ) : (
-                                <table className="table align-middle">
-                                    <thead>
+                                <table className="table table-striped table-hover align-middle text-nowrap">
+                                    <thead className="table-light">
                                         <tr>
                                             <th>Hình ảnh</th>
                                             <th>Sản phẩm</th>
@@ -107,6 +158,7 @@ const Cart = () => {
                                             <th>Số lượng</th>
                                             <th>Giá</th>
                                             <th>Thành tiền</th>
+                                            <th></th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -116,46 +168,68 @@ const Cart = () => {
                                                     <img
                                                         src={item.hinhanh || "https://via.placeholder.com/60"}
                                                         alt={item.tensanpham}
-                                                        style={{ width: 60, height: 60, objectFit: "cover", borderRadius: 6, border: "1px solid #eee" }}
+                                                        className="img-thumbnail"
+                                                        style={{ width: 60, height: 60, objectFit: "cover" }}
                                                     />
                                                 </td>
                                                 <td>{item.tensanpham || item.masanpham}</td>
                                                 <td>{item.size}</td>
                                                 <td>
-                                                    <span style={{
-                                                        display: "inline-block",
-                                                        width: 20,
-                                                        height: 20,
-                                                        background: item.mausac,
-                                                        border: "1px solid #ccc",
-                                                        borderRadius: 4
-                                                    }} title={item.mausac}></span>
+                                                    <span
+                                                        className="d-inline-block"
+                                                        style={{
+                                                            width: 20,
+                                                            height: 20,
+                                                            backgroundColor: item.mausac,
+                                                            border: "1px solid #ccc",
+                                                            borderRadius: 4
+                                                        }}
+                                                        title={item.mausac}
+                                                    ></span>
                                                 </td>
-                                                <td style={{ maxWidth: 110 }}>
+                                                <td>
                                                     <div className="input-group input-group-sm">
                                                         <button
                                                             className="btn btn-outline-secondary"
                                                             type="button"
                                                             onClick={() => handleDecrease(item)}
-                                                        >-</button>
+                                                            aria-label="Giảm số lượng"
+                                                        >
+                                                            -
+                                                        </button>
                                                         <input
                                                             type="text"
                                                             min={1}
                                                             value={inputValues[item._id] ?? ""}
-                                                            onChange={e => handleInputChange(item, e.target.value)}
+                                                            onChange={(e) => handleInputChange(item, e.target.value)}
                                                             onBlur={() => handleInputBlur(item)}
-                                                            className="form-control text-center"
-                                                            style={{ width: 50 }}
+                                                            className="form-control text-center shadow-none bg-light"
+                                                            style={{ width: 30, padding: "0.25rem 0.4rem" }}
                                                         />
+
                                                         <button
                                                             className="btn btn-outline-secondary"
                                                             type="button"
                                                             onClick={() => handleIncrease(item)}
-                                                        >+</button>
+                                                            aria-label="Tăng số lượng"
+                                                        >
+                                                            +
+                                                        </button>
                                                     </div>
                                                 </td>
                                                 <td>{(item.giasanpham || 0).toLocaleString("vi-VN")} đ</td>
-                                                <td>{((item.giasanpham || 0) * (item.soluong || 1)).toLocaleString("vi-VN")} đ</td>
+                                                <td>
+                                                    {((item.giasanpham || 0) * (item.soluong || 1)).toLocaleString("vi-VN")} đ
+                                                </td>
+                                                <td>
+                                                    <button
+                                                        className="btn btn-sm btn-outline-danger"
+                                                        onClick={() => handleRemoveItem(item)}
+                                                        title="Xóa sản phẩm"
+                                                    >
+                                                        <i className="bi bi-trash"></i>
+                                                    </button>
+                                                </td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -170,9 +244,9 @@ const Cart = () => {
                         <div className="card-header fw-bold">Thanh toán</div>
                         <div className="card-body">
                             <p>Tổng tiền: {total.toLocaleString("vi-VN")}đ</p>
-                            <button className="btn btn-primary w-100" disabled={cartItems.length === 0}>
+                            <Link to="/auth/order" className="btn btn-primary w-100" disabled={cartItems.length === 0}>
                                 Đặt hàng
-                            </button>
+                            </Link>
                         </div>
                     </div>
                 </div>

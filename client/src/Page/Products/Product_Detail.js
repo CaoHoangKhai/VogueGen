@@ -9,9 +9,8 @@ import { colors } from "../../config/colors";
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import Toast from "../../Components/Toast";
-// Nếu chưa có file này, hãy tạo src/api/cart.api.js với hàm addToCart
 import { addToCart } from '../../api/User/cart.api';
-
+import { createDesign } from "../../api/Design/design.api";
 const ProductDetail = () => {
     const { id } = useParams();
     const [product, setProduct] = useState(null);
@@ -84,13 +83,67 @@ const ProductDetail = () => {
 
     // Toggle trạng thái yêu thích qua API
     const handleToggleFavorite = async () => {
-        if (!userId || !id) return;
+        if (!user?._id) {
+            setToast({
+                show: true,
+                message: (
+                    <>
+                        Bạn cần{" "}
+                        <a href="/auth/signin" style={{ color: "#00bcd4", textDecoration: "underline" }}>
+                            đăng nhập
+                        </a>{" "}
+                        để tiếp tục
+                    </>
+                ),
+                type: "error"
+            });
+            return;
+        }
         try {
             await toggleFavoriteApi(userId, id);
             const res = await checkIsFavoriteApi(userId, id);
             setIsFavorite(!!res?.isFavorite);
         } catch (err) {
             setToast({ show: true, message: "Có lỗi khi cập nhật yêu thích!", type: "error" });
+        }
+    };
+
+    const handleCustomize = async () => {
+        if (!user?._id) {
+            setToast({
+                show: true,
+                message: (
+                    <>
+                        Bạn cần{" "}
+                        <a href="/auth/signin" style={{ color: "#00bcd4", textDecoration: "underline" }}>
+                            đăng nhập
+                        </a>{" "}
+                        để tiếp tục
+                    </>
+                ),
+                type: "error"
+            });
+            return;
+        }
+        if (!product?.theloai) {
+            setToast({ show: true, message: "Thiếu thông tin thể loại sản phẩm!", type: "error" });
+            return;
+        }
+
+        try {
+            const res = await createDesign({
+                manguoidung: user._id,
+                theloai: product.theloai
+            });
+            if (res.success) {
+                setToast({ show: true, message: res.message, type: "success" });
+                // Chuyển hướng sang trang thiết kế nếu muốn:
+                window.location.href = `/design/${res.id}`;
+            } else {
+                setToast({ show: true, message: res.message || "Tạo thiết kế thất bại!", type: "error" });
+            }
+        } catch (err) {
+            setToast({ show: true, message: "Có lỗi khi tạo thiết kế!", type: "error" });
         }
     };
 
@@ -446,20 +499,55 @@ const ProductDetail = () => {
 
                 {/* Phần thông tin sản phẩm */}
                 <div className="col-md-7">
-                    <h2 style={{ fontWeight: 600 }}>{product.tensanpham}</h2>  {renderFavoriteIcon()}
+                    <div
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "start", // không dùng space-between
+                            gap: 8 // hoặc 4 nếu muốn sát hơn
+                        }}
+                    >
+                        <h2
+                            style={{
+                                fontWeight: 600,
+                                margin: 0,
+                                lineHeight: "1",
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis"
+                            }}
+                        >
+                            {product.tensanpham}
+                        </h2>
+                        <div
+                            style={{
+                                marginLeft: 8,
+                                display: "flex",
+                                alignItems: "center",
+                                cursor: "pointer"
+                            }}
+                        >
+                            {renderFavoriteIcon()}
+                        </div>
+                    </div>
+
                     <div style={{ fontSize: 24, color: "#e53935", margin: "12px 0" }}>
                         <strong>{product.giasanpham?.toLocaleString("vi-VN") || "0"} đ</strong>
                     </div>
+
                     <div style={{ marginBottom: 8 }}>
                         <span style={{ color: "#888" }}>Danh mục: </span>
                         <strong>{product.tentheloai || "Không có"}</strong>
                     </div>
+
                     <div style={{ marginBottom: 12 }}>
                         <span style={{ color: "#888" }}>Kích thước:</span> {renderSizes()}
                     </div>
+
                     <div style={{ marginBottom: 12 }}>
                         <span style={{ color: "#888" }}>Màu sắc:</span> {renderColors()}
                     </div>
+
                     <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 16 }}>
                         <button
                             className="btn btn-primary"
@@ -468,10 +556,16 @@ const ProductDetail = () => {
                         >
                             Thêm vào giỏ hàng
                         </button>
-                        <div style={{ display: "flex", alignItems: "center", cursor: "pointer" }}>
-                            {renderFavoriteIcon()}
-                        </div>
+
+                        <button
+                            className="btn btn-outline-secondary"
+                            style={{ minWidth: 120, fontWeight: 500 }}
+                            onClick={handleCustomize}
+                        >
+                            Thiết kế
+                        </button>
                     </div>
+
                 </div>
             </div>
 

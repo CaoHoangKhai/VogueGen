@@ -7,13 +7,15 @@ import {
 
 import Tinymce from "../../../Components/Tinymce";
 import { colors } from "../../../config/colors";
+import Toast from "../../../Components/Toast";
+
 const ProductAdd = () => {
   const [categories, setCategories] = useState([]);
   const [availableSizes, setAvailableSizes] = useState([]);
   const [selectedSizes, setSelectedSizes] = useState([]);
   const [selectedColors, setSelectedColors] = useState([]);
   const [images, setImages] = useState([]);
-
+  const [toast, setToast] = useState({ show: false, message: "", type: "" });
   const [form, setForm] = useState({
     tensanpham: "",
     giasanpham: "",       // lưu giá dạng số chuỗi nguyên (ko dấu chấm)
@@ -61,7 +63,7 @@ const ProductAdd = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isFormValid()) {
-      alert("Vui lòng điền đầy đủ thông tin và chọn size, màu, ảnh.");
+      setToast({ show: true, message: "Vui lòng điền đầy đủ thông tin và chọn size, màu, ảnh.", type: "error" });
       return;
     }
 
@@ -85,7 +87,7 @@ const ProductAdd = () => {
 
     try {
       const res = await createProduct(formData);
-      alert("Tạo sản phẩm thành công!");
+      setToast({ show: true, message: "Tạo sản phẩm thành công!", type: "success" });
       // Reset form
       setForm({
         tensanpham: "",
@@ -496,6 +498,12 @@ const ProductAdd = () => {
 
   return (
     <div className="container">
+      <Toast
+        show={toast.show}
+        message={toast.message}
+        type={toast.type}
+        onClose={() => setToast({ ...toast, show: false })}
+      />
       <h3 className="text-center">Thêm Sản Phẩm</h3>
       <form onSubmit={handleSubmit}>
         {inputNameProduct()}

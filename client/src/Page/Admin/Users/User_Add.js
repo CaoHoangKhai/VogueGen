@@ -102,7 +102,7 @@ const UserAdd = () => {
   };
 
   return (
-    <Box className="container" mt={5}>
+    <Box className="container">
       <Paper elevation={3} sx={{ p: 4, borderRadius: 4 }}>
         <Typography variant="h5" align="center" gutterBottom>
           Thêm Người Dùng

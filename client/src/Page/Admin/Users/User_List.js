@@ -84,7 +84,7 @@ const UserList = () => {
   };
 
   return (
-    <div className="container mt-4">
+    <div className="container">
       <div className="card p-4 shadow-sm">
         <h4 className="text-center mt-2 mb-3">Quản lý Người Dùng</h4>
 

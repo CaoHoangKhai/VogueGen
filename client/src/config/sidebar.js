@@ -34,30 +34,30 @@ const sidebarConfig = {
         { label: 'Thêm danh mục', path: '/admin/products/category_add', icon: MdCategory }
       ]
     },
-    {
-      label: 'Quản lý kho hàng',
-      icon: FaWarehouse,
-      children: [
-        { label: 'Danh sách kho', path: '/admin/inventory', icon: HiOutlineClipboardList },
-        { label: 'Thêm kho', path: '/admin/inventory/add', icon: IoMdAddCircle }
-      ]
-    },
-    {
-      label: 'Quản lý tin tức',
-      icon: MdOutlineCampaign,
-      children: [
-        { label: 'Danh sách tin tức', path: '/admin/news', icon: HiOutlineClipboardList },
-        { label: 'Thêm tin tức', path: '/admin/news/add', icon: IoMdAddCircle }
-      ]
-    },
-    {
-      label: 'Quản lý khuyến mãi',
-      icon: FaGift,
-      children: [
-        { label: 'Danh sách khuyến mãi', path: '/admin/promotions', icon: HiOutlineClipboardList },
-        { label: 'Thêm khuyến mãi', path: '/admin/promotions/add', icon: IoMdAddCircle }
-      ]
-    },
+    // {
+    //   label: 'Quản lý kho hàng',
+    //   icon: FaWarehouse,
+    //   children: [
+    //     { label: 'Danh sách kho', path: '/admin/inventory', icon: HiOutlineClipboardList },
+    //     { label: 'Thêm kho', path: '/admin/inventory/add', icon: IoMdAddCircle }
+    //   ]
+    // },
+    // {
+    //   label: 'Quản lý tin tức',
+    //   icon: MdOutlineCampaign,
+    //   children: [
+    //     { label: 'Danh sách tin tức', path: '/admin/news', icon: HiOutlineClipboardList },
+    //     { label: 'Thêm tin tức', path: '/admin/news/add', icon: IoMdAddCircle }
+    //   ]
+    // },
+    // {
+    //   label: 'Quản lý khuyến mãi',
+    //   icon: FaGift,
+    //   children: [
+    //     { label: 'Danh sách khuyến mãi', path: '/admin/promotions', icon: HiOutlineClipboardList },
+    //     { label: 'Thêm khuyến mãi', path: '/admin/promotions/add', icon: IoMdAddCircle }
+    //   ]
+    // },
     {
       label: 'Quản lý đơn hàng',
       icon: RiShoppingBag3Fill,
@@ -91,7 +91,7 @@ const sidebarConfig = {
     },
     {
       label: 'Giỏ hàng',
-      path: '/user/cart',
+      path: '/auth/cart',
       icon: FaShoppingCart
     },
     {
