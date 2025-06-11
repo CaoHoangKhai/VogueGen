@@ -42,6 +42,12 @@ class DesignService {
             id: result.insertedId
         };
     }
+
+    async getDesignsByUser(manguoidung) {
+        if (!ObjectId.isValid(manguoidung)) throw new Error("ID người dùng không hợp lệ.");
+        const designs = await this.design.find({ manguoidung: new ObjectId(manguoidung) }).toArray();
+        return designs;
+    }
 }
 
 module.exports = DesignService;

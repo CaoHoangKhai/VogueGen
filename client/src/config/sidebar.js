@@ -1,10 +1,10 @@
 // FaCog
 import {
   FaUsers, FaUserPlus, FaBoxOpen,
-  FaWarehouse, FaGift, FaHeart,
+  FaHeart,
   FaShoppingCart, FaMapMarkerAlt
 } from 'react-icons/fa';
-import { MdDashboard, MdCategory, MdOutlineCampaign } from "react-icons/md";
+import { MdDashboard, MdCategory, MdDesignServices } from "react-icons/md";
 import { IoMdAddCircle } from "react-icons/io";
 import { HiOutlineClipboardList } from "react-icons/hi";
 import { BiSolidUserAccount } from "react-icons/bi";
@@ -85,9 +85,9 @@ const sidebarConfig = {
       icon: BiSolidUserAccount
     },
     {
-      label: 'Sản phẩm của tôi',
-      path: '/user/my-products',
-      icon: FaBoxOpen
+      label: 'Thiết kế của tôi',
+      path: '/user/my-designs',
+      icon: MdDesignServices
     },
     {
       label: 'Giỏ hàng',

@@ -4,10 +4,10 @@ import { createOrder } from '../../api/auth.api';
 import Toast from "../../Components/Toast";
 import { getUserById, getUserLocations } from '../../api/User/user.api';
 import diachiData from '../../assets/data/vietnam_administrative_data.json';
-import { useNavigate } from "react-router-dom";
+// import { useNavigate } from "react-router-dom";
 const Order = () => {
     const [cartItems, setCartItems] = useState([]);
-    const navigate = useNavigate();
+    // const navigate = useNavigate();
     const [form, setForm] = useState({
         hoten: "",
         sodienthoai: "",

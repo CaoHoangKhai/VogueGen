@@ -7,3 +7,8 @@ export const createDesign = async (data) => {
     // Kết quả trả về: { success: true, message: "...", id: "..." }
     return res.data;
 };
+
+export const getDesignsByUser = async (manguoidung) => {
+    const res = await axios.get(`${API_URL_DESIGN}/user/${manguoidung}`);
+    return res.data;
+};
