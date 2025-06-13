@@ -30,3 +30,25 @@ exports.getDesignsByUser = async (req, res) => {
         });
     }
 };
+
+
+exports.getDesignById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const designService = new DesignService(MongoDB.client);
+        const design = await designService.getDesignById(id);
+        if (!design) {
+            return res.status(404).json({
+                success: false,
+                message: "Không tìm thấy thiết kế."
+            });
+        }
+        res.status(200).json(design);
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Lỗi server khi lấy chi tiết thiết kế.",
+            error: error.message
+        });
+    }
+};

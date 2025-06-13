@@ -46,7 +46,7 @@ const MyDesign = () => {
                 <div className="row">
                     {designs.map((d) => (
                         <div className="col-12 col-sm-6 col-md-4 col-lg-3 mb-4" key={d._id}>
-                            <Link to={`/design/${d._id}`} className="text-decoration-none text-dark">
+                            <Link to={`/design/${d.link}`} className="text-decoration-none text-dark">
                                 <div className="card h-100 shadow-sm">
                                     <div className="card-body">
                                         <h5 className="card-title text-primary">Thể loại: {d.theloai}</h5>

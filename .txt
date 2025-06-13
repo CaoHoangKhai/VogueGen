@@ -1,6 +1,6 @@
-Chỗ khuyến mãi kết thúc ko được( tối nhớ chỉnh)
+Chỗ khuyến mãi kết thúc ko được( tối nhớ chỉnh) ( HỦY)
 
-Chưa làm tìm kiếm (tên, thể loại, giá tiền)
+Chưa làm tìm kiếm (tên, thể loại, giá tiền) (13/06)
 
 Xuất file thông tin sản phẩm 
 Xuất file đơn hàng
@@ -8,20 +8,51 @@ Xem danh sách đơn hàng
 Tìm kiếm đơn hàng theo( tên người đặt, theo mã, theo trạng thái)
 
 
-
-
-
 đã xog thêm sản phẩm vào giỏ hàng, nhưng số lượng theo size đó ko bị giảm, 
 
-chưa hiển thị ra giỏ hàng
-
 bây giờ còn 
-đặt hàng, hủy đặt, chỉnh sửa thôgn tin cá nhân, xem chi tiết đơn hàng, xem danh sách đơn hàng,
-tối nay phải xog
+chỉnh sửa thông tin cá nhân
+xem chi tiết đơn hàng
+xem danh sách đơn hàng
+
+design cho phép xem lại thiết kế???
+có được đặt hàng thêm với thiết kế mới
+lưu thiết kế vào csdl thế nào
 
 
+color: 
+hiển thị màu ra ngoài giống giống các ô màu
 
-còn thiết kế
+image: 
+tải ảnh lên thì có lưu vào csdl hay ko?
+	nếu có thì ảnh thiết kế là nối tới ảnh csdl hay ảnh được chèn vào hàng của cột thiết kế
+	nếu chèn vào thì người dùng muốn xóa có được ko?
+
+lưu lại tọa độ và vị trí ảnh.
+có crop ảnh được ko
+	nếu có thì lưu ảnh ntn?
+	nếu ko mà người dùng muốn nửa ảnh thì sao?
+có thể xoay ảnh được ko
+có thể lật ảnh ko
+có chồng ảnh lên ko
+
+
+ảnh được thiết kế:
+thu nhỏ & phóng to màn hình bị thấy background phía sau tấm ảnh
+
+thanh chọn ảnh
+
+{chia 2 phần:
+	1 ảnh chọn thiết kế
+	2 ảnh kq 
+}
+
+thiết kế link ảnh thiết kế
+chèn trực tiếp vào db
+tiền xử lý tên danh mục
+
+còn 
+thiết kế (đang làm)
 sinh ảnh 
 
 

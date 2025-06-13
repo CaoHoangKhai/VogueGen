@@ -55,7 +55,6 @@ class FavoriteService {
         for (const fav of favorites) {
             const productDetail = await this.productServer.getProductById(fav.masanpham.toString());
             if (productDetail && productDetail.success) {
-                // Gắn thêm _id của bản ghi yeuthich vào kết quả
                 result.push({
                     mayeuthich: fav._id, // _id của bảng yeuthich
                     masanpham: fav.masanpham,
@@ -77,7 +76,7 @@ class FavoriteService {
         });
         return !!exists;
     }
-    
+
     async checkFavorite(manguoidung, masanpham) {
         if (!ObjectId.isValid(manguoidung) || !ObjectId.isValid(masanpham)) {
             throw new Error("ID không hợp lệ.");

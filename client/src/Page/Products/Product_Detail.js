@@ -18,13 +18,12 @@ const ProductDetail = () => {
     const [isFavorite, setIsFavorite] = useState(false);
     const [user, setUser] = useState(null);
     const [showModal, setShowModal] = useState(false);
-    const colorRef = useRef();
     const [selectedColor, setSelectedColor] = useState(null);
     const [selectedSizes, setSelectedSizes] = useState([]);
     const [toast, setToast] = useState({ show: false, message: "", type: "" });
 
     const availableSizes = product?.kichthuoc || [];
-
+    const colorRef = useRef();
     useEffect(() => {
         const userData = localStorage.getItem('user');
         if (userData) {
@@ -138,7 +137,7 @@ const ProductDetail = () => {
             if (res.success) {
                 setToast({ show: true, message: res.message, type: "success" });
                 // Chuyển hướng sang trang thiết kế nếu muốn:
-                window.location.href = `/design/${res.id}`;
+                window.location.href = `/design/${res.link}`;
             } else {
                 setToast({ show: true, message: res.message || "Tạo thiết kế thất bại!", type: "error" });
             }

@@ -535,19 +535,19 @@ function WhyChooseSection() {
 function Design({ showToast }) {
     const designBlocks = [
         {
-            img: "http://localhost:4000/images/designs/men_wear.png",
+            img: "http://localhost:4000/images/home/men_wear.png",
             label: "Men's Wear"
         },
         {
-            img: "http://localhost:4000/images/designs/accessories.png",
+            img: "http://localhost:4000/images/home/accessories.png",
             label: "Accesories"
         },
         {
-            img: "http://localhost:4000/images/designs/cup.png",
+            img: "http://localhost:4000/images/home/cup.png",
             label: "Cup"
         },
         {
-            img: "http://localhost:4000/images/designs/phone_case.png",
+            img: "http://localhost:4000/images/home/phone_case.png",
             label: "Phone Case"
         },
     ];

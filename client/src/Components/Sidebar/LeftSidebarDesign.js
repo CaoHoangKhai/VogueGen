@@ -1,21 +1,37 @@
-import { useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { FaPalette, FaImage, FaFont, FaHome } from "react-icons/fa";
 import Toast from '../Toast';
 import { useNavigate } from "react-router-dom";
-const menu = [
+import { colors } from "../../config/colors";
 
+const menu = [
     { label: "Color", key: "color", icon: <FaPalette /> },
-    { label: "Img", key: "img", icon: <FaImage /> },
+    { label: "Image", key: "img", icon: <FaImage /> },
     { label: "Text", key: "text", icon: <FaFont /> }
 ];
 
-const SidebarDesign = () => {
+const LeftSidebarDesign = ({ onColorChange }) => {
     const [activeTab, setActiveTab] = useState("color");
-    const [selectedColor, setSelectedColor] = useState("#ff0000");
+    const [selectedColors, setSelectedColors] = useState([]);
     const [uploadedImage, setUploadedImage] = useState(null);
     const [inputText, setInputText] = useState("");
     const [toast, setToast] = useState({ show: false, message: "", type: "info" });
+    const colorRef = useRef();
     const navigate = useNavigate();
+
+    useEffect(() => {
+        if (window.bootstrap?.Tooltip) {
+            const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+            tooltipTriggerList.forEach(el => {
+                try {
+                    new window.bootstrap.Tooltip(el);
+                } catch (err) {
+                    console.error("Tooltip init error:", err);
+                }
+            });
+        }
+    }, []);
+
     const handleImageUpload = (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -39,6 +55,14 @@ const SidebarDesign = () => {
             };
             reader.readAsDataURL(file);
         }
+    };
+
+    const toggleColor = (code) => {
+        setSelectedColors([code]);
+        if (onColorChange) {
+            onColorChange(code);
+        }
+
     };
 
     const renderMenuButton = (item) => {
@@ -81,24 +105,45 @@ const SidebarDesign = () => {
 
     const renderColorPanel = () => (
         <>
-            <div style={{ marginBottom: 12 }}>🎨 <strong>Chọn màu</strong></div>
-            <input
-                type="color"
-                value={selectedColor}
-                onChange={(e) => {
-                    setSelectedColor(e.target.value);
-                    setToast({ show: true, message: `Đã chọn màu: ${e.target.value}`, type: "info" });
-                }}
-                style={{ width: "100%", height: 40, border: "none", borderRadius: 4 }}
-            />
-            <div style={{ marginTop: 10 }}>Mã màu: {selectedColor}</div>
+            <div style={{ marginBottom: 12 }} className="text-center"><strong>Chọn màu</strong></div>
+            <hr />
+            <div className="mb-3">
+                <div
+                    className="d-flex gap-2 mt-3"
+                    style={{ flexWrap: "wrap" }}
+                    ref={colorRef}
+                >
+                    {colors.map(({ color, code }) => {
+                        const isSelected = selectedColors.includes(code);
+                        return (
+                            <div
+                                key={code}
+                                onClick={() => toggleColor(code)}
+                                title={color}
+                                data-bs-toggle="tooltip"
+                                data-bs-placement="top"
+                                style={{
+                                    width: "32px",
+                                    height: "32px",
+                                    borderRadius: "50%",
+                                    backgroundColor: code,
+                                    cursor: "pointer",
+                                    border: isSelected ? "3px solid #007bff" : "1px solid #ccc",
+                                    boxShadow: isSelected ? "0 0 6px #007bff55" : "none",
+                                    transition: "border 0.2s, box-shadow 0.2s"
+                                }}
+                            />
+                        );
+                    })}
+                </div>
+            </div>
         </>
     );
 
     const renderImgPanel = () => (
         <>
-            <div style={{ marginBottom: 12, color: "#fff" }}>
-                🖼️ <strong>Tải ảnh</strong>
+            <div style={{ marginBottom: 12, color: "#fff" }} className="text-center">
+                <strong>Tải ảnh</strong>
             </div>
 
             <label
@@ -179,7 +224,7 @@ const SidebarDesign = () => {
 
     const renderTextPanel = () => (
         <>
-            <div style={{ marginBottom: 12 }}>🔤 <strong>Nhập chữ</strong></div>
+            <div style={{ marginBottom: 12 }} className="text-center"><strong>Nhập chữ</strong></div>
             <textarea
                 value={inputText}
                 onChange={(e) => {
@@ -225,8 +270,6 @@ const SidebarDesign = () => {
                     boxShadow: "2px 0 12px rgba(0,0,0,0.12)"
                 }}
             >
-
-
                 {/* Nút về trang chính */}
                 <button
                     onClick={() => navigate("/")}
@@ -254,7 +297,7 @@ const SidebarDesign = () => {
             {/* Panel bên cạnh */}
             <div
                 style={{
-                    width: 280,
+                    width: 200,
                     background: "#2b2f38",
                     padding: 14,
                     borderRadius: "0 8px 8px 0",
@@ -275,4 +318,4 @@ const SidebarDesign = () => {
     );
 };
 
-export default SidebarDesign;
+export default LeftSidebarDesign;

@@ -5,4 +5,6 @@ const designController = require("../controllers/design.controller");
 // Route để tạo thiết kế mới
 router.post("/create", designController.createDesign);
 router.get("/user/:manguoidung", designController.getDesignsByUser);
+
+router.get("/:id", designController.getDesignById);
 module.exports = router;
