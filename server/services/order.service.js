@@ -97,6 +97,84 @@ class OrderService {
         const orders = await this.donhang.find().sort({ ngaydat: -1 }).toArray();
         return orders;
     }
+
+
+    async getOrdersByUserId(userId) {
+        try {
+            if (!userId) {
+                throw new Error("Thiếu mã người dùng.");
+            }
+
+            // Thử chuyển userId thành ObjectId, nếu không được thì để nguyên
+            let objectUserId = null;
+            try {
+                objectUserId = new ObjectId(userId);
+            } catch (e) {
+                console.warn("userId không phải ObjectId hợp lệ, sẽ tìm bằng string.");
+            }
+
+            // Truy vấn theo cả ObjectId và string (nếu có)
+            const query = objectUserId
+                ? { $or: [{ manguoidung: userId }, { manguoidung: objectUserId }] }
+                : { manguoidung: userId };
+
+            const orders = await this.donhang
+                .find(query)
+                .sort({ ngaydat: -1 })
+                .toArray();
+
+            return {
+                success: true,
+                data: orders,
+            };
+        } catch (error) {
+            console.error("Lỗi khi lấy đơn hàng theo người dùng:", error.message);
+            return {
+                success: false,
+                message: "Không thể lấy đơn hàng.",
+                error: error.message,
+            };
+        }
+    }
+    async getOrderByIdWithDetails(orderId) {
+        try {
+            if (!orderId) throw new Error("Thiếu mã đơn hàng.");
+
+            const objectOrderId = new ObjectId(orderId);
+
+            // 1. Lấy thông tin đơn hàng
+            const order = await this.donhang.findOne({ _id: objectOrderId });
+
+            if (!order) {
+                return {
+                    success: false,
+                    message: "Không tìm thấy đơn hàng."
+                };
+            }
+
+            // 2. Lấy chi tiết đơn hàng
+            const orderDetails = await this.chitietdonhang
+                .find({ madonhang: orderId })
+                .toArray();
+
+            return {
+                success: true,
+                data: {
+                    ...order,
+                    chitiet: orderDetails
+                }
+            };
+        } catch (error) {
+            console.error("Lỗi khi lấy chi tiết đơn hàng:", error.message);
+            return {
+                success: false,
+                message: "Không thể lấy chi tiết đơn hàng.",
+                error: error.message
+            };
+        }
+    }
+
+
 }
 
 module.exports = OrderService;

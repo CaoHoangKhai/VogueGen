@@ -1,6 +1,6 @@
 const UserService = require("../services/user.service");
 const LocationService = require("../services/location.service");
-
+const OrderService = require("../services/order.service");
 const MongoDB = require("../utils/mongodb.util");
 
 exports.findOne = async (req, res, next) => {
@@ -102,11 +102,11 @@ exports.getListUsers = async (req, res, next) => {
     try {
         const userService = new UserService(MongoDB.client);
         const users = await userService.findAll();
-       if (!users.length) {
+        if (!users.length) {
             return res.status(404).json({ message: "Không tìm thấy người dùng nào." });
         }
         return res.json(users);
     } catch (error) {
-                return res.status(500).json({ message: `Lỗi khi lấy danh sách độc giả: ${error.message}` });
+        return res.status(500).json({ message: `Lỗi khi lấy danh sách độc giả: ${error.message}` });
     }
 }

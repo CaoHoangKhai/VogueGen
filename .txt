@@ -12,8 +12,7 @@ Tìm kiếm đơn hàng theo( tên người đặt, theo mã, theo trạng thái
 
 bây giờ còn 
 chỉnh sửa thông tin cá nhân
-xem chi tiết đơn hàng
-xem danh sách đơn hàng
+
 
 design cho phép xem lại thiết kế???
 có được đặt hàng thêm với thiết kế mới
