@@ -26,7 +26,7 @@ class ProductServer {
         const productData = this.extractProductData(payload);
 
         try {
-            // 1. Tạo sản phẩm chính trong collection "sanpham"
+            // 1. Tạo sản phẩm chính
             const result = await this.sanpham.insertOne({
                 tensanpham: productData.tensanpham,
                 giasanpham: productData.giasanpham,
@@ -43,11 +43,10 @@ class ProductServer {
                 mau: mau.trim()
             }));
 
-            // 3. Tạo danh sách kích thước
-            const kichthuocDocs = productData.kichthuoc.map(item => ({
+            // 3. Tạo danh sách kích thước (chỉ có size)
+            const kichthuocDocs = productData.kichthuoc.map(size => ({
                 masanpham: productId,
-                size: item.size,
-                soluong: item.soluong
+                size: typeof size === "string" ? size.trim() : size?.size?.trim()
             }));
 
             // 4. Tạo danh sách hình ảnh
@@ -56,7 +55,7 @@ class ProductServer {
                 tenfile: img.tenfile
             }));
 
-            // 5. Lưu vào các collection phụ nếu có dữ liệu
+            // 5. Lưu vào các collection phụ
             if (mauDocs.length > 0) {
                 await this.mausanpham.insertMany(mauDocs);
             }
@@ -67,7 +66,6 @@ class ProductServer {
                 await this.hinhanhsanpham.insertMany(hinhanhDocs);
             }
 
-            // 6. Trả về sản phẩm đã tạo
             return {
                 _id: productId,
                 ...productData
@@ -77,6 +75,7 @@ class ProductServer {
             throw error;
         }
     }
+
 
     async getCategoryNameById(theloaiId) {
         try {
@@ -199,17 +198,15 @@ class ProductServer {
                 ? payload.mausanpham
                 : JSON.parse(payload.mausanpham || "[]");
 
-            // Hình ảnh cũ (giữ lại)
             const hinhanhCu = payload.hinhanhCu
                 ? (Array.isArray(payload.hinhanhCu) ? payload.hinhanhCu : JSON.parse(payload.hinhanhCu))
                 : [];
 
-            // Danh sách _id ảnh cần xóa
             const hinhanhXoa = payload.hinhanhXoa
                 ? (Array.isArray(payload.hinhanhXoa) ? payload.hinhanhXoa : JSON.parse(payload.hinhanhXoa))
                 : [];
 
-            // 2. Cập nhật thông tin sản phẩm chính
+            // 2. Cập nhật sản phẩm chính
             await this.sanpham.updateOne(
                 { _id: objectId },
                 {
@@ -233,30 +230,29 @@ class ProductServer {
                 await this.mausanpham.insertMany(mauDocs);
             }
 
-            // 4. Cập nhật kích thước
+            // 4. Cập nhật kích thước (chỉ chứa size)
             await this.kichthuoc.deleteMany({ masanpham: objectId });
-            const kichThuocDocs = kichthuoc.map(sizeObj => ({
-                masanpham: objectId,
-                size: sizeObj.size,
-                soluong: sizeObj.soluong,
-            }));
+            const kichThuocDocs = kichthuoc.map(size =>
+                typeof size === "string"
+                    ? { masanpham: objectId, size: size.trim() }
+                    : { masanpham: objectId, size: size?.size?.trim() }
+            );
             if (kichThuocDocs.length > 0) {
                 await this.kichthuoc.insertMany(kichThuocDocs);
             }
 
             // 5. Cập nhật hình ảnh
-            // a. Danh sách ảnh hiện có trong DB
             const existingImages = await this.hinhanhsanpham.find({ masanpham: objectId }).toArray();
             const existingImgMap = new Map(existingImages.map(img => [img.tenfile, img]));
 
-            // b. Danh sách ảnh cần giữ lại (ảnh cũ + ảnh upload mới)
             const newImages = [
                 ...hinhanhCu.map(img => ({ tenfile: img.tenfile })),
                 ...(Array.isArray(files) ? files.map(file => ({ tenfile: file.filename })) : []),
             ];
+
             const newImgSet = new Set(newImages.map(img => img.tenfile));
 
-            // c. Thêm ảnh mới chưa có trong DB
+            // Thêm ảnh mới chưa có trong DB
             for (const img of newImages) {
                 if (!existingImgMap.has(img.tenfile)) {
                     await this.hinhanhsanpham.insertOne({
@@ -266,7 +262,7 @@ class ProductServer {
                 }
             }
 
-            // d. Xóa ảnh đã bị loại bỏ (theo _id)
+            // Xóa ảnh theo _id
             if (Array.isArray(hinhanhXoa) && hinhanhXoa.length > 0) {
                 for (const imgId of hinhanhXoa) {
                     try {
@@ -289,7 +285,6 @@ class ProductServer {
             };
         }
     }
-
 
     async deleteProduct(id) {
         try {

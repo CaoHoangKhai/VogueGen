@@ -45,30 +45,35 @@ class CartService {
         return result;
     }
     async addToCart(payload) {
-        const data = this.extractCartData(payload);
-        if (!data.manguoidung || !data.masanpham || !data.size || !data.mausac) {
-            throw new Error("Dữ liệu không hợp lệ.");
-        }
-
-        const existed = await this.cart.findOne({
-            manguoidung: data.manguoidung,
-            masanpham: data.masanpham,
-            size: data.size,
-            mausac: data.mausac
-        });
-
-        if (existed) {
-            // Nếu sản phẩm với size & màu đã có trong giỏ, tăng số lượng
-            await this.cart.updateOne(
-                { _id: existed._id },
-                { $inc: { soluong: data.soluong } }
-            );
-            return { message: "Đã cập nhật số lượng trong giỏ hàng." };
-        } else {
-            await this.cart.insertOne(data);
-            return { message: "Đã thêm vào giỏ hàng." };
-        }
+    const data = this.extractCartData(payload);
+    if (!data.manguoidung || !data.masanpham || !data.size || !data.mausac) {
+        throw new Error("Dữ liệu không hợp lệ.");
     }
+
+    const existed = await this.cart.findOne({
+        manguoidung: data.manguoidung,
+        masanpham: data.masanpham,
+        size: data.size,
+        mausac: data.mausac
+    });
+
+    if (existed) {
+        // Nếu đã tồn tại, tăng thêm 1
+        await this.cart.updateOne(
+            { _id: existed._id },
+            { $inc: { soluong: 1 } }
+        );
+        return { success: true, message: "Đã tăng số lượng sản phẩm trong giỏ hàng." };
+    } else {
+        await this.cart.insertOne({
+            ...data,
+            soluong: 1 // mặc định là 1
+        });
+        return { success: true, message: "Đã thêm vào giỏ hàng." };
+    }
+}
+
+
 
 
     async increaseQuantity(cartId) {

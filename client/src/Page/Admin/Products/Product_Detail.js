@@ -64,7 +64,6 @@ const ProductDetail = () => {
           if (Array.isArray(product.kichthuoc)) {
             setSelectedSizes(product.kichthuoc.map((item) => ({
               size: item.size,
-              soluong: item.soluong,
             })));
             setLockedSizes(product.kichthuoc.map((item) => item.size));
           } else {
@@ -235,7 +234,7 @@ const ProductDetail = () => {
             );
           })}
         </div>
-        {selectedSizes.length > 0 && (
+        {/* {selectedSizes.length > 0 && (
           <div className="mb-4">
             <label className="form-label fw-bold mb-3">Số lượng theo size:</label>
             {selectedSizes.map(({ size, soluong }) => (
@@ -259,7 +258,7 @@ const ProductDetail = () => {
               </div>
             ))}
           </div>
-        )}
+        )} */}
       </div>
     );
   }
@@ -499,10 +498,7 @@ const ProductDetail = () => {
       giasanpham: Number(form.giasanpham),
       theloai: form.theloai,
       mota: form.mota,
-      kichthuoc: selectedSizes.map(s => ({
-        size: s.size,
-        soluong: Number(s.soluong),
-      })),
+      kichthuoc: selectedSizes.map(s => ({ size: s.size })),
       mausanpham: selectedColors,
       hinhanh: {
         old: oldImages,
@@ -548,11 +544,8 @@ const ProductDetail = () => {
         setLoading(false);
         return;
       }
+      const kichthuoc = selectedSizes.map(({ size }) => ({ size }));
 
-      const kichthuoc = selectedSizes.map(({ size, soluong }) => ({
-        size,
-        soluong,
-      }));
 
       const mausanpham = selectedColors;
 

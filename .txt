@@ -8,7 +8,7 @@ Xem danh sách đơn hàng
 Tìm kiếm đơn hàng theo( tên người đặt, theo mã, theo trạng thái)
 
 
-đã xog thêm sản phẩm vào giỏ hàng, nhưng số lượng theo size đó ko bị giảm, 
+đã xog thêm sản phẩm vào giỏ hàng, nhưng số lượng theo size đó ko bị giảm, ( BỎ SỐ LƯỢNG)
 
 bây giờ còn 
 chỉnh sửa thông tin cá nhân

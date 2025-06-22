@@ -244,9 +244,18 @@ const Cart = () => {
                         <div className="card-header fw-bold">Thanh toán</div>
                         <div className="card-body">
                             <p>Tổng tiền: {total.toLocaleString("vi-VN")}đ</p>
-                            <Link to="/auth/order" className="btn btn-primary w-100" disabled={cartItems.length === 0}>
+                            <button
+                                className="btn btn-primary w-100"
+                                disabled={cartItems.length === 0}
+                                onClick={() => {
+                                    if (cartItems.length > 0) {
+                                        window.location.href = "/auth/order"; // hoặc dùng navigate
+                                    }
+                                }}
+                            >
                                 Đặt hàng
-                            </Link>
+                            </button>
+
                         </div>
                     </div>
                 </div>

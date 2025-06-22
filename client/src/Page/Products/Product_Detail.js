@@ -193,15 +193,15 @@ const ProductDetail = () => {
     // Render danh sách hình nhỏ (thumbnail)
     function renderImageThumbnails() {
         return (
-            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginRight: 12, maxHeight: 320, overflowY: "auto" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginRight: 12, maxHeight: 470, overflowY: "auto" }}>
                 {product.hinhanh?.map((img) => (
                     <img
                         key={img._id}
                         src={img.url}
                         alt={img.tenfile}
                         style={{
-                            width: 60,
-                            height: 60,
+                            width: 80,
+                            height: 80,
                             objectFit: "cover",
                             borderRadius: 4,
                             border: mainImg === img.url ? "2px solid #007bff" : "1px solid #ccc",
@@ -218,30 +218,31 @@ const ProductDetail = () => {
 
     // Render ảnh chính
     function renderMainImage() {
-        return (
-            <div style={{
-                borderRadius: 8,
-                padding: 8,
-                background: "#fff",
-                flexGrow: 1,
-                maxWidth: 320,
-                height: 320,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center"
-            }}>
-                {mainImg ? (
-                    <img
-                        src={mainImg}
-                        alt={product.tensanpham}
-                        style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 8 }}
-                    />
-                ) : (
-                    <div style={{ color: "#888" }}>Không có ảnh</div>
-                )}
-            </div>
-        )
-    };
+    return (
+        <div style={{
+            borderRadius: 8,
+            padding: 8,
+            background: "#fff",
+            flexGrow: 1,
+            maxWidth: 480, // Tăng kích thước tối đa
+            height: 480,    // Tăng chiều cao
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center"
+        }}>
+            {mainImg ? (
+                <img
+                    src={mainImg}
+                    alt={product.tensanpham}
+                    style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 8 }}
+                />
+            ) : (
+                <div style={{ color: "#888" }}>Không có ảnh</div>
+            )}
+        </div>
+    );
+}
+
 
     // Render kích thước
     function renderSizes() {
@@ -391,15 +392,7 @@ const ProductDetail = () => {
 
     // Chọn size và số lượng trong modal
     function inputSizeProduct() {
-        const handleQuantityChange = (size, value) => {
-            setSelectedSizes((prev) =>
-                prev.map((s) =>
-                    s.size === size
-                        ? { ...s, soluong: value === "" ? "" : parseInt(value, 10) }
-                        : s
-                )
-            );
-        };
+        
 
         const toggleSize = (size) => {
             setSelectedSizes((prev) => {
@@ -412,23 +405,7 @@ const ProductDetail = () => {
             });
         };
 
-        const handleQuantityBlur = (size) => {
-            setSelectedSizes((prev) =>
-                prev.map((s) => {
-                    if (s.size === size) {
-                        const validNumber = parseInt(s.soluong, 10);
-                        if (isNaN(validNumber) || validNumber < 1) {
-                            return { ...s, soluong: 1 };
-                        }
-                        // Giới hạn số lượng không vượt quá tồn kho
-                        const max = availableSizes.find(sz => sz.size === size)?.soluong || 1;
-                        return { ...s, soluong: Math.min(validNumber, max) };
-                    }
-                    return s;
-                })
-            );
-        };
-
+        
         return (
             <>
                 <div className="mb-3">
@@ -450,37 +427,6 @@ const ProductDetail = () => {
                         })}
                     </div>
                 </div>
-
-                {selectedSizes.length > 0 && (
-                    <div className="mb-4">
-                        <label className="form-label fw-bold mb-3">Số lượng theo size:</label>
-                        {selectedSizes.map(({ size, soluong }) => {
-                            const max = availableSizes.find(sz => sz.size === size)?.soluong || 1;
-                            return (
-                                <div
-                                    key={size}
-                                    className="d-flex align-items-center mb-3 p-2 border rounded"
-                                    style={{ maxWidth: "320px", backgroundColor: "#f8f9fa" }}
-                                >
-                                    <span className="me-3" style={{ minWidth: "60px" }}>
-                                        Size {size}:
-                                    </span>
-                                    <input
-                                        type="number"
-                                        min={1}
-                                        max={max}
-                                        value={soluong === "" ? "" : soluong}
-                                        onChange={(e) => handleQuantityChange(size, e.target.value)}
-                                        onBlur={() => handleQuantityBlur(size)}
-                                        className="form-control"
-                                        style={{ maxWidth: "80px" }}
-                                    />
-                                    <span className="ms-2 text-muted">(Còn {max})</span>
-                                </div>
-                            );
-                        })}
-                    </div>
-                )}
             </>
         );
     }
@@ -489,21 +435,29 @@ const ProductDetail = () => {
         <div className="container mt-5">
             <div className="row">
                 {/* Phần ảnh sản phẩm */}
-                <div className="col-md-4 mb-4 d-flex flex-column">
-                    {renderMainImage()}
-                    <div className="mt-3 d-flex justify-content-start">
-                        {renderImageThumbnails()}
+                <div className="col-md-6 mb-4">
+                    <div className="d-flex align-items-start">
+                        {/* Thumbnail nằm dọc bên trái */}
+                        <div className="me-3 d-flex flex-column gap-2">
+                            {renderImageThumbnails()}
+                        </div>
+
+                        {/* Ảnh chính */}
+                        <div style={{ flex: 1 }}>
+                            {renderMainImage()}
+                        </div>
                     </div>
                 </div>
 
+
                 {/* Phần thông tin sản phẩm */}
-                <div className="col-md-7">
+                <div className="col-md-6">
                     <div
                         style={{
                             display: "flex",
                             alignItems: "center",
-                            justifyContent: "start", // không dùng space-between
-                            gap: 8 // hoặc 4 nếu muốn sát hơn
+                            justifyContent: "start",
+                            gap: 8,
                         }}
                     >
                         <h2
@@ -513,7 +467,7 @@ const ProductDetail = () => {
                                 lineHeight: "1",
                                 whiteSpace: "nowrap",
                                 overflow: "hidden",
-                                textOverflow: "ellipsis"
+                                textOverflow: "ellipsis",
                             }}
                         >
                             {product.tensanpham}
@@ -523,7 +477,7 @@ const ProductDetail = () => {
                                 marginLeft: 8,
                                 display: "flex",
                                 alignItems: "center",
-                                cursor: "pointer"
+                                cursor: "pointer",
                             }}
                         >
                             {renderFavoriteIcon()}
@@ -564,9 +518,9 @@ const ProductDetail = () => {
                             Thiết kế
                         </button>
                     </div>
-
                 </div>
             </div>
+
 
             {/* Modal Bootstrap khi thêm vào giỏ hàng */}
             {showModal && (

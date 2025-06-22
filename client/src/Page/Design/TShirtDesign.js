@@ -23,11 +23,9 @@ const sectionTitle = {
 const TShirtDesign = () => {
     const { id } = useParams();
     const [design, setDesign] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [selectedImg, setSelectedImg] = useState(null);
-    const [uploadedImg, setUploadedImg] = useState(null);
+
+    // const [uploadedImg, setUploadedImg] = useState(null);
     const [selectedColor, setSelectedColor] = useState("#ffffff");
-    const [texts, setTexts] = useState([]);
     const [inputText, setInputText] = useState("");
     const [fontFamily, setFontFamily] = useState("Arial");
     const [isBold, setIsBold] = useState(false);
@@ -36,10 +34,16 @@ const TShirtDesign = () => {
     const [activeTab, setActiveTab] = useState("color");
     const [selectedSide, setSelectedSide] = useState("front"); // hoặc "back"
     const [showHelpers, setShowHelpers] = useState(true);
+    const [selectedImageId, setSelectedImageId] = useState(null);
 
+    const canvasWrapperRef = useRef();
     const canvasRef = useRef();
     const textAreaRef = useRef();
-    const bounds = textAreaRef.current.getBoundingClientRect();
+
+    const [selectedImgs, setSelectedImgs] = useState({
+        front: null,
+        back: null
+    });
 
     const menu = [
         { label: "Color", key: "color", icon: <FaPalette /> },
@@ -54,37 +58,45 @@ const TShirtDesign = () => {
                 const data = await getDesignById(id);
                 setDesign(data);
                 if (data?.hinhanh_mau?.length > 0) {
-                    setSelectedImg(data.hinhanh_mau[0].url);
+                    const frontImg = data.hinhanh_mau.find(img => img.position === "front");
+                    const backImg = data.hinhanh_mau.find(img => img.position === "back");
+
+                    setSelectedImgs({
+                        front: frontImg?.url || null,
+                        back: backImg?.url || null
+                    });
                 }
+
             } catch {
                 setDesign(null);
-            } finally {
-                setLoading(false);
             }
         };
         fetchDesign();
     }, [id]);
 
+
     useEffect(() => {
         const handleClickOutside = (e) => {
-            // Chỉ giữ lại selected nếu click vào text-element
-            if (!e.target.closest(".text-element")) {
+            // Nếu click ngoài vùng canvas (không nằm trong wrapper)
+            if (canvasWrapperRef.current && !canvasWrapperRef.current.contains(e.target)) {
                 setDesignData((prev) => ({
                     ...prev,
                     [selectedSide]: {
                         ...prev[selectedSide],
-                        texts: prev[selectedSide].texts.map((t) => ({ ...t, selected: false }))
+                        texts: prev[selectedSide].texts.map((t) => ({ ...t, selected: false })),
+                        images: prev[selectedSide].images.map((img) => ({ ...img, selected: false }))
                     }
                 }));
+                setSelectedImageId(null); // ✅ xoá ảnh đang chọn
             }
         };
 
         document.addEventListener("click", handleClickOutside);
-
-        return () => {
-            document.removeEventListener("click", handleClickOutside);
-        };
+        return () => document.removeEventListener("click", handleClickOutside);
     }, [selectedSide]);
+
+
+
 
     const handleExportImage = async (format = "png") => {
         if (!canvasRef.current) return;
@@ -130,22 +142,175 @@ const TShirtDesign = () => {
 
 
     const [designData, setDesignData] = useState({
-        front: { texts: [], uploadedImg: null },
-        back: { texts: [], uploadedImg: null }
+        front: { texts: [], images: [] },
+        back: { texts: [], images: [] }
     });
-    const handleSelectImg = (img) => {
-        setSelectedImg(img.url);           // ảnh được hiển thị
-        setSelectedSide(img.position);     // mặt đang được thiết kế: "front" hoặc "back"
+    const handleSelectBgImage = (img) => {
+        setSelectedImgs(prev => ({
+            ...prev,
+            [img.position]: img.url
+        }));
     };
 
+    // const handleSelectImg = (img) => {
+    //     const newImage = {
+    //         id: Date.now(),
+    //         src: img.url,
+    //         position: { x: 100, y: 100 },
+    //         size: { width: 150, height: 150 },
+    //         selected: false,
+    //         rotation: 0, // mới: xoay
+    //         crop: null   // nếu sau này bạn thêm cropping
+    //     };
+
+    //     setDesignData((prev) => ({
+    //         ...prev,
+    //         [selectedSide]: {
+    //             ...prev[selectedSide],
+    //             images: [...prev[selectedSide].images, newImage]
+    //         }
+    //     }));
+    // };
+
+
+    const selectImage = (id) => {
+        setSelectedImageId(id); // ✅ mới
+        setDesignData((prev) => ({
+            ...prev,
+            [selectedSide]: {
+                ...prev[selectedSide],
+                images: prev[selectedSide].images.map((img) => ({
+                    ...img,
+                    selected: img.id === id
+                }))
+            }
+        }));
+    };
+   const ControlButton = ({ onClick, pos, title, icon }) => {
+  const [vPos, hPos] = pos.split("-");
+
+  const style = {
+    position: "absolute",
+    width: 28,
+    height: 28,
+    fontSize: 14,
+    background: "#fff",
+    border: "1px solid #ccc",
+    borderRadius: "50%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+    zIndex: 11,
+  };
+
+  // Căn sát mép trong, thay vì top/left = 0
+  const spacing = 4;
+
+  if (vPos === "top") {
+    style.top = spacing;
+  } else if (vPos === "bottom") {
+    style.bottom = spacing;
+  }
+
+  if (hPos === "left") {
+    style.left = spacing;
+  } else if (hPos === "right") {
+    style.right = spacing;
+  } else if (hPos === "center") {
+    style.left = "50%";
+    style.transform = "translateX(-50%)";
+  }
+
+  return (
+    <button onClick={onClick} style={style} title={title}>
+      {icon}
+    </button>
+  );
+};
+
+
+
+
+    const deleteImage = (id) => {
+        setDesignData((prev) => ({
+            ...prev,
+            [selectedSide]: {
+                ...prev[selectedSide],
+                images: prev[selectedSide].images.filter((img) => img.id !== id)
+            }
+        }));
+    };
+
+    const cloneImage = (id) => {
+        setDesignData((prev) => {
+            const img = prev[selectedSide].images.find((i) => i.id === id);
+            if (!img) return prev;
+
+            const newImg = {
+                ...img,
+                id: Date.now(),
+                position: { x: img.position.x + 20, y: img.position.y + 20 },
+                selected: false
+            };
+
+            return {
+                ...prev,
+                [selectedSide]: {
+                    ...prev[selectedSide],
+                    images: [...prev[selectedSide].images, newImg]
+                }
+            };
+        });
+    };
+
+    const resizeImage = (id, delta) => {
+        setDesignData((prev) => ({
+            ...prev,
+            [selectedSide]: {
+                ...prev[selectedSide],
+                images: prev[selectedSide].images.map((img) =>
+                    img.id === id
+                        ? {
+                            ...img,
+                            size: {
+                                width: img.size.width + delta,
+                                height: img.size.height + delta
+                            }
+                        }
+                        : img
+                )
+            }
+        }));
+    };
 
     const handleUploadImage = (e) => {
         const file = e.target.files[0];
         if (!file) return;
+
         const reader = new FileReader();
-        reader.onload = () => setUploadedImg(reader.result);
+        reader.onload = () => {
+            const newImage = {
+                id: Date.now(),
+                src: reader.result,
+                position: { x: 100, y: 100 },
+                size: { width: 150, height: 150 },
+                selected: false,
+            };
+
+            setDesignData((prev) => ({
+                ...prev,
+                [selectedSide]: {
+                    ...prev[selectedSide],
+                    images: [...prev[selectedSide].images, newImage]
+                }
+            }));
+        };
+
         reader.readAsDataURL(file);
     };
+
 
     const handleAddText = () => {
         const newText = {
@@ -187,6 +352,25 @@ const TShirtDesign = () => {
         }));
     };
 
+    const updateImageSize = (id, updates) => {
+        setDesignData((prev) => ({
+            ...prev,
+            [selectedSide]: {
+                ...prev[selectedSide],
+                images: prev[selectedSide].images.map((img) =>
+                    img.id === id
+                        ? {
+                            ...img,
+                            size: {
+                                ...img.size,
+                                ...updates
+                            }
+                        }
+                        : img
+                )
+            }
+        }));
+    };
 
 
 
@@ -289,6 +473,68 @@ const TShirtDesign = () => {
     };
 
 
+    const handleImageMouseDown = (e, id) => {
+        e.preventDefault();
+
+        // Đảm bảo ref đã sẵn sàng
+        if (!textAreaRef.current) return;
+
+        const bounds = textAreaRef.current.getBoundingClientRect(); // Vùng giới hạn
+        const startX = e.clientX;
+        const startY = e.clientY;
+
+        const targetImg = designData[selectedSide].images.find((img) => img.id === id);
+        if (!targetImg) return; // Tránh lỗi nếu không tìm thấy
+
+        const startPos = targetImg.position;
+
+        const handleMouseMove = (eMove) => {
+            const dx = eMove.clientX - startX;
+            const dy = eMove.clientY - startY;
+
+            let newX = startPos.x + dx;
+            let newY = startPos.y + dy;
+
+            const estimatedWidth = targetImg.size?.width || 100;
+            const estimatedHeight = targetImg.size?.height || 100;
+
+            // Giới hạn không ra ngoài vùng thiết kế
+            newX = Math.max(0, Math.min(newX, bounds.width - estimatedWidth));
+            newY = Math.max(0, Math.min(newY, bounds.height - estimatedHeight));
+
+            setDesignData((prev) => {
+                const updated = { ...prev };
+                const image = updated[selectedSide].images.find((img) => img.id === id);
+                if (image) {
+                    image.position = { x: newX, y: newY };
+                }
+                return updated;
+            });
+        };
+
+        const handleMouseUp = () => {
+            window.removeEventListener("mousemove", handleMouseMove);
+            window.removeEventListener("mouseup", handleMouseUp);
+        };
+
+        window.addEventListener("mousemove", handleMouseMove);
+        window.addEventListener("mouseup", handleMouseUp);
+    };
+
+
+    const rotateImage = (id) => {
+        setDesignData((prev) => ({
+            ...prev,
+            [selectedSide]: {
+                ...prev[selectedSide],
+                images: prev[selectedSide].images.map((img) =>
+                    img.id === id
+                        ? { ...img, rotation: ((img.rotation || 0) + 15) % 360 }
+                        : img
+                )
+            }
+        }));
+    };
 
     const iconStyle = (vPos, hPos) => ({
         position: "absolute",
@@ -467,10 +713,56 @@ const TShirtDesign = () => {
                                 <span><h5>Click để tải ảnh</h5><p>PNG, JPG, JPEG</p></span>
                             </label>
                             <input id="fileInput" type="file" accept="image/*" onChange={handleUploadImage} className="d-none" />
-                            {designData[selectedSide].uploadedImg && (
-                                <img src={designData[selectedSide].uploadedImg} alt="Uploaded" style={{ marginTop: 12, width: "100%", borderRadius: "8px" }} />
-                            )}
+
+                            {/* Nếu có ảnh được chọn */}
+                            {selectedImageId && (() => {
+                                const selectedImg = designData[selectedSide].images.find(img => img.id === selectedImageId);
+                                if (!selectedImg) return null;
+
+                                return (
+                                    <div className="mt-4">
+                                        <h6 className="mb-2 text-dark">📐 Chi tiết ảnh</h6>
+                                        <img
+                                            src={selectedImg.src}
+                                            alt="Xem trước"
+                                            className="img-fluid rounded mb-3"
+                                            style={{ maxHeight: 150 }}
+                                        />
+
+                                        <div className="mb-2">
+                                            <label className="form-label">Chiều rộng (px)</label>
+                                            <input
+                                                type="number"
+                                                className="form-control"
+                                                value={selectedImg.size.width}
+                                                onChange={(e) => {
+                                                    const newWidth = parseInt(e.target.value, 10);
+                                                    if (!isNaN(newWidth)) {
+                                                        updateImageSize(selectedImg.id, { width: newWidth });
+                                                    }
+                                                }}
+                                            />
+                                        </div>
+
+                                        <div className="mb-2">
+                                            <label className="form-label">Chiều cao (px)</label>
+                                            <input
+                                                type="number"
+                                                className="form-control"
+                                                value={selectedImg.size.height}
+                                                onChange={(e) => {
+                                                    const newHeight = parseInt(e.target.value, 10);
+                                                    if (!isNaN(newHeight)) {
+                                                        updateImageSize(selectedImg.id, { height: newHeight });
+                                                    }
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+                                );
+                            })()}
                         </div>
+
                     )}
 
                     {activeTab === "export" && (
@@ -510,7 +802,8 @@ const TShirtDesign = () => {
                 {/* Vùng thiết kế giữa (col-8) */}
                 <div className="col-12 py-4 d-flex justify-content-center align-items-start">
                     <div
-                        ref={canvasRef}
+
+                        ref={canvasWrapperRef}
                         style={{
                             width: 500,
                             height: 595,
@@ -521,22 +814,23 @@ const TShirtDesign = () => {
                             overflow: "hidden"
                         }}
                     >
-                        {selectedImg && (
+                        {selectedImgs[selectedSide] && (
                             <img
-                                src={selectedImg}
+                                src={selectedImgs[selectedSide]}
                                 alt="Mẫu"
                                 className="position-absolute w-100 h-100"
                                 style={{ objectFit: "contain", zIndex: 1 }}
                             />
                         )}
-                        {uploadedImg && (
+
+                        {/* {uploadedImg && (
                             <img
                                 src={uploadedImg}
                                 alt="Upload"
                                 className="position-absolute"
                                 style={{ top: "35%", left: "35%", width: "30%", zIndex: 2, opacity: 0.9 }}
                             />
-                        )}
+                        )} */}
                         <div
                             ref={textAreaRef}
                             style={{
@@ -572,7 +866,7 @@ const TShirtDesign = () => {
                                     <div
                                         style={{
                                             position: "relative",
-                                            padding: 8,
+                                            padding: 28,
                                             border: item.selected ? "1px dashed #888" : "none",
                                             // background: "rgba(255,255,255,0.5)", // giúp nhìn rõ chữ nếu nền tối
                                             borderRadius: 4,
@@ -636,6 +930,91 @@ const TShirtDesign = () => {
                                     </div>
                                 </div>
                             ))}
+                            {designData[selectedSide].images.map((img) => (
+                                <div
+                                    key={img.id}
+                                    className="image-element"
+                                    onMouseDown={(e) => handleImageMouseDown(e, img.id)}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        selectImage(img.id);
+                                    }}
+                                    style={{
+                                        position: "absolute",
+                                        top: img.position.y,
+                                        left: img.position.x,
+                                        width: img.size.width,
+                                        height: img.size.height,
+                                        zIndex: img.selected ? 10 : 1,
+                                        cursor: "move"
+                                    }}
+                                >
+                                    <div style={{ position: "relative", width: "100%", height: "100%" }}>
+                                        <img
+                                            src={img.src}
+                                            alt=""
+                                            style={{
+                                                width: "100%",
+                                                height: "100%",
+                                                objectFit: "contain",
+                                                transform: `rotate(${img.rotation || 0}deg)`
+                                            }}
+                                        />
+
+                                        {img.selected && showHelpers && (
+                                            <>
+                                                <ControlButton
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        deleteImage(img.id);
+                                                    }}
+                                                    pos="top-left"
+                                                    title="Xóa"
+                                                    icon="🗑️"
+                                                />
+                                                <ControlButton
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        cloneImage(img.id);
+                                                    }}
+                                                    pos="top-right"
+                                                    title="Nhân bản"
+                                                    icon="📄"
+                                                />
+                                                <ControlButton
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        resizeImage(img.id, +20);
+                                                    }}
+                                                    pos="bottom-left"
+                                                    title="Phóng to"
+                                                    icon="➕"
+                                                />
+                                                <ControlButton
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        resizeImage(img.id, -10);
+                                                    }}
+                                                    pos="bottom-right"
+                                                    title="Thu nhỏ"
+                                                    icon="➖"
+                                                />
+                                                <ControlButton
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        rotateImage(img.id);
+                                                    }}
+                                                    pos="top-center"
+                                                    title="Xoay"
+                                                    icon="🔄"
+                                                />
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+
+                            ))}
+
                         </div>
                     </div>
                 </div>
@@ -656,52 +1035,57 @@ const TShirtDesign = () => {
                         borderLeft: "1px solid #ccc"
                     }}
                 >
-                    <div style={panelStyle}>
-                        <div style={sectionTitle}>Chọn mẫu</div>
-                        {design?.hinhanh_mau?.length > 0 && (
-                            <>
-                                {/* Front */}
-                                <div className="d-flex flex-column gap-2 mb-3">
-                                    {design.hinhanh_mau.filter(img => img.position === "front").map((img, idx) => (
-                                        <div
-                                            key={`front-${idx}`}
-                                            onClick={() => handleSelectImg(img)}
-                                            className={`rounded shadow-sm border ${selectedImg === img.url ? "border-primary border-3" : "border-light"}`}
-                                            style={{
-                                                width: 60,
-                                                height: 60,
-                                                backgroundImage: `url(${img.url})`,
-                                                backgroundSize: "cover",
-                                                backgroundPosition: "center",
-                                                cursor: "pointer"
-                                            }}
-                                        />
-                                    ))}
-                                </div>
-
-                                {/*Back */}
+                    <div
+                        className="col-1"
+                        style={{
+                            position: "fixed",
+                            top: 0,
+                            right: 0,
+                            width: 120,
+                            height: "100vh",
+                            background: "#f1f3f5",
+                            padding: 20,
+                            overflowY: "auto",
+                            zIndex: 998,
+                            borderLeft: "1px solid #ccc"
+                        }}
+                    >
+                        <div style={panelStyle}>
+                            <div style={sectionTitle}>Chọn mẫu</div>
+                            {design?.hinhanh_mau?.length > 0 && (
                                 <div className="d-flex flex-column gap-2">
-                                    {design.hinhanh_mau.filter(img => img.position === "back").map((img, idx) => (
-                                        <div
-                                            key={`back-${idx}`}
-                                            onClick={() => handleSelectImg(img)}
-                                            className={`rounded shadow-sm border ${selectedImg === img.url ? "border-primary border-3" : "border-light"}`}
-                                            style={{
-                                                width: 60,
-                                                height: 60,
-                                                backgroundImage: `url(${img.url})`,
-                                                backgroundSize: "cover",
-                                                backgroundPosition: "center",
-                                                cursor: "pointer"
-                                            }}
-                                        />
-                                    ))}
+                                    {["front", "back"].map((side) => {
+                                        const img = design.hinhanh_mau.find(i => i.position === side);
+                                        if (!img) return null;
+
+                                        return (
+                                            <div
+                                                key={side}
+                                                onClick={() => {
+                                                    handleSelectBgImage(img);
+                                                    setSelectedSide(side);
+                                                }}
+                                                className={`rounded shadow-sm border ${selectedSide === side && selectedImgs[side] === img.url
+                                                    ? "border-primary border-3"
+                                                    : "border-light"
+                                                    }`}
+                                                style={{
+                                                    width: 60,
+                                                    height: 60,
+                                                    backgroundImage: `url(${img.url})`,
+                                                    backgroundSize: "cover",
+                                                    backgroundPosition: "center",
+                                                    cursor: "pointer"
+                                                }}
+                                                title={side === "front" ? "Mặt trước" : "Mặt sau"}
+                                            />
+                                        );
+                                    })}
                                 </div>
-                            </>
-                        )}
+                            )}
+                        </div>
                     </div>
                 </div>
-
             </div>
         </div>
     );
