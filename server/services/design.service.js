@@ -14,13 +14,13 @@ class DesignService {
         this.theloaisanpham = client.db().collection("theloaisanpham");
         this.nguoidung = client.db().collection("nguoidung");
         this.mauthietke = client.db().collection("mauthietke");
+        this.thietkecuanguoidung = client.db().collection("thietkecuanguoidung")
     }
 
     async createDesign({ manguoidung, theloai }) {
         if (!ObjectId.isValid(manguoidung)) throw new Error("ID người dùng không hợp lệ.");
         if (!ObjectId.isValid(theloai)) throw new Error("ID thể loại không hợp lệ.");
 
-        // Kiểm tra người dùng có tồn tại không
         const user = await this.nguoidung.findOne({ _id: new ObjectId(manguoidung) });
         if (!user) {
             return {
@@ -29,7 +29,6 @@ class DesignService {
             };
         }
 
-        // Kiểm tra thể loại có tồn tại không
         const category = await this.theloaisanpham.findOne({ _id: new ObjectId(theloai) });
         if (!category) {
             return {
@@ -38,37 +37,41 @@ class DesignService {
             };
         }
 
-        const designData = {
+        // 👉 Tạm thời insert trước để lấy ObjectId
+        const tempResult = await this.design.insertOne({
             manguoidung: new ObjectId(manguoidung),
             theloai: new ObjectId(theloai),
             ngaytao: new Date()
-        };
+        });
 
-        const result = await this.design.insertOne(designData);
-
-        // Tạo link giống getDesignByUser
+        const insertedId = tempResult.insertedId;
         const slugPrefix = category?.tendanhmuc ? toSlug(category.tendanhmuc) : "san-pham";
-        const originalId = result.insertedId.toString();
-        const link = `${slugPrefix}/${originalId}`;
+        const link = `${slugPrefix}/${insertedId}`;
+        const ten = `Thiết kế ${insertedId.toString()}`;
 
-        // Cập nhật trường link vào document vừa tạo
+        // 👉 Cập nhật lại với tên + link
         await this.design.updateOne(
-            { _id: result.insertedId },
-            { $set: { link: link } }
+            { _id: insertedId },
+            { $set: { link, ten } }
         );
 
         return {
             success: true,
             message: "Khởi tạo thiết kế thành công.",
-            id: result.insertedId,
+            id: insertedId,
             link
         };
     }
 
+
     async getDesignsByUser(manguoidung) {
         if (!ObjectId.isValid(manguoidung)) throw new Error("ID người dùng không hợp lệ.");
 
-        const designs = await this.design.find({ manguoidung: new ObjectId(manguoidung) }).toArray();
+        const designs = await this.design
+            .find({ manguoidung: new ObjectId(manguoidung) })
+            .sort({ ngaytao: -1 }) // 🆕 sắp xếp mới nhất lên đầu
+            .toArray();
+
 
         for (const design of designs) {
             // Lấy thông tin thể loại
@@ -135,6 +138,92 @@ class DesignService {
         return design;
 
     }
+
+    async saveUserDesignFull({ designId, color, designData }) {
+        if (!ObjectId.isValid(designId)) throw new Error("ID thiết kế không hợp lệ.");
+
+        // Kiểm tra thiết kế gốc có tồn tại không
+        const design = await this.design.findOne({ _id: new ObjectId(designId) });
+        if (!design) {
+            return { success: false, message: "Thiết kế không tồn tại." };
+        }
+
+        const operations = [];
+
+        // Duyệt qua cả hai mặt: front, back
+        for (const side of ["front", "back"]) {
+            const data = {
+                id_thietke: new ObjectId(designId),
+                side,
+                color,
+                texts: designData[side]?.texts || [],
+                images: designData[side]?.images || [],
+                updated_at: new Date()
+            };
+
+            // Thêm created_at nếu là tạo mới
+            operations.push(
+                this.thietkecuanguoidung.updateOne(
+                    { id_thietke: data.id_thietke, side: side },
+                    {
+                        $set: data,
+                        $setOnInsert: { created_at: new Date() }
+                    },
+                    { upsert: true }
+                )
+            );
+        }
+
+        // Thực hiện song song
+        await Promise.all(operations);
+
+        return {
+            success: true,
+            message: "Đã lưu hoặc cập nhật thiết kế người dùng (2 mặt)."
+        };
+    }
+
+    async getUserDesignByDesignId(designId) {
+        if (!ObjectId.isValid(designId)) throw new Error("ID thiết kế không hợp lệ.");
+
+        const data = await this.thietkecuanguoidung
+            .find({ id_thietke: new ObjectId(designId) })
+            .toArray();
+
+        if (!data || data.length === 0) {
+            return {
+                success: false,
+                message: "Chưa có thiết kế người dùng cho ID này."
+            };
+        }
+
+        // Gom dữ liệu theo mặt áo (front/back)
+        const designData = {
+            front: { texts: [], images: [] },
+            back: { texts: [], images: [] }
+        };
+
+        let color = null;
+
+        data.forEach((entry) => {
+            if (entry.side === "front" || entry.side === "back") {
+                designData[entry.side] = {
+                    texts: entry.texts || [],
+                    images: entry.images || []
+                };
+                color = entry.color || color;
+            }
+        });
+
+        return {
+            success: true,
+            message: "Lấy thiết kế người dùng thành công.",
+            tshirtColor: color,
+            designData
+        };
+    }
+
+
 }
 
 module.exports = DesignService;

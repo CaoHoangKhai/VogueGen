@@ -17,3 +17,17 @@ export const getDesignById = async (id) => {
     const res = await axios.get(`${API_URL_DESIGN}/${id}`);
     return res.data;
 };
+
+export const saveUserDesign = async ({ designId, tshirtColor, designData }) => {
+    const res = await axios.post(`${API_URL_DESIGN}/save-user-design`, {
+        designId,
+        tshirtColor,
+        designData
+    });
+    return res.data;
+};
+
+export const getUserDesignById = async (designId) => {
+    const res = await axios.get(`${API_URL_DESIGN}/user-design/${designId}`);
+    return res.data;
+};

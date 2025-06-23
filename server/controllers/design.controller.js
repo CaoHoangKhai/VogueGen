@@ -52,3 +52,54 @@ exports.getDesignById = async (req, res) => {
         });
     }
 };
+
+exports.saveUserDesign = async (req, res) => {
+  try {
+    const { designId, tshirtColor, designData } = req.body;
+
+    if (!designId || !designData || !tshirtColor) {
+      return res.status(400).json({
+        success: false,
+        message: "Thiếu dữ liệu: designId, tshirtColor hoặc designData."
+      });
+    }
+
+    const designService = new DesignService(MongoDB.client);
+    const result = await designService.saveUserDesignFull({
+      designId,
+      color: tshirtColor,
+      designData
+    });
+
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error("❌ Lỗi khi lưu thiết kế người dùng:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Lỗi server khi lưu thiết kế.",
+      error: error.message
+    });
+  }
+};
+
+
+exports.getUserDesignByDesignId = async (req, res) => {
+    try {
+        const { designId } = req.params;
+        const designService = new DesignService(MongoDB.client);
+        const result = await designService.getUserDesignByDesignId(designId);
+
+        if (!result.success) {
+            return res.status(404).json(result);
+        }
+
+        res.status(200).json(result);
+    } catch (error) {
+        console.error("❌ Lỗi khi lấy thiết kế người dùng:", error);
+        res.status(500).json({
+            success: false,
+            message: "Lỗi server khi lấy thiết kế người dùng.",
+            error: error.message
+        });
+    }
+};

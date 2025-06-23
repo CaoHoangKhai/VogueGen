@@ -14,18 +14,18 @@ bây giờ còn
 chỉnh sửa thông tin cá nhân
 
 
-design cho phép xem lại thiết kế???
-có được đặt hàng thêm với thiết kế mới
-lưu thiết kế vào csdl thế nào
+design cho phép xem lại thiết kế( ĐƯỢC)
+có được đặt hàng thêm với thiết kế mới ( ĐANG LÀM)
+lưu thiết kế vào csdl thế nào (SD BASE 64)
 
 
 color: 
 hiển thị màu ra ngoài giống giống các ô màu
 
 image: 
-tải ảnh lên thì có lưu vào csdl hay ko?
-	nếu có thì ảnh thiết kế là nối tới ảnh csdl hay ảnh được chèn vào hàng của cột thiết kế
-	nếu chèn vào thì người dùng muốn xóa có được ko?
+tải ảnh lên thì có lưu vào csdl hay ko? (KO MÀ BĂM BASE64 RỒI LƯU)
+	nếu có thì ảnh thiết kế là nối tới ảnh csdl hay ảnh được chèn vào hàng của cột thiết kế ( ẢNH ĐƯỢC BASE64 ra)
+	 nếu chèn vào thì người dùng muốn xóa có được ko? (BỎ LƯU VÀO BACK HOẶC FRONT)
 
 lưu lại tọa độ và vị trí ảnh.
 có crop ảnh được ko
@@ -37,21 +37,21 @@ có chồng ảnh lên ko
 
 
 ảnh được thiết kế:
-thu nhỏ & phóng to màn hình bị thấy background phía sau tấm ảnh
+thu nhỏ & phóng to màn hình bị thấy background phía sau tấm ảnh (ĐÃ CHỈNH)
 
 thanh chọn ảnh
 
 {chia 2 phần:
-	1 ảnh chọn thiết kế
-	2 ảnh kq 
+	1 ảnh chọn thiết kế ( ĐƯỢC)
+	2 ảnh kq ( BỎ)
 }
 
-thiết kế link ảnh thiết kế
-chèn trực tiếp vào db
-tiền xử lý tên danh mục
+thiết kế link ảnh thiết kế (ĐƯỢC)
+chèn trực tiếp vào db( ĐƯỢC)
+tiền xử lý tên danh mục (ĐƯỢC)
 
 còn 
-thiết kế (đang làm)
+thiết kế (XONG)
 sinh ảnh 
 
 

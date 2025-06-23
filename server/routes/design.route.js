@@ -7,4 +7,9 @@ router.post("/create", designController.createDesign);
 router.get("/user/:manguoidung", designController.getDesignsByUser);
 
 router.get("/:id", designController.getDesignById);
+
+
+router.post("/save-user-design", designController.saveUserDesign);
+router.get("/user-design/:designId", designController.getUserDesignByDesignId);
+
 module.exports = router;
