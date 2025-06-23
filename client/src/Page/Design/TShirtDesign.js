@@ -56,7 +56,7 @@ const TShirtDesign = () => {
     });
 
     const menu = [
-        { label: "Home", key: "home", icon: <FaHome /> },         // 🆕 Thêm dòng này
+        { label: "Home", key: "home", icon: <FaHome /> },
         { label: "Color", key: "color", icon: <FaPalette /> },
         { label: "Image", key: "img", icon: <FaImage /> },
         { label: "Text", key: "text", icon: <FaFont /> },
@@ -117,16 +117,15 @@ const TShirtDesign = () => {
     useEffect(() => {
         const fetchUserDesign = async () => {
             try {
-                const result = await getUserDesignById(id); // id từ useParams
+                const result = await getUserDesignById(id); 
                 if (result?.success) {
-                    setDesignData(result.designData);       // chứa front + back
-                    setSelectedColor(result.tshirtColor);   // màu áo
+                    setDesignData(result.designData);
+                    setSelectedColor(result.tshirtColor);
                 }
             } catch (error) {
                 console.error("Lỗi khi tải thiết kế người dùng:", error);
             }
         };
-
         fetchUserDesign();
     }, [id]);
 
@@ -203,27 +202,6 @@ const TShirtDesign = () => {
             [img.position]: img.url
         }));
     };
-
-    // const handleSelectImg = (img) => {
-    //     const newImage = {
-    //         id: Date.now(),
-    //         src: img.url,
-    //         position: { x: 100, y: 100 },
-    //         size: { width: 150, height: 150 },
-    //         selected: false,
-    //         rotation: 0, // mới: xoay
-    //         crop: null   // nếu sau này bạn thêm cropping
-    //     };
-
-    //     setDesignData((prev) => ({
-    //         ...prev,
-    //         [selectedSide]: {
-    //             ...prev[selectedSide],
-    //             images: [...prev[selectedSide].images, newImage]
-    //         }
-    //     }));
-    // };
-
 
     const selectImage = (id) => {
         setSelectedImageId(id); // ✅ mới
@@ -594,7 +572,7 @@ const TShirtDesign = () => {
 
     const iconStyle = (vPos, hPos) => ({
         position: "absolute",
-        [vPos]: -10,   // hoặc 0 nếu bạn muốn bên trong
+        [vPos]: -10,
         [hPos]: -10,
         background: "#fff",
         border: "1px solid #ccc",
@@ -915,7 +893,7 @@ const TShirtDesign = () => {
                                     border: showHelpers ? "2px dashed rgba(0,0,0,0.2)" : "none",
                                     overflow: "hidden",
                                     zIndex: 3,
-                                    pointerEvents: showHelpers ? "auto" : "none"  // ✅ quan trọng
+                                    pointerEvents: showHelpers ? "auto" : "none"
                                 }}
                             >
                                 {designData[selectedSide].texts.map((item) => (
@@ -1169,7 +1147,6 @@ const TShirtDesign = () => {
                 message={toast.message}
                 onClose={() => setToast((prev) => ({ ...prev, show: false }))}
             />
-
         </>
     );
 };

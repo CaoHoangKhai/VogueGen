@@ -67,12 +67,12 @@ const Footer = () => {
                             </strong>
                             <ul className="list-unstyled mb-4">
                                 <li className="mb-1">
-                                    <Link className="text-decoration-none" style={{ color: "#43A047" }} to={'/phuong_thu_thanh_toan'}>
+                                    <Link className="text-decoration-none" style={{ color: "#43A047" }} to={'/phuong_thuc_thanh_toan'}>
                                         Phương thức thanh toán
                                     </Link>
                                 </li>
                                 <li className="mb-1">
-                                    <Link className="text-decoration-none" style={{ color: "#43A047" }} to={'/phuong_thu_giao_hang'}>
+                                    <Link className="text-decoration-none" style={{ color: "#43A047" }} to={'/phuong_thuc_giao_hang'}>
                                         Phương thức giao hàng
                                     </Link>
                                 </li>

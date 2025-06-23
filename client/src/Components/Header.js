@@ -3,12 +3,12 @@ import Logo from '../assets/images/header/VogueGen.jpg';
 import { Link, useLocation } from 'react-router-dom';
 import { FaShoppingCart, FaUser } from "react-icons/fa";
 
-// Màu fashion: tím, hồng, pastel
 const navLinks = [
     { to: "/products", label: "Products" },
     { to: "/services", label: "Services" },
     { to: "/shipping", label: "Shipping" },
     { to: "/help-center", label: "Help Center" },
+    { to: "/contact", label: "Contact" },
     { to: "/summer-sale", label: "Summer Sale", className: "text-pink fw-bold" }
 ];
 

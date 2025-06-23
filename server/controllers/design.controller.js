@@ -103,3 +103,34 @@ exports.getUserDesignByDesignId = async (req, res) => {
         });
     }
 };
+
+exports.renameDesign = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { ten } = req.body;
+    if (!ten || ten.trim() === "") {
+      return res.status(400).json({ success: false, message: "Tên không hợp lệ." });
+    }
+
+    const designService = new DesignService(MongoDB.client);
+    const result = await designService.renameDesign(id, ten.trim());
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Lỗi đổi tên", error: err.message });
+  }
+};
+
+exports.deleteDesign = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const designService = new DesignService(MongoDB.client);
+        const result = await designService.deleteDesign(id);
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            message: "Lỗi khi xóa thiết kế",
+            error: err.message
+        });
+    }
+};

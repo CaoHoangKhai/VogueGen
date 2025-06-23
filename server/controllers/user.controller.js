@@ -67,13 +67,13 @@ exports.deleteUserLocation = async (req, res, next) => {
 
         const locationService = new LocationService(MongoDB.client);
 
-        const deleted = await locationService.softDeleteUserLocation(id);
+        const deleted = await locationService.deleteUserLocation(id);
 
         if (!deleted) {
             return res.status(404).json({ message: "Không tìm thấy địa chỉ để xóa hoặc đã bị xóa trước đó." });
         }
 
-        return res.json({ message: "Đã ẩn địa chỉ khỏi danh sách thành công." });
+        return res.json({ message: "Đã xóa địa chỉ khỏi danh sách thành công." });
     } catch (error) {
         return res.status(500).json({ message: `Lỗi server: ${error.message}` });
     }

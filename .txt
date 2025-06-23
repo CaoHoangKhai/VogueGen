@@ -1,4 +1,4 @@
-Chỗ khuyến mãi kết thúc ko được( tối nhớ chỉnh) ( HỦY)
+Chỗ khuyến mãi kết thúc ko được ( HỦY)
 
 Chưa làm tìm kiếm (tên, thể loại, giá tiền) (13/06)
 
@@ -11,29 +11,29 @@ Tìm kiếm đơn hàng theo( tên người đặt, theo mã, theo trạng thái
 đã xog thêm sản phẩm vào giỏ hàng, nhưng số lượng theo size đó ko bị giảm, ( BỎ SỐ LƯỢNG)
 
 bây giờ còn 
-chỉnh sửa thông tin cá nhân
+chỉnh sửa thông tin cá nhân (THÀNH CÔNG)
 
 
-design cho phép xem lại thiết kế( ĐƯỢC)
+design cho phép xem lại thiết kế( ĐƯỢC )(XONG)
 có được đặt hàng thêm với thiết kế mới ( ĐANG LÀM)
 lưu thiết kế vào csdl thế nào (SD BASE 64)
 
 
 color: 
-hiển thị màu ra ngoài giống giống các ô màu
+hiển thị màu ra ngoài giống giống các ô màu (XOG)
 
 image: 
 tải ảnh lên thì có lưu vào csdl hay ko? (KO MÀ BĂM BASE64 RỒI LƯU)
 	nếu có thì ảnh thiết kế là nối tới ảnh csdl hay ảnh được chèn vào hàng của cột thiết kế ( ẢNH ĐƯỢC BASE64 ra)
-	 nếu chèn vào thì người dùng muốn xóa có được ko? (BỎ LƯU VÀO BACK HOẶC FRONT)
+	nếu chèn vào thì người dùng muốn xóa có được ko? (BỎ)
 
-lưu lại tọa độ và vị trí ảnh.
-có crop ảnh được ko
+lưu lại tọa độ và vị trí ảnh. (XOG)
+có crop ảnh được ko (KHÔNG)
 	nếu có thì lưu ảnh ntn?
 	nếu ko mà người dùng muốn nửa ảnh thì sao?
-có thể xoay ảnh được ko
-có thể lật ảnh ko
-có chồng ảnh lên ko
+có thể xoay ảnh được ko (CÓ)
+có thể lật ảnh ko (để xem)
+có chồng ảnh lên ko(KHÔNG)
 
 
 ảnh được thiết kế:
@@ -52,10 +52,40 @@ tiền xử lý tên danh mục (ĐƯỢC)
 
 còn 
 thiết kế (XONG)
-sinh ảnh 
+sinh ảnh ( ĐANG LÀM)
+
+nhận dạng áo trước hay sau
+nhận dạng người dùng dáng đứng
+
+đổi tên,( XOG)
+xóa (XOG)
+thêm vào giỏ hàng
+
+
+CÒN TRANG SẢN PHẨM CHƯA CHỈNH SỬA ( TỐI NAY PHẢI XONG)
+CÁC FOOTER CHƯA XONG
 
 
 customink
 printdoors
 printful
 printify
+
+
+
+
+
+
+
+
+// TỐI NAY XONG VÀ FIX CHỖ PRODUCTS 
+có thể tách ra nếu quan_ao
+coc,
+mũ
+kiếm cái gì đó lắp vào chỗ ngày tạo
+
+
+CONTACT
+ABOUT
+Guides
+Policy

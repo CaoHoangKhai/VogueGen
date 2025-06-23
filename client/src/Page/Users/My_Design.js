@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
-import { getDesignsByUser } from "../../api/Design/design.api";
+import { getDesignsByUser, renameDesign, deleteDesignById } from "../../api/Design/design.api";
 import { Link } from "react-router-dom";
+import Toast from "../../Components/Toast";
 
 const MyDesign = () => {
     const [designs, setDesigns] = useState([]);
     const [loading, setLoading] = useState(true);
     const [userId, setUserId] = useState(null);
-    const [openMenuId, setOpenMenuId] = useState(null); // để điều khiển hiển thị menu ⋯
+    const [openMenuId, setOpenMenuId] = useState(null);
+    const [toast, setToast] = useState(null);
 
     useEffect(() => {
         const userStr = localStorage.getItem("user");
@@ -35,46 +37,52 @@ const MyDesign = () => {
         if (userId) fetchDesigns();
     }, [userId]);
 
-    // const handleRename = async (designId, oldName) => {
-    //     const newName = prompt("Đổi tên thiết kế:", oldName);
-    //     if (!newName || newName.trim() === "" || newName === oldName) return;
-
-    //     try {
-    //         const result = await renameDesign(designId, newName.trim());
-    //         if (result.success) {
-    //             setDesigns((prev) =>
-    //                 prev.map((d) => (d._id === designId ? { ...d, ten: newName.trim() } : d))
-    //             );
-    //         } else {
-    //             alert("Không thể đổi tên: " + result.message);
-    //         }
-    //     } catch (err) {
-    //         console.error("Lỗi đổi tên:", err);
-    //         alert("Lỗi khi đổi tên.");
-    //     }
-    // };
-
-    // const handleDelete = async (designId) => {
-    //     if (!window.confirm("Bạn có chắc chắn muốn xóa thiết kế này?")) return;
-
-    //     try {
-    //         const res = await deleteDesignById(designId);
-    //         if (res.success) {
-    //             setDesigns((prev) => prev.filter((d) => d._id !== designId));
-    //         } else {
-    //             alert("Xóa không thành công: " + res.message);
-    //         }
-    //     } catch (err) {
-    //         console.error("Lỗi khi xóa:", err);
-    //         alert("Xảy ra lỗi khi xóa thiết kế.");
-    //     }
-    // };
 
     if (loading) return <div className="text-center mt-5">Đang tải...</div>;
 
+    const handleRename = async (designId, oldName) => {
+        const newName = prompt("Đổi tên thiết kế:", oldName);
+        if (!newName || newName.trim() === "" || newName === oldName) return;
+
+        try {
+            const result = await renameDesign(designId, newName.trim());
+            if (result.success) {
+                setDesigns((prev) =>
+                    prev.map((d) =>
+                        d._id === designId ? { ...d, ten: newName.trim() } : d
+                    )
+                );
+                setToast({ type: "success", message: "✅ Đổi tên thành công!" });
+            } else {
+                setToast({ type: "error", message: "❌ Không thể đổi tên." });
+            }
+        } catch (err) {
+            console.error("Lỗi đổi tên:", err);
+            setToast({ type: "error", message: "❌ Đã xảy ra lỗi khi đổi tên." });
+        }
+    };
+    const handleDelete = async (designId) => {
+        const confirm = window.confirm("Bạn có chắc chắn muốn xóa thiết kế này?");
+        if (!confirm) return;
+
+        try {
+            const result = await deleteDesignById(designId);
+            if (result.success) {
+                setDesigns((prev) => prev.filter((d) => d._id !== designId));
+                setToast({ type: "success", message: "🗑️ Thiết kế đã được xóa!" });
+            } else {
+                setToast({ type: "error", message: "❌ Không thể xóa thiết kế: " + result.message });
+            }
+        } catch (err) {
+            console.error("Lỗi khi xóa:", err);
+            setToast({ type: "error", message: "❌ Đã xảy ra lỗi khi xóa thiết kế." });
+        }
+    };
+
     return (
+
         <div className="container">
-            <h3 className="mb-4">Thiết kế của tôi</h3>
+            <h3 className="mb-4 text-center">Thiết kế của tôi</h3>
 
             {designs.length === 0 ? (
                 <div>Không có thiết kế nào.</div>
@@ -121,7 +129,7 @@ const MyDesign = () => {
                                                             e.preventDefault();
                                                             e.stopPropagation();
                                                             setOpenMenuId(null);
-                                                            // handleRename(d._id, d.ten);
+                                                            handleRename(d._id, d.ten);
                                                         }}
                                                     >
                                                         ✏️ Đổi tên
@@ -132,7 +140,7 @@ const MyDesign = () => {
                                                             e.preventDefault();
                                                             e.stopPropagation();
                                                             setOpenMenuId(null);
-                                                            // handleDelete(d._id);
+                                                            handleDelete(d._id);
                                                         }}
                                                     >
                                                         🗑️ Xóa
@@ -149,6 +157,14 @@ const MyDesign = () => {
                             </Link>
                         </div>
                     ))}
+                    {toast && (
+                        <Toast
+                            type={toast.type}
+                            message={toast.message}
+                            onClose={() => setToast(null)}
+                        />
+                    )}
+
                 </div>
             )}
         </div>

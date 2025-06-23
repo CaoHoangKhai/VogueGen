@@ -48,18 +48,19 @@ class LocationService {
             trangthai: 1
         });
     }
+
     async softDeleteUserLocation(id) {
-    if (!ObjectId.isValid(id)) {
-        throw new Error("ID không hợp lệ");
+        if (!ObjectId.isValid(id)) {
+            throw new Error("ID không hợp lệ");
+        }
+
+        const result = await this.Location.updateOne(
+            { _id: new ObjectId(id) },
+            { $set: { trangthai: 0 } }
+        );
+
+        return result.modifiedCount > 0;
     }
-
-    const result = await this.Location.updateOne(
-        { _id: new ObjectId(id) },
-        { $set: { trangthai: 0 } }
-    );
-
-    return result.modifiedCount > 0;
-}
 
 
 

@@ -93,12 +93,12 @@ const Profile = () => {
                     </Link>
                 </div>
 
-                <div className="col-md-3">
+                {/* <div className="col-md-3">
                     <div className="border p-3 rounded shadow-sm">
                         <strong>Ngày tạo</strong>
                         <div>{user.ngayTao ? new Date(user.ngayTao).toLocaleDateString() : '---'}</div>
                     </div>
-                </div>
+                </div> */}
             </div>
 
             {/* Form chỉnh sửa */}

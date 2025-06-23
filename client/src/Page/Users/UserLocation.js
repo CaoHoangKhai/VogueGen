@@ -64,10 +64,6 @@ const UserLocation = () => {
             });
     };
 
-    // useEffect(() => {
-    //     if (manguoidung) fetchAddressList();
-    // }, [manguoidung]);
-
     const handleChange = (e) => {
         const { name, value } = e.target;
         setForm(prev => ({
@@ -98,7 +94,6 @@ const UserLocation = () => {
             });
     };
 
-    // Hàm xử lý xóa địa chỉ
     const handleDeleteAddress = (id) => {
         if (!window.confirm("Bạn có chắc muốn xóa địa chỉ này không?")) return;
 

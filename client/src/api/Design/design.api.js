@@ -31,3 +31,15 @@ export const getUserDesignById = async (designId) => {
     const res = await axios.get(`${API_URL_DESIGN}/user-design/${designId}`);
     return res.data;
 };
+
+export const renameDesign = async (designId, newName) => {
+    const res = await axios.patch(`${API_URL_DESIGN}/rename/${designId}`, {
+        ten: newName
+    });
+    return res.data;
+};
+
+export const deleteDesignById = async (id) => {
+    const res = await axios.delete(`${API_URL_DESIGN}/${id}`);
+    return res.data;
+};

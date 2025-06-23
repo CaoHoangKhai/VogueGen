@@ -223,6 +223,39 @@ class DesignService {
         };
     }
 
+    async renameDesign(designId, newTen) {
+        if (!ObjectId.isValid(designId)) return { success: false, message: "ID không hợp lệ." };
+        const result = await this.design.updateOne(
+            { _id: new ObjectId(designId) },
+            { $set: { ten: newTen } }
+        );
+        return {
+            success: result.modifiedCount === 1,
+            message: result.modifiedCount === 1 ? "Đã đổi tên thành công" : "Không tìm thấy thiết kế"
+        };
+    }
+
+    async deleteDesign(designId) {
+        if (!ObjectId.isValid(designId)) {
+            return { success: false, message: "ID không hợp lệ." };
+        }
+
+        const objectId = new ObjectId(designId);
+
+        // Xóa thiết kế chính
+        const result = await this.design.deleteOne({ _id: objectId });
+
+        // Xóa thiết kế người dùng liên quan (2 mặt)
+        await this.thietkecuanguoidung.deleteMany({ id_thietke: objectId });
+
+        return {
+            success: result.deletedCount === 1,
+            message: result.deletedCount === 1
+                ? "Đã xóa thiết kế và dữ liệu liên quan."
+                : "Không tìm thấy thiết kế để xóa."
+        };
+    }
+
 
 }
 
