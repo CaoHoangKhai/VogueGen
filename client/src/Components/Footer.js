@@ -43,10 +43,23 @@ const Footer = () => {
                                 VỀ Shopify
                             </strong>
                             <ul className="list-unstyled mb-4">
-                                <li className="mb-1"><Link className="text-decoration-none" style={{ color: "#00838f" }} to="#">Giới thiệu Shopify</Link></li>
-                                <li className="mb-1"><Link className="text-decoration-none" style={{ color: "#00838f" }} to="#">Tuyển dụng</Link></li>
-                                <li className="mb-1"><Link className="text-decoration-none" style={{ color: "#00838f" }} to="#">Hệ thống cửa hàng</Link></li>
-                                <li className="mb-1"><Link className="text-decoration-none" style={{ color: "#00838f" }} to="#">Liên hệ</Link></li>
+                                <li className="mb-1">
+                                    <Link className="text-decoration-none" style={{ color: "#00838f" }} to="#">
+                                        Giới thiệu Shopify
+                                    </Link>
+                                </li>
+                                <li className="mb-1">
+                                    <Link className="text-decoration-none" style={{ color: "#00838f" }} to="#">Tuyển dụng
+                                    </Link>
+                                </li>
+                                <li className="mb-1">
+                                    <Link className="text-decoration-none" style={{ color: "#00838f" }} to="#">Hệ thống cửa hàng
+                                    </Link>
+                                </li>
+                                <li className="mb-1">
+                                    <Link className="text-decoration-none" style={{ color: "#00838f" }} to="#">Liên hệ
+                                    </Link>
+                                </li>
                             </ul>
                         </div>
 
@@ -55,9 +68,21 @@ const Footer = () => {
                                 HƯỚNG DẪN
                             </strong>
                             <ul className="list-unstyled mb-4">
-                                <li className="mb-1"><Link className="text-decoration-none" style={{ color: "#0288d1" }} to="#">Hướng dẫn mua hàng</Link></li>
-                                <li className="mb-1"><Link className="text-decoration-none" style={{ color: "#0288d1" }} to="#">Quy trình đổi trả hàng</Link></li>
-                                <li className="mb-1"><Link className="text-decoration-none" style={{ color: "#0288d1" }} to="#">Điều khoản mua hàng</Link></li>
+                                <li className="mb-1">
+                                    <Link className="text-decoration-none" style={{ color: "#0288d1" }} to="#">
+                                        Hướng dẫn mua hàng
+                                    </Link>
+                                </li>
+                                <li className="mb-1">
+                                    <Link className="text-decoration-none" style={{ color: "#0288d1" }} to="#">
+                                        Quy trình đổi trả hàng
+                                    </Link>
+                                </li>
+                                <li className="mb-1">
+                                    <Link className="text-decoration-none" style={{ color: "#0288d1" }} to="#">
+                                        Điều khoản mua hàng
+                                    </Link>
+                                </li>
                             </ul>
                         </div>
 

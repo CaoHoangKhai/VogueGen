@@ -1,4 +1,15 @@
-Chỗ khuyến mãi kết thúc ko được ( HỦY)
+CẦN CÁ NHÂN HÓA (tên tiếng việt và tiếng anh)
+Tên đề tài tiếng Việt: Xây dựng website kinh doanh thời trang có tích hợp chức năng sinh ảnh người mẫu
+Tên đề tài tiếng Anh: Virtual Model Image Generation for Fashion Websites Using Generative AI
+
+CHUYỂN IDM_VITON-HD trên local của máy
+TÌM MỌI CÁCH CHO NÓ CHẠY CỤC BỘ
+KIỂM TRA XEM MÁY CHẠY LOCAL CHƯƠNG TRÌNH VITION-HD ĐƯỢC KO?
+
+thiết kế api cho nó  khi người dùng bấm SINH ẢNH thì sẽ hiển lên gửi ảnh mẫu là người dùng hay mẫu ảnh có sẵn, còn áo là lấy từ front ra
+
+
+Chỗ khuyến mãi kết thúc ko được (HỦY)
 
 Chưa làm tìm kiếm (tên, thể loại, giá tiền) (13/06)
 
@@ -17,7 +28,7 @@ chỉnh sửa thông tin cá nhân (THÀNH CÔNG)
 design cho phép xem lại thiết kế( ĐƯỢC )(XONG)
 có được đặt hàng thêm với thiết kế mới ( ĐANG LÀM)
 lưu thiết kế vào csdl thế nào (SD BASE 64)
-
+DESIGN CHỈ CHO ÁO THÔI CHỨ CHƯA CÓ CHO MŨ HOẶC CỐC
 
 color: 
 hiển thị màu ra ngoài giống giống các ô màu (XOG)
@@ -74,18 +85,26 @@ printify
 
 
 
-
-
-
-
 // TỐI NAY XONG VÀ FIX CHỖ PRODUCTS 
 có thể tách ra nếu quan_ao
 coc,
 mũ
 kiếm cái gì đó lắp vào chỗ ngày tạo
 
+có thể tạo api theo thể loại, khi lấy xog thì hiện thị ra khi trỏ tới, viết lại các tên danh mục
 
-CONTACT
-ABOUT
-Guides
-Policy
+
+
+CONTACT(XOG)
+ABOUT ( TỐI NAY)
+Guides ( TỐI NAY)
+Policy( TỐI NAY)
+VIẾT LẠI FOOTER
+TỐI NAY ĐỔ DỮ LIỆU SẢN PHẨM RA
+
+thiết kế sinh ảnh (ĐAG LÀM)
+
+
+
+tự build ->thiết kế api gửi mẫu ảnh, mẫu áo đã thiết kế qua
+bị lỗi 

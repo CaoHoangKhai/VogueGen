@@ -1,4 +1,4 @@
-import Home from '../Page/Home';
+import homeRoutes from './homeRoutes';
 import authRoutes from './authRoutes';
 import userRoutes from './userRoutes';
 import adminRoutes from './adminRoutes';
@@ -8,7 +8,7 @@ import policyRoutes from './policyRoutes';
 
 
 const mainRoutes = [
-  { path: '/', element: <Home /> },
+  ...homeRoutes,
   ...authRoutes,
   ...userRoutes,
   ...adminRoutes,

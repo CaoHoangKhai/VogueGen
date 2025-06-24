@@ -8,6 +8,10 @@ const policyRoutes = [
         element: <PaymentMethods />
     },
     {
+        path: '/phuong_thuc_giao_hang',
+        element: <ReturnPolicy />
+    },
+    {
         path: '/chinh_sach_doi_tra',
         element: <ReturnPolicy />
     },
