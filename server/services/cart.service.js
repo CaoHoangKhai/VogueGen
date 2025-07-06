@@ -9,72 +9,76 @@ class CartService {
 
     extractCartData(payload) {
         return {
-            manguoidung: ObjectId.isValid(payload.manguoidung) ? new ObjectId(payload.manguoidung) : null,
-            masanpham: ObjectId.isValid(payload.masanpham) ? new ObjectId(payload.masanpham) : null,
-            soluong: typeof payload.soluong === 'number' && payload.soluong > 0 ? payload.soluong : 1,
-            size: payload.size ? payload.size.trim() : null,
-            mausac: payload.mausac ? payload.mausac.trim() : null
+            manguoidung: new ObjectId(payload.manguoidung),
+            masanpham: new ObjectId(payload.masanpham),
+            soluong: payload.soluong || 1,
+            size: payload.size,
+            mausac: payload.mausac
         };
     }
 
     async getCartByUserId(userId) {
-        if (!ObjectId.isValid(userId)) {
-            throw new Error("ID người dùng không hợp lệ.");
-        }
+        if (!ObjectId.isValid(userId)) throw new Error("ID người dùng không hợp lệ.");
+        const uid = new ObjectId(userId);
 
-        const cartItems = await this.cart.find({ manguoidung: new ObjectId(userId) }).toArray();
-        if (!cartItems.length) {
-            throw new Error("Giỏ hàng trống hoặc không tìm thấy.");
-        }
+        const cartItems = await this.cart.find({ manguoidung: uid }).toArray();
+        if (!cartItems.length) return [];
 
-        // Lấy thông tin sản phẩm và hình ảnh cho từng item
         const result = await Promise.all(cartItems.map(async (item) => {
-            // Lấy thông tin sản phẩm
-            const product = await this.sanpham.findOne({ _id: item.masanpham });
-            // Lấy hình ảnh đầu tiên (hoặc tất cả nếu muốn)
-            const image = await this.hinhanhsanpham.findOne({ masanpham: item.masanpham });
+            const productId = new ObjectId(item.masanpham);
+            const product = await this.sanpham.findOne({ _id: productId });
+
+            const color = typeof item.mausac === "string" ? item.mausac.trim().toUpperCase() : null;
+
+            let image = await this.hinhanhsanpham.findOne({ masanpham: productId, mau: color, vitri: "front" }) ||
+                await this.hinhanhsanpham.findOne({ masanpham: productId, mau: color }) ||
+                await this.hinhanhsanpham.findOne({ masanpham: productId, vitri: "front" }) ||
+                await this.hinhanhsanpham.findOne({ masanpham: productId, vitri: "back" });
+
+            let imageSrc = null;
+            if (image?.data?.buffer) {
+                const base64 = image.data.buffer.toString("base64");
+                imageSrc = `data:${image.contentType};base64,${base64}`;
+            }
 
             return {
-                ...item,
-                tensanpham: product ? product.tensanpham : null,
-                giasanpham: product ? product.giasanpham : null,
-                hinhanh: image ? `http://localhost:4000/images/${image.tenfile}` : null
+                _id: item._id,
+                manguoidung: item.manguoidung,
+                masanpham: item.masanpham,
+                soluong: item.soluong,
+                size: item.size,
+                mausac: item.mausac,
+                tensanpham: product?.tensanpham || null,
+                giasanpham: product?.giasanpham || null,
+                hinhanh: imageSrc
             };
         }));
 
         return result;
     }
+
     async addToCart(payload) {
-    const data = this.extractCartData(payload);
-    if (!data.manguoidung || !data.masanpham || !data.size || !data.mausac) {
-        throw new Error("Dữ liệu không hợp lệ.");
-    }
+        const data = this.extractCartData(payload);
 
-    const existed = await this.cart.findOne({
-        manguoidung: data.manguoidung,
-        masanpham: data.masanpham,
-        size: data.size,
-        mausac: data.mausac
-    });
+        if (!data.manguoidung || !data.masanpham || !data.size || !data.mausac) {
+            throw new Error("Thiếu dữ liệu giỏ hàng.");
+        }
 
-    if (existed) {
-        // Nếu đã tồn tại, tăng thêm 1
-        await this.cart.updateOne(
-            { _id: existed._id },
-            { $inc: { soluong: 1 } }
-        );
-        return { success: true, message: "Đã tăng số lượng sản phẩm trong giỏ hàng." };
-    } else {
-        await this.cart.insertOne({
-            ...data,
-            soluong: 1 // mặc định là 1
+        const existed = await this.cart.findOne({
+            manguoidung: data.manguoidung,
+            masanpham: data.masanpham,
+            size: data.size,
+            mausac: data.mausac
         });
-        return { success: true, message: "Đã thêm vào giỏ hàng." };
+
+        if (existed) {
+            await this.cart.updateOne({ _id: existed._id }, { $inc: { soluong: 1 } });
+            return { success: true, message: "Đã tăng số lượng sản phẩm." };
+        } else {
+            await this.cart.insertOne({ ...data, soluong: 1 });
+            return { success: true, message: "Đã thêm sản phẩm vào giỏ hàng." };
+        }
     }
-}
-
-
-
 
     async increaseQuantity(cartId) {
         if (!ObjectId.isValid(cartId)) throw new Error("ID giỏ hàng không hợp lệ.");
@@ -82,48 +86,42 @@ class CartService {
             { _id: new ObjectId(cartId) },
             { $inc: { soluong: 1 } }
         );
-        if (result.modifiedCount === 1) {
-            return { success: true, message: "Đã tăng số lượng sản phẩm." };
-        }
-        return { success: false, message: "Không tìm thấy sản phẩm trong giỏ hàng." };
+
+        return result.modifiedCount === 1
+            ? { success: true, message: "Đã tăng số lượng." }
+            : { success: false, message: "Không tìm thấy sản phẩm." };
     }
 
     async decreaseQuantity(cartId) {
         if (!ObjectId.isValid(cartId)) throw new Error("ID giỏ hàng không hợp lệ.");
         const item = await this.cart.findOne({ _id: new ObjectId(cartId) });
-        if (!item) return { success: false, message: "Không tìm thấy sản phẩm trong giỏ hàng." };
+
+        if (!item) return { success: false, message: "Không tìm thấy sản phẩm." };
 
         if (item.soluong > 1) {
-            await this.cart.updateOne(
-                { _id: new ObjectId(cartId) },
-                { $inc: { soluong: -1 } }
-            );
-            return { success: true, message: "Đã giảm số lượng sản phẩm." };
+            await this.cart.updateOne({ _id: item._id }, { $inc: { soluong: -1 } });
+            return { success: true, message: "Đã giảm số lượng." };
         } else {
-            await this.cart.deleteOne({ _id: new ObjectId(cartId) });
+            await this.cart.deleteOne({ _id: item._id });
             return { success: true, message: "Đã xóa sản phẩm khỏi giỏ hàng." };
         }
     }
 
     async updateQuantity(cartId, quantity) {
         if (!ObjectId.isValid(cartId)) throw new Error("ID giỏ hàng không hợp lệ.");
-        if (typeof quantity !== "number" || quantity < 0) {
-            throw new Error("Số lượng phải là số nguyên không âm.");
-        }
         if (quantity === 0) {
-            // Nếu số lượng là 0 thì xóa khỏi giỏ hàng
             await this.cart.deleteOne({ _id: new ObjectId(cartId) });
             return { success: true, message: "Đã xóa sản phẩm khỏi giỏ hàng." };
-        } else {
-            const result = await this.cart.updateOne(
-                { _id: new ObjectId(cartId) },
-                { $set: { soluong: quantity } }
-            );
-            if (result.modifiedCount === 1) {
-                return { success: true, message: "Đã cập nhật số lượng sản phẩm." };
-            }
-            return { success: false, message: "Không tìm thấy sản phẩm trong giỏ hàng." };
         }
+
+        const result = await this.cart.updateOne(
+            { _id: new ObjectId(cartId) },
+            { $set: { soluong: quantity } }
+        );
+
+        return result.modifiedCount === 1
+            ? { success: true, message: "Cập nhật số lượng thành công." }
+            : { success: false, message: "Không tìm thấy sản phẩm." };
     }
 }
 

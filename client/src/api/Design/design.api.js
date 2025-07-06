@@ -13,8 +13,8 @@ export const getDesignsByUser = async (manguoidung) => {
     return res.data;
 };
 
-export const getDesignById = async (id) => {
-    const res = await axios.get(`${API_URL_DESIGN}/${id}`);
+export const getDesignDetail = async (designId) => {
+    const res = await axios.get(`${API_URL_DESIGN}/${designId}`);
     return res.data;
 };
 
@@ -33,13 +33,15 @@ export const getUserDesignById = async (designId) => {
 };
 
 export const renameDesign = async (designId, newName) => {
-    const res = await axios.patch(`${API_URL_DESIGN}/rename/${designId}`, {
-        ten: newName
-    });
+    const res = await axios.patch(`${API_URL_DESIGN}/rename/${designId}`, { ten: newName });
     return res.data;
 };
 
-export const deleteDesignById = async (id) => {
-    const res = await axios.delete(`${API_URL_DESIGN}/${id}`);
+export const deleteDesignById = async (designId) => {
+    const res = await axios.delete(`${API_URL_DESIGN}/${designId}`); // ✅
     return res.data;
 };
+export const getColorByDesignId = async (id) => {
+    const res = await axios.get(`${API_URL_DESIGN}/colors/${id}`);
+    return res.data;
+}

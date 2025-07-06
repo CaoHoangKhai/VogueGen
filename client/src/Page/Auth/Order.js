@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { getCartByUserId } from '../../api/User/cart.api';
-import { createOrder } from '../../api/auth.api';
+import { getCartByUserId } from '../../api/Cart/cart.api';
+import { createOrder } from '../../api/Order/order.api';
 import Toast from "../../Components/Toast";
 import { getUserById, getUserLocations } from '../../api/User/user.api';
 import diachiData from '../../assets/data/vietnam_administrative_data.json';
@@ -93,6 +93,7 @@ const Order = () => {
             setToast({ show: true, message: "Vui lòng nhập đầy đủ thông tin!", type: "error" });
             return;
         }
+
         const orderData = {
             manguoidung: userId,
             hoten: form.hoten,
@@ -110,13 +111,29 @@ const Order = () => {
                 mausac: item.mausac
             }))
         };
+
         try {
-            await createOrder(orderData);
+            const res = await createOrder(orderData);
+            console.log("✅ Đặt hàng thành công:", res);
+
             setToast({ show: true, message: "Đặt hàng thành công!", type: "success" });
+
+            // 🧹 Xóa giỏ hàng trên client
+            setCartItems([]);
+
+            // 🧹 Xóa form nếu cần
+            setForm(prev => ({
+                ...prev,
+                ghichu: "",
+            }));
+
+            // ⏱ Option: điều hướng sau 2 giây
             // setTimeout(() => {
-            //     navigate("/", { state: { toast: { show: true, message: "Đặt hàng thành công!", type: "success" } } });
-            // }, 1200);
-        } catch {
+            //     navigate("/");
+            // }, 2000);
+
+        } catch (error) {
+            console.error("❌ Đặt hàng thất bại:", error);
             setToast({ show: true, message: "Đặt hàng thất bại!", type: "error" });
         }
     };

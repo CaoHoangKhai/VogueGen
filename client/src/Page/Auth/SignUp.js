@@ -8,8 +8,7 @@ import {
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
-import { signUp } from '../../api/auth.api';  // import hàm gọi API đăng ký
-
+import { signUp } from '../../api/Auth/auth.api';
 const SignUp = () => {
     const [formData, setFormData] = useState({
         hoten: '',

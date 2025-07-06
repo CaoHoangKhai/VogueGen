@@ -1,21 +1,32 @@
 const express = require("express");
 const router = express.Router();
-
 const userController = require("../controllers/user.controller");
-const orderController = require("../controllers/order.controller");
-const message = require("../utils/messages");
-{/*Lấy thông tin người dùng*/}
-router.get("/:id",userController.findOne);
-router.get("/location/list", userController.getUserLocations);
+
+// ================== ROUTES NGƯỜI DÙNG ==================
+
+/**
+ * Lấy thông tin chi tiết người dùng theo ID
+ * GET /user/:userId
+ */
+router.get("/:userId", userController.findOne);
+
+/**
+ * Lấy danh sách địa chỉ giao hàng của người dùng
+ * GET /user/location/list/:userId
+ */
+router.get("/location/list/:userId", userController.getUserLocations);
+
+
+/**
+ * Thêm địa chỉ giao hàng mới cho người dùng
+ * POST /user/location
+ */
 router.post("/location", userController.addUserLocation);
-router.delete("/location/:id",userController.deleteUserLocation);
 
-// ----- ORDER ROUTES -----
-
-// Lấy danh sách đơn hàng theo userId
-router.get("/orders/:userId", orderController.getOrdersByUserId);
-
-// Lấy chi tiết đơn hàng theo orderId
-router.get("/orders/detail/:orderId", orderController.getOrderDetailById);
+/**
+ * Xoá địa chỉ giao hàng theo ID
+ * DELETE /user/location/:id
+ */
+router.delete("/location/:id", userController.deleteUserLocation);
 
 module.exports = router;

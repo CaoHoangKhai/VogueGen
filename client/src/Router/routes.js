@@ -5,8 +5,8 @@ import adminRoutes from './adminRoutes';
 import productRoutes from './productRoutes';
 import designRoutes from './designRoutes';
 import policyRoutes from './policyRoutes';
-
-
+import guidesRoute from "./guidesRoutes";
+import categoryRoutes from './categoryRoutes';
 const mainRoutes = [
   ...homeRoutes,
   ...authRoutes,
@@ -14,7 +14,9 @@ const mainRoutes = [
   ...adminRoutes,
   ...productRoutes,
   ...designRoutes,
-  ...policyRoutes
+  ...policyRoutes,
+  ...guidesRoute,
+  ...categoryRoutes,
 ];
 
 export default mainRoutes;

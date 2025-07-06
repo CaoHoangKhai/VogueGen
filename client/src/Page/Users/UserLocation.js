@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import diachiData from '../../assets/data/vietnam_administrative_data.json';
+import {
+    getUserLocations,
+    addUserLocation,
+    deleteUserLocation
+} from '../../api/User/user.api';
 
 const UserLocation = () => {
-    // Lấy manguoidung từ localStorage
     const userData = localStorage.getItem('user');
     const manguoidung = userData ? JSON.parse(userData)._id : '';
 
@@ -17,6 +20,7 @@ const UserLocation = () => {
     });
     const [addressList, setAddressList] = useState([]);
 
+    // ===== Helper lấy tên tỉnh/thành và quận/huyện =====
     const getCityName = (cityCode) => {
         const city = diachiData.find(c => c.Id === cityCode);
         return city ? city.Name : cityCode;
@@ -29,6 +33,7 @@ const UserLocation = () => {
         return district ? district.Name : districtCode;
     };
 
+    // ===== Xử lý dữ liệu địa lý =====
     useEffect(() => {
         const cities = diachiData.map(city => ({
             code: city.Id,
@@ -50,31 +55,34 @@ const UserLocation = () => {
         }
     }, [form.city]);
 
-    const fetchAddressList = () => {
-        axios.get(`http://localhost:4000/user/location/list?userId=${manguoidung}`)
-            .then(res => {
-                if (Array.isArray(res.data)) {
-                    setAddressList(res.data);
-                } else {
-                    setAddressList([]);
-                }
-            })
-            .catch(err => {
-                console.error('Lỗi lấy danh sách địa chỉ:', err);
-            });
+    // ===== Gọi API: lấy danh sách địa chỉ =====
+    const fetchAddressList = async () => {
+        try {
+            const res = await getUserLocations(manguoidung);
+            setAddressList(Array.isArray(res.data) ? res.data : []);
+        } catch (err) {
+            console.error('❌ Lỗi lấy danh sách địa chỉ:', err);
+        }
     };
 
+    useEffect(() => {
+        if (manguoidung) fetchAddressList();
+    }, [manguoidung]);
+
+    // ===== Sự kiện thay đổi input =====
     const handleChange = (e) => {
         const { name, value } = e.target;
         setForm(prev => ({
             ...prev,
             [name]: value,
-            ...(name === "city" && { district: '' })
+            ...(name === "city" && { district: '' }) // reset district khi đổi thành phố
         }));
     };
 
-    const handleSubmit = (e) => {
+    // ===== Submit form: Thêm địa chỉ =====
+    const handleSubmit = async (e) => {
         e.preventDefault();
+
         const payload = {
             manguoidung,
             thanhpho: form.city,
@@ -82,34 +90,33 @@ const UserLocation = () => {
             diachi: form.address
         };
 
-        axios.post('http://localhost:4000/user/location', payload)
-            .then(res => {
-                alert(res.data?.message || 'Thêm địa chỉ thành công');
-                fetchAddressList();
-                setForm({ city: '', district: '', address: '' });
-            })
-            .catch(err => {
-                alert(err.response?.data?.message || 'Thêm địa chỉ thất bại');
-                console.error('Lỗi thêm địa chỉ:', err);
-            });
+        try {
+            const res = await addUserLocation(payload);
+            alert(res.data?.message || "✅ Thêm địa chỉ thành công");
+            fetchAddressList();
+            setForm({ city: '', district: '', address: '' });
+        } catch (err) {
+            alert(err.response?.data?.message || "❌ Lỗi thêm địa chỉ");
+            console.error('Lỗi khi thêm địa chỉ:', err);
+        }
     };
 
-    const handleDeleteAddress = (id) => {
+    // ===== Xóa địa chỉ =====
+    const handleDeleteAddress = async (id) => {
         if (!window.confirm("Bạn có chắc muốn xóa địa chỉ này không?")) return;
 
-        axios.delete(`http://localhost:4000/user/location/${id}`)
-            .then(res => {
-                alert(res.data?.message || "Xóa thành công");
-                fetchAddressList();
-            })
-            .catch(err => {
-                alert(err.response?.data?.message || "Xóa thất bại");
-                console.error("Lỗi xóa địa chỉ:", err);
-            });
+        try {
+            const res = await deleteUserLocation(id);
+            alert(res.data?.message || "✅ Xóa thành công");
+            fetchAddressList();
+        } catch (err) {
+            alert(err.response?.data?.message || "❌ Xóa thất bại");
+            console.error('Lỗi khi xóa địa chỉ:', err);
+        }
     };
 
     return (
-        <div >
+        <div>
             <h5 className='text-center'>THÊM ĐỊA CHỈ</h5>
             <form className="card container p-4 mb-4" onSubmit={handleSubmit}>
                 <div className="row mb-3">
@@ -123,7 +130,7 @@ const UserLocation = () => {
                             onChange={handleChange}
                             required
                         >
-                            <option value="">Chọn Tỉnh/Thành phố của bạn</option>
+                            <option value="">Chọn Tỉnh/Thành phố</option>
                             {cityList.map(city => (
                                 <option key={city.code} value={city.code}>{city.name}</option>
                             ))}
@@ -140,7 +147,7 @@ const UserLocation = () => {
                             onChange={handleChange}
                             required
                         >
-                            <option value="">Chọn Quận/Huyện của bạn</option>
+                            <option value="">Chọn Quận/Huyện</option>
                             {districtList.map(d => (
                                 <option key={d.code} value={d.code}>{d.name}</option>
                             ))}
@@ -155,7 +162,7 @@ const UserLocation = () => {
                         className="form-control"
                         name="address"
                         id="inputAddress"
-                        placeholder="Nhập địa chỉ của bạn VD: Số 20, ngõ 90"
+                        placeholder="VD: Số 20, ngõ 90..."
                         value={form.address}
                         onChange={handleChange}
                         required
@@ -163,31 +170,34 @@ const UserLocation = () => {
                 </div>
 
                 <div className="text-center">
-                    <button type="submit" className="btn btn-success me-2">Thêm địa chỉ</button>
+                    <button type="submit" className="btn btn-success">Thêm địa chỉ</button>
                 </div>
             </form>
 
-            <div className='card container p-4'>
+            <div className="card container p-4">
                 <h5>📍 Danh sách địa chỉ của tôi</h5>
-                {addressList.length === 0 && <p>Chưa có địa chỉ nào.</p>}
-                <ul className="list-group">
-                    {addressList.map(addr => (
-                        <li
-                            key={addr._id}
-                            className="list-group-item d-flex justify-content-between align-items-center"
-                        >
-                            <div>
-                                🏙 Thành phố: {getCityName(addr.thanhpho)}, 📍 Quận/Huyện: {getDistrictName(addr.thanhpho, addr.quan_huyen)}, 🏠 Địa chỉ: {addr.diachi}
-                            </div>
-                            <button
-                                className="btn btn-sm btn-danger"
-                                onClick={() => handleDeleteAddress(addr._id)}
+                {addressList.length === 0 ? (
+                    <p className="text-muted">Bạn chưa có địa chỉ nào.</p>
+                ) : (
+                    <ul className="list-group">
+                        {addressList.map(addr => (
+                            <li
+                                key={addr._id}
+                                className="list-group-item d-flex justify-content-between align-items-center"
                             >
-                                Xóa
-                            </button>
-                        </li>
-                    ))}
-                </ul>
+                                <div>
+                                    🏙 {getCityName(addr.thanhpho)}, 📍 {getDistrictName(addr.thanhpho, addr.quan_huyen)}, 🏠 {addr.diachi}
+                                </div>
+                                <button
+                                    className="btn btn-sm btn-danger"
+                                    onClick={() => handleDeleteAddress(addr._id)}
+                                >
+                                    Xóa
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                )}
             </div>
         </div>
     );

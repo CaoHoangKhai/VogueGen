@@ -1,15 +1,33 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const favoriteController = require('../controllers/favorite.controller');
+const favoriteController = require("../controllers/favorite.controller");
 
-// Toggle (thêm nếu chưa có, xóa nếu đã có)
-router.post('/toggle', favoriteController.toggleFavorite);
-// Kiểm tra sản phẩm đã được yêu thích chưa (POST)
-router.post('/is-favorite', favoriteController.isFavorite);
-// Lấy danh sách sản phẩm yêu thích theo người dùng
-router.get('/user/:manguoidung', favoriteController.getFavoritesByUser);
+// ================== ROUTES YÊU THÍCH ==================
 
-// Xóa bản ghi yêu thích theo _id
-router.delete('/:id', favoriteController.deleteFavoriteById);
+/**
+ * Toggle yêu thích sản phẩm (thêm nếu chưa có, xoá nếu đã có)
+ * POST /favorite/toggle
+ */
+router.post("/toggle", favoriteController.toggleFavorite);
+
+/**
+ * Kiểm tra sản phẩm đã được người dùng yêu thích chưa
+ * POST /favorite/is-favorite
+ */
+router.post("/is-favorite", favoriteController.isFavorite);
+
+/**
+ * Lấy danh sách sản phẩm yêu thích của người dùng
+ * GET /favorite/user/:manguoidung
+ * @param {String} manguoidung - ID của người dùng
+ */
+router.get("/user/:userId", favoriteController.getFavoritesByUser);
+
+/**
+ * Xoá bản ghi yêu thích theo ID
+ * DELETE /favorite/:id
+ * @param {String} id - ID của bản ghi yêu thích
+ */
+router.delete("/:id", favoriteController.deleteFavoriteById);
 
 module.exports = router;

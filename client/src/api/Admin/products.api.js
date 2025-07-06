@@ -51,13 +51,21 @@ export const createProduct = async (formData) => {
             method: "POST",
             body: formData,
         });
-        if (!response.ok) throw new Error("Lỗi khi tạo sản phẩm");
-        return await response.json();
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            console.error("❌ Server trả lỗi:", result);
+            throw new Error(result?.error || "Lỗi không xác định từ server");
+        }
+
+        return result; // ví dụ: { message: "Tạo sản phẩm thành công", id, ... }
     } catch (error) {
-        console.error("Lỗi POST /products:", error);
-        return null;
+        console.error("❌ Lỗi POST /products:", error);
+        return { success: false, error: error.message };
     }
 };
+
 
 export const updateProduct = (id, formData) => {
   return fetch(`${BASE_URL_ADMIN}/products/${id}`, {

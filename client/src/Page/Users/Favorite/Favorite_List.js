@@ -7,11 +7,13 @@ const FavoriteList = () => {
     const [user, setUser] = useState(null);
     const navigate = useNavigate();
 
+    // Lấy thông tin người dùng từ localStorage
     useEffect(() => {
         const userData = localStorage.getItem("user");
         if (userData) setUser(JSON.parse(userData));
     }, []);
 
+    // Lấy danh sách yêu thích theo userId
     useEffect(() => {
         const fetchFavorites = async () => {
             if (!user?._id) return;
@@ -25,6 +27,7 @@ const FavoriteList = () => {
         fetchFavorites();
     }, [user]);
 
+    // Xử lý xoá yêu thích
     const handleRemoveFavorite = async (mayeuthich) => {
         try {
             await deleteFavoriteById(mayeuthich);
@@ -61,7 +64,11 @@ const FavoriteList = () => {
 
                             {/* Ảnh sản phẩm */}
                             <img
-                                src={product.hinhanh?.[0]?.url || "/placeholder.jpg"}
+                                src={
+                                    product.anhdaidien?.data
+                                        ? `data:${product.anhdaidien.contentType};base64,${product.anhdaidien.data}`
+                                        : "/placeholder.jpg"
+                                }
                                 className="card-img-top"
                                 alt={product.tensanpham}
                                 style={{
@@ -97,7 +104,8 @@ const FavoriteList = () => {
                                                 style={{
                                                     width: "16px",
                                                     height: "16px",
-                                                    backgroundColor: color
+                                                    backgroundColor: color.mau,
+                                                    borderColor: "#ccc"
                                                 }}
                                             ></span>
                                         ))}
@@ -107,6 +115,8 @@ const FavoriteList = () => {
                         </div>
                     </div>
                 ))}
+
+                {/* Không có sản phẩm yêu thích */}
                 {favorites.length === 0 && (
                     <div className="col-12 text-center mt-4 text-muted">
                         Bạn chưa có sản phẩm nào trong danh sách yêu thích 💔

@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import {
-  TextField, Button, IconButton, InputAdornment, Alert, Typography, Divider, Box, Paper
+  TextField, Button, IconButton, InputAdornment, Alert,
+  Typography, Divider, Box, Paper
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
-import * as XLSX from 'xlsx';
-import axios from 'axios';
-
 import UploadFileIcon from '@mui/icons-material/UploadFile';
+import * as XLSX from 'xlsx';
+import { signUp } from '../../../api/Auth/auth.api';
+
 const UserAdd = () => {
   const [formData, setFormData] = useState({
     hoten: '',
@@ -37,7 +38,7 @@ const UserAdd = () => {
     if (!validateForm()) return;
     setLoading(true);
     try {
-      await axios.post('http://localhost:4000/auth/signup', {
+      await signUp({
         ...formData,
         VaiTro_id: 0,
         TrangThai_id: 1
@@ -45,7 +46,10 @@ const UserAdd = () => {
       setMessage({ type: 'success', content: 'Thêm người dùng thành công' });
       setFormData({ hoten: '', email: '', sodienthoai: '', matkhau: '' });
     } catch (error) {
-      setMessage({ type: 'error', content: error.response?.data?.message || 'Đã có lỗi xảy ra.' });
+      setMessage({
+        type: 'error',
+        content: error.response?.data?.message || 'Đã có lỗi xảy ra.'
+      });
     } finally {
       setLoading(false);
     }
@@ -84,7 +88,7 @@ const UserAdd = () => {
         }
 
         for (const user of data) {
-          await axios.post('http://localhost:4000/auth/signup', {
+          await signUp({
             ...user,
             VaiTro_id: 0,
             TrangThai_id: 1

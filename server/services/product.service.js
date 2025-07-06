@@ -1,402 +1,247 @@
 const { ObjectId } = require("mongodb");
 const port = require("../config").app.port;
+
 class ProductServer {
-    constructor(client) {
-        this.sanpham = client.db().collection("sanpham");
-        this.kichthuoc = client.db().collection("kichthuoc");
-        this.mausanpham = client.db().collection("mausanpham");
-        this.hinhanhsanpham = client.db().collection("hinhanhsanpham");
-        this.theloaisanpham = client.db().collection("theloaisanpham");
+  constructor(client) {
+    const db = client.db();
+    this.sanpham = db.collection("sanpham");
+    this.kichthuoc = db.collection("kichthuoc");
+    this.mausanpham = db.collection("mausanpham");
+    this.hinhanhsanpham = db.collection("hinhanhsanpham");
+    this.theloaisanpham = db.collection("theloaisanpham");
+  }
+
+  async createProduct(productData) {
+    try {
+      const result = await this.sanpham.insertOne({
+        tensanpham: productData.tensanpham,
+        giasanpham: productData.giasanpham,
+        theloai: productData.theloai,
+        mota: productData.mota,
+        ngaythem: productData.ngaythem,
+      });
+
+      const productId = result.insertedId;
+
+      const mauDocs = (productData.mausanpham || []).map(mau => ({
+        masanpham: productId,
+        mau: mau.trim(),
+      }));
+
+      const kichthuocDocs = (productData.kichthuoc || []).map(size => ({
+        masanpham: productId,
+        size: typeof size === "string" ? size.trim() : size?.size?.trim(),
+      }));
+
+      const hinhanhDocs = (productData.hinhanh || []).map(img => ({
+        masanpham: productId,
+        hash: img.hash,
+        data: img.data,
+        contentType: img.contentType,
+        tenfile: img.tenfile,
+        mau: img.color || null,
+        vitri: img.position || null,
+      }));
+
+      if (mauDocs.length) await this.mausanpham.insertMany(mauDocs);
+      if (kichthuocDocs.length) await this.kichthuoc.insertMany(kichthuocDocs);
+      if (hinhanhDocs.length) await this.hinhanhsanpham.insertMany(hinhanhDocs);
+
+      return { success: true, productId };
+    } catch (error) {
+      console.error("❌ createProduct error:", error);
+      return { success: false, message: error.message };
     }
+  }
 
-    extractProductData(payload) {
-        return {
-            tensanpham: payload.tensanpham || '',
-            giasanpham: Number(payload.giasanpham) || 0,
-            theloai: payload.theloai || '',
-            mota: payload.mota || '',
-            ngaythem: new Date(),
-            kichthuoc: Array.isArray(payload.kichthuoc) ? payload.kichthuoc : [],
-            mausanpham: Array.isArray(payload.mausanpham) ? payload.mausanpham : [],
-            hinhanh: Array.isArray(payload.hinhanh) ? payload.hinhanh : [],
-        }
-    }
 
-    async createProduct(payload) {
-        const productData = this.extractProductData(payload);
+  async getAllProducts() {
+    try {
+      const products = await this.sanpham.find({}).toArray();
 
-        try {
-            // 1. Tạo sản phẩm chính
-            const result = await this.sanpham.insertOne({
-                tensanpham: productData.tensanpham,
-                giasanpham: productData.giasanpham,
-                theloai: productData.theloai,
-                mota: productData.mota,
-                ngaythem: productData.ngaythem,
+      const detailedProducts = await Promise.all(
+        products.map(async (product) => {
+          let tentheloai = "Không rõ";
+
+          if (ObjectId.isValid(product.theloai)) {
+            const theloaiDoc = await this.theloaisanpham.findOne({
+              _id: new ObjectId(product.theloai),
             });
-
-            const productId = result.insertedId;
-
-            // 2. Tạo danh sách màu sắc
-            const mauDocs = productData.mausanpham.map(mau => ({
-                masanpham: productId,
-                mau: mau.trim()
-            }));
-
-            // 3. Tạo danh sách kích thước (chỉ có size)
-            const kichthuocDocs = productData.kichthuoc.map(size => ({
-                masanpham: productId,
-                size: typeof size === "string" ? size.trim() : size?.size?.trim()
-            }));
-
-            // 4. Tạo danh sách hình ảnh
-            const hinhanhDocs = productData.hinhanh.map(img => ({
-                masanpham: productId,
-                tenfile: img.tenfile
-            }));
-
-            // 5. Lưu vào các collection phụ
-            if (mauDocs.length > 0) {
-                await this.mausanpham.insertMany(mauDocs);
+            if (theloaiDoc?.tendanhmuc) {
+              tentheloai = theloaiDoc.tendanhmuc;
             }
-            if (kichthuocDocs.length > 0) {
-                await this.kichthuoc.insertMany(kichthuocDocs);
-            }
-            if (hinhanhDocs.length > 0) {
-                await this.hinhanhsanpham.insertMany(hinhanhDocs);
-            }
+          }
 
-            return {
-                _id: productId,
-                ...productData
-            };
-        } catch (error) {
-            console.error("❌ Lỗi khi tạo sản phẩm:", error);
-            throw error;
-        }
+          return {
+            _id: product._id,
+            tensanpham: product.tensanpham,
+            giasanpham: product.giasanpham,
+            mota: product.mota,
+            ngaythem: product.ngaythem,
+            theloai: product.theloai,
+            tentheloai,
+          };
+        })
+      );
+
+      return detailedProducts;
+    } catch (err) {
+      console.error("❌ getAllProducts error:", err);
+      return [];
     }
+  }
 
+  async getProductById(productId) {
+    try {
+      const _id = new ObjectId(productId);
 
-    async getCategoryNameById(theloaiId) {
-        try {
-            // Nếu là ObjectId dạng chuỗi thì convert
-            const id = typeof theloaiId === 'string' && ObjectId.isValid(theloaiId)
-                ? new ObjectId(theloaiId)
-                : theloaiId;
-
-            const category = await this.theloaisanpham.findOne({ _id: id });
-            return category?.tendanhmuc || null;
-        } catch (error) {
-            console.warn("⚠️ Không thể lấy tên thể loại:", error.message);
-            return null;
+      const product = await this.sanpham.findOne(
+        { _id },
+        {
+          projection: {
+            _id: 1,
+            tensanpham: 1,
+            mota: 1,
+            giasanpham: 1,
+            theloai: 1,
+            trangthai: 1,
+          },
         }
+      );
+      if (!product) return null;
+
+      // Lấy tên danh mục
+      if (product.theloai) {
+        const danhMucDoc = await this.theloaisanpham.findOne(
+          { _id: new ObjectId(product.theloai) },
+          { projection: { tendanhmuc: 1 } }
+        );
+        product.tendanhmuc = danhMucDoc?.tendanhmuc || null;
+      }
+
+      // Lấy màu sắc
+      const mausanpham = await this.mausanpham.find(
+        { masanpham: _id },
+        { projection: { _id: 1, masanpham: 1, mau: 1 } }
+      ).toArray();
+
+      // Lấy kích thước
+      const kichthuocRaw = await this.kichthuoc.find(
+        { masanpham: _id },
+        { projection: { _id: 1, masanpham: 1, size: 1 } }
+      ).toArray();
+
+      const sizeOrder = ["XS", "S", "M", "L", "XL", "XXL", "3XL", "4XL"];
+      const kichthuoc = kichthuocRaw.sort((a, b) => {
+        const idxA = sizeOrder.indexOf(a.size.toUpperCase());
+        const idxB = sizeOrder.indexOf(b.size.toUpperCase());
+        return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
+      });
+
+      return {
+        ...product,
+        mausanpham,
+        kichthuoc,
+      };
+    } catch (err) {
+      console.error("❌ getProductById error:", err);
+      return null;
     }
+  }
 
-    async getAllProducts() {
-        try {
-            const products = await this.sanpham.find({}).toArray();
 
-            // Sử dụng Promise.all để xử lý song song
-            const enrichedProducts = await Promise.all(products.map(async (product) => {
-                const productId = product._id.toString();
+  async getImagesByColor(productId, colorHex) {
+    try {
+      const images = await this.hinhanhsanpham.find({
+        masanpham: new ObjectId(productId),
+        mau: colorHex,
+      }).toArray();
 
-                // Thể loại
-                const tentheloai = await this.getCategoryNameById(product.theloai);
+      return { success: true, images };
+    } catch (error) {
+      console.error("❌ getImagesByColor error:", error);
+      return { success: false, message: error.message };
+    }
+  }
 
-                // Kích thước
-                const kichthuoc = await this.kichthuoc.find({ masanpham: productId }).toArray();
+  async getProductByCategorySlug(slug) {
+    try {
+      // 1. Tìm danh mục theo slug
+      const category = await this.theloaisanpham.findOne({ slug });
 
-                // Màu sắc
-                const mausanpham = await this.mausanpham.find({ masanpham: productId }).toArray();
+      if (!category) {
+        return []; // Không tìm thấy danh mục
+      }
 
-                // Hình ảnh
-                const hinhAnhList = await this.hinhanhsanpham.find({ masanpham: productId }).toArray();
-                const hinhanh = hinhAnhList.map(img => ({
-                    ...img,
-                    url: img.tenfile ? `/images/${img.tenfile}` : null
-                }));
+      // 2. So sánh theloai = category._id (dưới dạng string)
+      const result = await this.sanpham.find({
+        theloai: category._id.toString()
+      }).toArray();
 
-                return {
-                    ...product,
-                    // tentheloai,
-                    kichthuoc,
-                    mausanpham,
-                    hinhanh
-                };
-            }));
+      return result;
+    } catch (error) {
+      console.error("Lỗi getProductByCategorySlug:", error);
+      return [];
+    }
+  }
 
-            return enrichedProducts;
-        } catch (error) {
-            console.error("❌ Lỗi khi lấy tất cả sản phẩm:", error);
-            throw new Error("Không thể lấy danh sách sản phẩm.");
+  async getFullProductsByCategorySlug(slug) {
+    try {
+      // Bước 1: Lấy danh sách sản phẩm thô theo slug
+      const rawProducts = await this.getProductByCategorySlug(slug);
+
+      const fullProducts = [];
+
+      for (const rawProduct of rawProducts) {
+        const full = await this.getProductById(rawProduct._id.toString());
+
+        if (full) {
+          let anhdaidien = null;
+
+          // Bước 3: Lấy màu đầu tiên để lấy ảnh
+          const firstColor = full.mausanpham?.[0]?.mau;
+          if (firstColor) {
+            const { images } = await this.getImagesByColor(full._id, firstColor);
+            anhdaidien = images?.[0] || null;
+          }
+
+          fullProducts.push({
+            ...full,
+            anhdaidien,
+          });
         }
+      }
+
+      return fullProducts;
+    } catch (error) {
+      console.error("❌ getFullProductsByCategorySlug error:", error);
+      return [];
     }
+  }
 
+  async getColorsByProductId(productId) {
+    try {
+      const colors = await this.mausanpham.find(
+        { masanpham: new ObjectId(productId) },
+        { projection: { _id: 1, mau: 1 } }
+      ).toArray();
 
-    async getProductById(id) {
-        try {
-            if (!ObjectId.isValid(id)) {
-                return {
-                    success: false,
-                    message: "ID sản phẩm không hợp lệ",
-                };
-            }
-
-            const objectId = new ObjectId(id);
-
-            const product = await this.sanpham.findOne({ _id: objectId });
-            if (!product) {
-                return {
-                    success: false,
-                    message: "Không tìm thấy sản phẩm",
-                };
-            }
-
-            // ✅ Tích hợp lấy tên thể loại
-            product.tentheloai = await this.getCategoryNameById(product.theloai);
-
-            // 🔍 Lấy kích thước
-            product.kichthuoc = await this.kichthuoc.find({ masanpham: objectId }).toArray();
-
-            // 🎨 Lấy màu sắc
-            const mausanpham = await this.mausanpham.find({ masanpham: objectId }).toArray();
-            product.mausanpham = mausanpham.map(mau => mau.mau);
-
-            // 🖼️ Lấy hình ảnh (tạo URL đầy đủ)
-            const hinhanh = await this.hinhanhsanpham.find({ masanpham: objectId }).toArray();
-            product.hinhanh = hinhanh.map(img => ({
-                _id: img._id,
-                tenfile: img.tenfile,
-                url: `http://localhost:${port}/images/${img.tenfile}`
-            }));
-
-            return {
-                success: true,
-                data: product,
-            };
-        } catch (error) {
-            console.error("Lỗi khi lấy sản phẩm theo ID:", error);
-            return {
-                success: false,
-                message: "Đã xảy ra lỗi khi truy vấn sản phẩm",
-                error: error.message,
-            };
-        }
+      return { success: true, colors };
+    } catch (error) {
+      console.error("❌ getColorsByProductId error:", error);
+      return { success: false, message: error.message };
     }
+  }
 
-
-    async updateProduct(id, payload, files) {
-        try {
-            const objectId = new ObjectId(id);
-
-            // 1. Parse các trường
-            const kichthuoc = Array.isArray(payload.kichthuoc)
-                ? payload.kichthuoc
-                : JSON.parse(payload.kichthuoc || "[]");
-
-            const mausanpham = Array.isArray(payload.mausanpham)
-                ? payload.mausanpham
-                : JSON.parse(payload.mausanpham || "[]");
-
-            const hinhanhCu = payload.hinhanhCu
-                ? (Array.isArray(payload.hinhanhCu) ? payload.hinhanhCu : JSON.parse(payload.hinhanhCu))
-                : [];
-
-            const hinhanhXoa = payload.hinhanhXoa
-                ? (Array.isArray(payload.hinhanhXoa) ? payload.hinhanhXoa : JSON.parse(payload.hinhanhXoa))
-                : [];
-
-            // 2. Cập nhật sản phẩm chính
-            await this.sanpham.updateOne(
-                { _id: objectId },
-                {
-                    $set: {
-                        tensanpham: payload.tensanpham,
-                        giasanpham: payload.giasanpham,
-                        theloai: payload.theloai,
-                        mota: payload.mota,
-                        ngaythem: payload.ngaythem,
-                    },
-                }
-            );
-
-            // 3. Cập nhật màu sắc
-            await this.mausanpham.deleteMany({ masanpham: objectId });
-            const mauDocs = mausanpham.map(mau => ({
-                masanpham: objectId,
-                mau: mau.trim(),
-            }));
-            if (mauDocs.length > 0) {
-                await this.mausanpham.insertMany(mauDocs);
-            }
-
-            // 4. Cập nhật kích thước (chỉ chứa size)
-            await this.kichthuoc.deleteMany({ masanpham: objectId });
-            const kichThuocDocs = kichthuoc.map(size =>
-                typeof size === "string"
-                    ? { masanpham: objectId, size: size.trim() }
-                    : { masanpham: objectId, size: size?.size?.trim() }
-            );
-            if (kichThuocDocs.length > 0) {
-                await this.kichthuoc.insertMany(kichThuocDocs);
-            }
-
-            // 5. Cập nhật hình ảnh
-            const existingImages = await this.hinhanhsanpham.find({ masanpham: objectId }).toArray();
-            const existingImgMap = new Map(existingImages.map(img => [img.tenfile, img]));
-
-            const newImages = [
-                ...hinhanhCu.map(img => ({ tenfile: img.tenfile })),
-                ...(Array.isArray(files) ? files.map(file => ({ tenfile: file.filename })) : []),
-            ];
-
-            const newImgSet = new Set(newImages.map(img => img.tenfile));
-
-            // Thêm ảnh mới chưa có trong DB
-            for (const img of newImages) {
-                if (!existingImgMap.has(img.tenfile)) {
-                    await this.hinhanhsanpham.insertOne({
-                        masanpham: objectId,
-                        tenfile: img.tenfile,
-                    });
-                }
-            }
-
-            // Xóa ảnh theo _id
-            if (Array.isArray(hinhanhXoa) && hinhanhXoa.length > 0) {
-                for (const imgId of hinhanhXoa) {
-                    try {
-                        await this.hinhanhsanpham.deleteOne({ _id: new ObjectId(imgId) });
-                    } catch (err) {
-                        console.error("Lỗi khi xóa ảnh theo _id:", imgId, err);
-                    }
-                }
-            }
-
-            return {
-                success: true,
-                message: "Cập nhật sản phẩm thành công.",
-            };
-        } catch (error) {
-            console.error("❌ Lỗi khi cập nhật sản phẩm:", error);
-            return {
-                success: false,
-                message: "Cập nhật sản phẩm thất bại: " + error.message,
-            };
-        }
+  async totalProducts() {
+    try {
+      const total = await this.sanpham.countDocuments();
+      return total;
+    } catch (error) {
+      console.error("❌ [adminDashboard - ProductServer] Lỗi:", error.message);
+      return 0;
     }
+  }
 
-    async deleteProduct(id) {
-        try {
-            const objectId = new ObjectId(id);
-            await this.sanpham.deleteOne({ _id: objectId });
-            await this.kichthuoc.deleteMany({ masanpham: id });
-            await this.mausanpham.deleteMany({ masanpham: id });
-            await this.hinhanhsanpham.deleteMany({ masanpham: id });
-
-            return { message: "Đã xoá sản phẩm và dữ liệu liên quan" };
-        } catch (error) {
-            console.error("Lỗi xoá sản phẩm:", error);
-            throw new Error("Không thể xoá sản phẩm.");
-        }
-    }
-
-    async searchProductByName(name) {
-        try {
-            const regex = new RegExp(name, "i");
-            return await this.sanpham.find({ tensanpham: { $regex: regex } }).toArray();
-        } catch (error) {
-            console.error("Lỗi tìm kiếm sản phẩm:", error);
-            throw new Error("Không thể tìm kiếm sản phẩm.");
-        }
-    }
-
-    async getCategoryNameById(theloaiId) {
-        try {
-            const id = typeof theloaiId === 'string' && ObjectId.isValid(theloaiId)
-                ? new ObjectId(theloaiId)
-                : theloaiId;
-
-            const query = ObjectId.isValid(id) ? { _id: id } : { _id: new ObjectId() }; // tránh lỗi
-            const category = await this.theloaisanpham.findOne(query);
-
-            return category?.tendanhmuc || null;
-        } catch (error) {
-            console.warn("⚠️ Không thể lấy tên thể loại:", error.message);
-            return null;
-        }
-    }
-
-
-
-    async getAllProducts() {
-        try {
-            // Lấy danh sách tất cả sản phẩm
-            const products = await this.sanpham.find({}).toArray();
-
-            // Lấy toàn bộ kích thước, màu sắc, hình ảnh một lần duy nhất
-            const allKichThuoc = await this.kichthuoc.find({}).toArray();
-            const allMauSac = await this.mausanpham.find({}).toArray();
-            const allHinhAnh = await this.hinhanhsanpham.find({}).toArray();
-
-            // Gộp dữ liệu theo masanpham
-            const kichThuocMap = {};
-            const mauSacMap = {};
-            const hinhAnhMap = {};
-
-            for (const kt of allKichThuoc) {
-                const pid = kt.masanpham.toString();
-                if (!kichThuocMap[pid]) kichThuocMap[pid] = [];
-                kichThuocMap[pid].push(kt);
-            }
-
-            for (const mau of allMauSac) {
-                const pid = mau.masanpham.toString();
-                if (!mauSacMap[pid]) mauSacMap[pid] = [];
-                mauSacMap[pid].push(mau.mau); // Chỉ lấy trường `mau`
-            }
-
-            for (const img of allHinhAnh) {
-                const pid = img.masanpham.toString();
-                if (!hinhAnhMap[pid]) hinhAnhMap[pid] = [];
-                hinhAnhMap[pid].push({
-                    _id: img._id,
-                    tenfile: img.tenfile,
-                    url: `http://localhost:${port}/images/${img.tenfile}`
-                });
-            }
-
-            // Duyệt từng sản phẩm và gắn dữ liệu liên quan
-            for (const product of products) {
-                const productId = product._id.toString();
-
-                // Gán tên thể loại
-                product.tentheloai = await this.getCategoryNameById(product.theloai);
-
-                // Gán kích thước
-                product.kichthuoc = kichThuocMap[productId] || [];
-
-                // Gán màu sắc
-                product.mausanpham = mauSacMap[productId] || [];
-
-                // Gán hình ảnh
-                product.hinhanh = hinhAnhMap[productId] || [];
-            }
-
-            return {
-                success: true,
-                data: products
-            };
-
-        } catch (error) {
-            console.error("Lỗi lấy tất cả sản phẩm:", error);
-            return {
-                success: false,
-                message: "Không thể lấy danh sách sản phẩm.",
-                error: error.message
-            };
-        }
-    }
 }
-
 module.exports = ProductServer;

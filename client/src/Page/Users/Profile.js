@@ -66,7 +66,7 @@ const Profile = () => {
             {/* Bốn khối thông tin */}
             <div className="row text-center mb-4">
                 <div className="col-md-3">
-                    <Link className="text-decoration-none quick-link text-secondary" to={'/user/location'}>
+                    <Link className="text-decoration-none quick-link text-secondary" to={'/user/orders'}>
                         <div className="border p-3 rounded shadow-sm">
                             <strong>Đã tiêu</strong>
                             <div>{user.tongChiTieu.toLocaleString()}₫</div>

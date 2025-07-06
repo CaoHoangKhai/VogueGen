@@ -22,60 +22,46 @@ class OrderService {
         };
     }
 
-    extractOrderDetailData(payload) {
+    extractOrderDetailData(item) {
         return {
-            madonhang: payload.madonhang,
-            masanpham: payload.masanpham,
-            soluong: payload.soluong,
-            mausanpham: payload.mausanpham || payload.mausac || payload.color || null, // Ưu tiên lấy đúng trường
-            size: payload.size,
-            giatien: payload.giatien
+            masanpham: item.masanpham,
+            soluong: item.soluong,
+            mausanpham: item.mausanpham || item.mausac || item.color || null,
+            size: item.size,
+            giatien: item.giatien
         };
     }
 
     async createOrder(payload) {
         try {
-            if (!payload) throw new Error("Thiếu thông tin đơn hàng.");
-
             const orderData = this.extractOrderData(payload);
 
-            // Bước 1: Tạo đơn hàng
+            // Tạo đơn hàng chính
             const result = await this.donhang.insertOne(orderData);
             const madonhang = result.insertedId.toString();
-            orderData.madonhang = madonhang;
 
-            // Cập nhật madonhang vào đơn hàng đã tạo
-            await this.donhang.updateOne(
-                { _id: result.insertedId },
-                { $set: { madonhang: madonhang } }
-            );
+            // Gắn lại mã đơn hàng
+            await this.donhang.updateOne({ _id: result.insertedId }, { $set: { madonhang } });
 
-            const orderDetails = Array.isArray(payload.chitiet) ? payload.chitiet : [];
+            const details = (payload.chitiet || []).map(item => ({
+                ...this.extractOrderDetailData(item),
+                madonhang
+            }));
 
-            // Bước 2: Xử lý chi tiết đơn hàng
-            if (orderDetails.length > 0) {
-                const detailDocs = [];
-
-                for (const item of orderDetails) {
-                    const detail = {
-                        ...this.extractOrderDetailData(item),
-                        madonhang: madonhang,
-                    };
-
-                    // Kiểm tra không có trường nào là null
-                    if (!detail.masanpham || !detail.soluong || !detail.size || !detail.mausanpham || !detail.giatien) {
+            if (details.length) {
+                for (const d of details) {
+                    if (!d.masanpham || !d.soluong || !d.mausanpham || !d.size || !d.giatien) {
                         throw new Error("Thông tin chi tiết đơn hàng không hợp lệ.");
                     }
-
-                    detailDocs.push(detail);
                 }
 
-                await this.chitietdonhang.insertMany(detailDocs);
+                await this.chitietdonhang.insertMany(details);
             }
 
-            // Bước 3: Xoá giỏ hàng của người dùng
-            if (!payload.manguoidung) throw new Error("Thiếu mã người dùng để xoá giỏ hàng.");
-            await this.giohang.deleteMany({ manguoidung: new ObjectId(payload.manguoidung) });
+            // Xoá giỏ hàng sau khi tạo đơn
+            if (payload.manguoidung) {
+                await this.giohang.deleteMany({ manguoidung: new ObjectId(payload.manguoidung) });
+            }
 
             return {
                 success: true,
@@ -83,7 +69,7 @@ class OrderService {
                 orderId: madonhang
             };
         } catch (error) {
-            console.error("Lỗi khi tạo đơn hàng:", error.message);
+            console.error("❌ [createOrder] Lỗi:", error.message);
             return {
                 success: false,
                 message: "Tạo đơn hàng thất bại",
@@ -93,82 +79,133 @@ class OrderService {
     }
 
     async getAllOrdersSorted() {
-        // Lấy tất cả đơn hàng, sắp xếp theo thời gian giảm dần (mới nhất trước)
-        const orders = await this.donhang.find().sort({ ngaydat: -1 }).toArray();
-        return orders;
+        return await this.donhang.find().sort({ ngaydat: -1 }).toArray();
     }
-
 
     async getOrdersByUserId(userId) {
         try {
-            if (!userId) {
-                throw new Error("Thiếu mã người dùng.");
-            }
+            if (!userId) throw new Error("Thiếu mã người dùng.");
+            const oid = ObjectId.isValid(userId) ? new ObjectId(userId) : null;
 
-            // Thử chuyển userId thành ObjectId, nếu không được thì để nguyên
-            let objectUserId = null;
-            try {
-                objectUserId = new ObjectId(userId);
-            } catch (e) {
-                console.warn("userId không phải ObjectId hợp lệ, sẽ tìm bằng string.");
-            }
-
-            // Truy vấn theo cả ObjectId và string (nếu có)
-            const query = objectUserId
-                ? { $or: [{ manguoidung: userId }, { manguoidung: objectUserId }] }
+            const query = oid
+                ? { $or: [{ manguoidung: oid }, { manguoidung: userId }] }
                 : { manguoidung: userId };
 
+            const data = await this.donhang.find(query).sort({ ngaydat: -1 }).toArray();
+            return { success: true, data };
+        } catch (error) {
+            return {
+                success: false,
+                message: "Không thể lấy đơn hàng.",
+                error: error.message
+            };
+        }
+    }
+
+    async getOrderByIdWithDetails(orderId) {
+        try {
+            if (!orderId) throw new Error("Thiếu mã đơn hàng.");
+
+            const query = ObjectId.isValid(orderId)
+                ? { $or: [{ _id: new ObjectId(orderId) }, { madonhang: orderId }] }
+                : { madonhang: orderId };
+
+            const order = await this.donhang.findOne(query);
+
+            if (!order) return { success: false, message: "Không tìm thấy đơn hàng." };
+
+            const chitiet = await this.chitietdonhang.find({ madonhang: order.madonhang }).toArray();
+
+            return {
+                success: true,
+                data: { ...order, chitiet }
+            };
+        } catch (error) {
+            return {
+                success: false,
+                message: "Không thể lấy chi tiết đơn hàng.",
+                error: error.message
+            };
+        }
+    }
+
+
+    // Lấy đơn hàng trong 28 ngày gần nhất
+    async getOrdersInLast28Days() {
+        try {
+            const now = new Date();
+            const past28Days = new Date(now.getTime() - 28 * 24 * 60 * 60 * 1000);
+
             const orders = await this.donhang
-                .find(query)
+                .find({ ngaydat: { $gte: past28Days } })
                 .sort({ ngaydat: -1 })
                 .toArray();
 
             return {
                 success: true,
-                data: orders,
+                data: orders
             };
         } catch (error) {
-            console.error("Lỗi khi lấy đơn hàng theo người dùng:", error.message);
+            console.error("❌ [getOrdersInLast28Days] Lỗi:", error.message);
             return {
                 success: false,
-                message: "Không thể lấy đơn hàng.",
-                error: error.message,
+                message: "Không thể lấy đơn hàng trong 28 ngày.",
+                error: error.message
             };
         }
     }
-    async getOrderByIdWithDetails(orderId) {
+
+    // Lấy tổng doanh thu trong 28 ngày gần nhất
+    async getRevenueInLast28Days() {
         try {
-            if (!orderId) throw new Error("Thiếu mã đơn hàng.");
+            const now = new Date();
+            const past28Days = new Date(now.getTime() - 28 * 24 * 60 * 60 * 1000);
 
-            const objectOrderId = new ObjectId(orderId);
+            const result = await this.donhang.aggregate([
+                {
+                    $match: { ngaydat: { $gte: past28Days } }
+                },
+                {
+                    $group: {
+                        _id: null,
+                        totalRevenue: { $sum: "$tongtien" }
+                    }
+                }
+            ]).toArray();
 
-            // 1. Lấy thông tin đơn hàng
-            const order = await this.donhang.findOne({ _id: objectOrderId });
+            const total = result[0]?.totalRevenue || 0;
 
-            if (!order) {
-                return {
-                    success: false,
-                    message: "Không tìm thấy đơn hàng."
-                };
-            }
+            return {
+                success: true,
+                totalRevenue: total
+            };
+        } catch (error) {
+            console.error("❌ [getRevenueInLast28Days] Lỗi:", error.message);
+            return {
+                success: false,
+                message: "Không thể tính tổng doanh thu.",
+                error: error.message
+            };
+        }
+    }
 
-            // 2. Lấy chi tiết đơn hàng
-            const orderDetails = await this.chitietdonhang
-                .find({ madonhang: orderId })
+    // Lấy 5 đơn hàng mới nhất đã xác nhận
+    async getLatestConfirmedOrders(limit = 5) {
+        try {
+            const orders = await this.donhang.find({ trangthai: 1 })
+                .sort({ ngaydat: -1 }) // Mới nhất trước
+                .limit(limit)
                 .toArray();
 
             return {
                 success: true,
-                data: {
-                    ...order,
-                    chitiet: orderDetails
-                }
+                data: orders
             };
         } catch (error) {
-            console.error("Lỗi khi lấy chi tiết đơn hàng:", error.message);
+            console.error("❌ [getLatestConfirmedOrders] Lỗi:", error.message);
             return {
                 success: false,
-                message: "Không thể lấy chi tiết đơn hàng.",
+                message: "Không thể lấy đơn hàng đã xác nhận.",
                 error: error.message
             };
         }

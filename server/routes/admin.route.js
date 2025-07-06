@@ -3,14 +3,10 @@ const router = express.Router();
 const multer = require("multer");
 const path = require("path");
 
-const adminController = require("../controllers/admin.controller");
-const categoryController = require("../controllers/categories.controller");
-const productController = require("../controllers/product.controller");
-const sizeController = require("../controllers/sizes.controller");
-const promotionsController = require("../controllers/promotions.controller");
 
-const orderController = require("../controllers/order.controller");
-const message = require("../utils/messages");
+const adminController = require("../controllers/admin.controller");
+const productController = require("../controllers/product.controller");
+
 
 // Cấu hình multer
 const storage = multer.diskStorage({
@@ -28,47 +24,38 @@ const upload = multer({
   storage: storage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
 });
+// ================== ROUTES ADMIN ==================
 
-// Trang chính ví dụ trang đăng nhập
+/**
+ * Trang đăng nhập admin (trả lời mặc định)
+ * GET /admin/
+ */
 router.get("/", (req, res) => {
-  res.json({ message: message.info.SIGNIN_PAGE });
+  res.json({ message: "Trang đăng nhập admin" });
 });
 
-// Dashboard admin
+/**
+ * Trang dashboard admin
+ * GET /admin/dashboard
+ */
 router.get("/dashboard", adminController.adminDashboard);
 
-// Quản lý user
+/**
+ * Lấy danh sách người dùng
+ * GET /admin/user_list
+ */
 router.get("/user_list", adminController.getListUsers);
-router.patch("/user/status/:id", adminController.toggleUserStatus);
 
-// Quản lý khuyến mãi
-router.post("/promotions", promotionsController.createPromotions);
-router.get("/promotions", promotionsController.getAllPromotions);
-router.patch("/promotions/status/:id", promotionsController.deactivatePromotionById);
+/**
+ * Bật/tắt trạng thái hoạt động của người dùng
+ * PATCH /admin/user/status/:id
+ * @param {String} id - ID của người dùng
+ */
+router.patch("/user/status/:userId", adminController.toggleUserStatus);
 
-// Quản lý danh mục
-router.get("/categories", categoryController.getAllCategories);
-router.post("/categories", categoryController.createCategory);
 
-// Quản lý sản phẩm
+
+router.get("/products",productController.getAllProducts)
+
 router.post('/products', upload.any(), productController.createProduct);
-router.get("/products", productController.getAllProducts);
-
-// Các route tĩnh liên quan đến sản phẩm đặt trước route có param :id
-router.get("/products/search", productController.searchProducts);
-router.get("/products/sizes", sizeController.getAllSizes);
-
-// Quản lý đơn hàng
-router.get("/orders", orderController.getAllOrdersSorted);
-
-// Route lấy sản phẩm theo ID, đặt cuối cùng để tránh nhầm lẫn với các route trên
-router.get("/products/:id", productController.getProductById);
-
-// ⚠️ Cần upload.any() để nhận ảnh
-
-router.delete("/products/:id", productController.deleteProduct);
-
-// Cần đặt các route khác trước route /:id để tránh nhầm
-router.put('/products/:id', upload.any(), productController.updateProduct);
-
 module.exports = router;

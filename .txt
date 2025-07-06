@@ -2,6 +2,39 @@ CẦN CÁ NHÂN HÓA (tên tiếng việt và tiếng anh)
 Tên đề tài tiếng Việt: Xây dựng website kinh doanh thời trang có tích hợp chức năng sinh ảnh người mẫu
 Tên đề tài tiếng Anh: Virtual Model Image Generation for Fashion Websites Using Generative AI
 
+1.
+Xây dựng website thời trang tích hợp chức năng sinh ảnh người mẫu và in áo theo yêu cầu
+Developing an AI-Based Fashion E-Commerce Website with Virtual Model Generation and Print-on-Demand Features
+2.
+Thiết kế website bán áo thời trang hỗ trợ sinh ảnh người mẫu và đặt in cá nhân hóa
+Building an Online Fashion Platform with Virtual Model Generation and On-Demand Apparel Printing
+=> Building an Online Fashion Website with Virtual Model Generation and On-Demand Apparel Printing
+3.
+Xây dựng website thời trang tích hợp thử áo ảo và in theo yêu cầu
+Developing a Fashion Website with Virtual Try-On and Print-on-Demand Capabilities
+
+4 => 1
+Xây dựng website thương mại điện tử thời trang với tính năng sinh ảnh người mẫu cá nhân hóa
+Designing a Personalized Fashion E-Commerce Website with AI-Generated Virtual Models and Custom Printing
+
+
+
+
+
+
+
+1. Xây dựng website thời trang tích hợp chức năng sinh ảnh người mẫu và in áo theo yêu cầu
+
+2. Thiết kế website bán áo thời trang hỗ trợ sinh ảnh người mẫu và đặt in cá nhân hóa
+
+3. Xây dựng website thời trang tích hợp thử áo ảo và in theo yêu cầu
+
+4. Xây dựng website thương mại điện tử thời trang với tính năng sinh ảnh người mẫu cá nhân hóa
+
+
+
+
+
 CHUYỂN IDM_VITON-HD trên local của máy
 TÌM MỌI CÁCH CHO NÓ CHẠY CỤC BỘ
 KIỂM TRA XEM MÁY CHẠY LOCAL CHƯƠNG TRÌNH VITION-HD ĐƯỢC KO?
@@ -81,6 +114,7 @@ customink
 printdoors
 printful
 printify
+https://www.spreadshirt.com/
 
 
 
@@ -96,11 +130,11 @@ có thể tạo api theo thể loại, khi lấy xog thì hiện thị ra khi tr
 
 
 CONTACT(XOG)
-ABOUT ( TỐI NAY)
-Guides ( TỐI NAY)
-Policy( TỐI NAY)
-VIẾT LẠI FOOTER
-TỐI NAY ĐỔ DỮ LIỆU SẢN PHẨM RA
+ABOUT ( XONG)
+Guides ( XONG)
+Policy( XONG)
+VIẾT LẠI FOOTER( XONG)
+TỐI NAY ĐỔ DỮ LIỆU SẢN PHẨM RA ( 27/06)
 
 thiết kế sinh ảnh (ĐAG LÀM)
 
@@ -108,3 +142,36 @@ thiết kế sinh ảnh (ĐAG LÀM)
 
 tự build ->thiết kế api gửi mẫu ảnh, mẫu áo đã thiết kế qua
 bị lỗi 
+
+
+
+
+
+
+
+
+Thiết kế ảnh mặc được chứ ko đeo, hay đội
+
+
+GIỚI HẠN ĐỀ TÀI :
+CHỈ MẶC ÁO KO ĐỘI NÓN ĐƯỢC
+CHỈ ÁO MẶC THÔI ko TRANG SỨC VÀ MU
+BẤM SINH MẶC ÁO thì lấy front để sinh ảnh
+khi sinh ảnh xog thì làm gì?
+	+ Chỉ hiển ra ảnh và hỏi xem người dùng có tải về ko ( Có thì tải / Không thì ko lưu ảnh đã sinh)
+
+
+
+design text bị lỗi
+
+
+
+nên tách api ra riêng để dễ quản lý
+
+
+
+CÒN TRANG SẢN PHẨM, SẢN PHẨM CHI TIẾT, DESIGN, SẢN PHẨM THEO DANH MỤC
+
+
+bây giờ thiết kế người dùng ko lưu ảnh mà lưu products và mau để gọi lấy ảnh từ hình ảnh sản phẩm
+tối nay đổ dữ liệu sản phẩm ra, chọn thêm danh mục

@@ -1,7 +1,7 @@
+import axios from "axios"; // cần import nếu chưa có
 // Cấu hình URL cho các khu vực khác nhau
-const BASE_URL_HOME = "http://localhost:4000/home";     // Dành cho user/public
-const BASE_URL_ADMIN = "http://localhost:4000/admin";   // Dành cho admin quản lý
-
+const BASE_URL_ADMIN = "http://localhost:4000/admin";
+const BASE_URL_PRODUCTS = "http://localhost:4000/products";
 export const getAllProductsAdmin = async () => {
     try {
         const response = await fetch(`${BASE_URL_ADMIN}/products`);
@@ -21,7 +21,7 @@ export const getAllProductsAdmin = async () => {
  */
 export const getProductById = async (id) => {
     try {
-        const response = await fetch(`${BASE_URL_HOME}/products/${id}`);
+        const response = await fetch(`${BASE_URL_ADMIN}/products/${id}`);
         if (!response.ok) {
             throw new Error("Không thể lấy sản phẩm theo ID");
         }
@@ -101,21 +101,19 @@ export const deleteProduct = async (id) => {
     }
 };
 
-
 /**
- * Lấy danh sách tất cả sản phẩm (hiển thị ở trang chủ)
- * @returns {Promise<Array>} Mảng sản phẩm từ backend
+ * Lấy danh sách ảnh theo màu của sản phẩm
+ * @param {string} productId 
+ * @param {string} colorHex 
+ * @returns {Promise<{ success: boolean, images: object[] } | null>}
  */
-export const getAllProducts = async () => {
-    try {
-        const response = await fetch(`${BASE_URL_HOME}/products`);
-        if (!response.ok) {
-            throw new Error("Không thể lấy dữ liệu sản phẩm từ server");
-        }
-        const data = await response.json();
-        return data;
-    } catch (error) {
-        console.error("Lỗi khi gọi API sản phẩm:", error);
-        return [];
-    }
+export const getImagesByColor = async (productId, color) => {
+  try {
+    const encodedColor = encodeURIComponent(color);
+    const res = await axios.get(`${BASE_URL_PRODUCTS}/${productId}/images/${encodedColor}`);
+    return res.data; // chính là mảng ảnh
+  } catch (error) {
+    console.error("❌ Lỗi khi lấy ảnh:", error);
+    return [];
+  }
 };

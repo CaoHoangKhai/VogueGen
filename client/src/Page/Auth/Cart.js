@@ -4,9 +4,9 @@ import {
     updateCartQuantity,
     increaseCartQuantity,
     decreaseCartQuantity
-} from '../../api/User/cart.api';
+} from '../../api/Cart/cart.api';
 import Toast from "../../Components/Toast";
-import { Link } from 'react-router-dom';
+// import { Link } from 'react-router-dom';
 const Cart = () => {
     const [cartItems, setCartItems] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -28,6 +28,7 @@ const Cart = () => {
         getCartByUserId(userId)
             .then(res => {
                 setCartItems(res.data || []);
+                console.log(res.data); // ✅ Log dữ liệu nhận từ API
                 setLoading(false);
             })
             .catch(() => {
@@ -166,8 +167,7 @@ const Cart = () => {
                                             <tr key={item._id || idx}>
                                                 <td>
                                                     <img
-                                                        src={item.hinhanh || "https://via.placeholder.com/60"}
-                                                        alt={item.tensanpham}
+                                                        src={item.hinhanh} alt={item.tensanpham}
                                                         className="img-thumbnail"
                                                         style={{ width: 60, height: 60, objectFit: "cover" }}
                                                     />

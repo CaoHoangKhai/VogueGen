@@ -3,29 +3,26 @@ const OrderService = require("../services/order.service");
 
 exports.createOrder = async (req, res) => {
     try {
-        console.log("📦 DỮ LIỆU CLIENT GỬI LÊN:");
-        console.log(req.body);
+        console.log("📦 [createOrder] BẮT ĐẦU XỬ LÝ");
+
         if (!req.body || Object.keys(req.body).length === 0) {
+            console.warn("⚠️ [createOrder] Thiếu dữ liệu đơn hàng trong request body.");
             return res.status(400).json({
                 success: false,
                 message: "Thiếu dữ liệu đơn hàng trong yêu cầu."
             });
         }
 
-        const orderService = new OrderService(MongoDB.client);
-        const result = await orderService.createOrder(req.body);
+        console.log("📥 [createOrder] DỮ LIỆU CLIENT GỬI LÊN:", JSON.stringify(req.body, null, 2));
 
-        if (result.success) {
-            return res.status(201).json(result);
-        } else {
-            return res.status(400).json({
-                success: false,
-                message: result.message || "Tạo đơn hàng thất bại.",
-                error: result.error || null
-            });
-        }
+        const service = new OrderService(MongoDB.client);
+        const result = await service.createOrder(req.body);
+
+        console.log("✅ [createOrder] KẾT QUẢ TRẢ VỀ:", JSON.stringify(result, null, 2));
+
+        return res.status(result.success ? 201 : 400).json(result);
     } catch (error) {
-        console.error("Lỗi server khi tạo đơn hàng:", error);
+        console.error("🔥 [createOrder] Lỗi:", error.message);
         return res.status(500).json({
             success: false,
             message: "Lỗi server khi tạo đơn hàng.",
@@ -34,17 +31,21 @@ exports.createOrder = async (req, res) => {
     }
 };
 
-
 exports.getAllOrdersSorted = async (req, res) => {
     try {
-        const orderService = new OrderService(MongoDB.client);
-        const orders = await orderService.getAllOrdersSorted();
+        console.log("📥 [getAllOrdersSorted] YÊU CẦU LẤY TOÀN BỘ ĐƠN HÀNG (admin)");
+
+        const service = new OrderService(MongoDB.client);
+        const orders = await service.getAllOrdersSorted();
+
+        console.log(`✅ [getAllOrdersSorted] Tìm thấy ${orders.length} đơn hàng`);
+
         res.status(200).json(orders);
     } catch (error) {
-        console.error("Lỗi server khi lấy danh sách đơn hàng:", error);
+        console.error("🔥 [getAllOrdersSorted] Lỗi:", error.message);
         res.status(500).json({
             success: false,
-            message: "Lỗi server khi lấy danh sách đơn hàng.",
+            message: "Không thể lấy danh sách đơn hàng.",
             error: error.message
         });
     }
@@ -52,24 +53,20 @@ exports.getAllOrdersSorted = async (req, res) => {
 
 exports.getOrdersByUserId = async (req, res) => {
     try {
-        const userId = req.params.userId;
+        const { userId } = req.params;
+        console.log("📥 [getOrdersByUserId] Yêu cầu lấy đơn hàng theo userId:", userId);
 
-        if (!userId) {
-            return res.status(400).json({
-                success: false,
-                message: "Thiếu mã người dùng."
-            });
-        }
+        const service = new OrderService(MongoDB.client);
+        const result = await service.getOrdersByUserId(userId);
 
-        const orderService = new OrderService(MongoDB.client);
-        const result = await orderService.getOrdersByUserId(userId);
+        console.log("✅ [getOrdersByUserId] Kết quả trả về:", JSON.stringify(result, null, 2));
 
-        return res.status(200).json(result);
+        res.status(result.success ? 200 : 404).json(result);
     } catch (error) {
-        console.error("Lỗi khi lấy đơn hàng theo userId:", error.message);
-        return res.status(500).json({
+        console.error("🔥 [getOrdersByUserId] Lỗi:", error.message);
+        res.status(500).json({
             success: false,
-            message: "Đã xảy ra lỗi khi lấy đơn hàng.",
+            message: "Lỗi server khi lấy đơn hàng.",
             error: error.message
         });
     }
@@ -77,25 +74,41 @@ exports.getOrdersByUserId = async (req, res) => {
 
 exports.getOrderDetailById = async (req, res) => {
     try {
-        const orderId = req.params.orderId;
+        const { orderId } = req.params;
+        console.log("📥 [getOrderDetailById] Yêu cầu lấy chi tiết đơn hàng:", orderId);
 
-        if (!orderId) {
-            return res.status(400).json({
-                success: false,
-                message: "Thiếu mã đơn hàng."
-            });
+        const service = new OrderService(MongoDB.client);
+        const result = await service.getOrderByIdWithDetails(orderId);
+
+        if (result.success) {
+            console.log("✅ [getOrderDetailById] Chi tiết đơn hàng:", JSON.stringify(result.data, null, 2));
+        } else {
+            console.warn("❌ [getOrderDetailById] Không tìm thấy đơn hàng.");
         }
 
-        const orderService = new OrderService(MongoDB.client);
-        const result = await orderService.getOrderByIdWithDetails(orderId);
-
-        return res.status(result.success ? 200 : 404).json(result);
+        res.status(result.success ? 200 : 404).json(result);
     } catch (error) {
-        console.error("Lỗi khi lấy chi tiết đơn hàng:", error.message);
-        return res.status(500).json({
+        console.error("🔥 [getOrderDetailById] Lỗi:", error.message);
+        res.status(500).json({
             success: false,
-            message: "Đã xảy ra lỗi khi lấy chi tiết đơn hàng.",
+            message: "Lỗi server khi lấy chi tiết đơn hàng.",
             error: error.message
         });
     }
+};
+
+exports.getLatestConfirmedOrders = async (req, res) => {
+  try {
+    const orderService = new OrderService(MongoDB.client);
+    const result = await orderService.getLatestConfirmedOrders(5);
+
+    if (!result.success) {
+      return res.status(500).json({ message: result.message });
+    }
+
+    return res.json(result.data);
+  } catch (error) {
+    console.error("❌ [getLatestConfirmedOrders] Lỗi:", error.message);
+    return res.status(500).json({ message: "Lỗi khi lấy đơn hàng mới nhất" });
+  }
 };

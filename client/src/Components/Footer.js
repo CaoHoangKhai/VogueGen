@@ -5,120 +5,123 @@ import { Link } from 'react-router-dom';
 const Footer = () => {
     return (
         <>
-            <div className="footer mt-2 py-3"            >
+            <div className="footer mt-2 py-4 bg-light">
                 <div className="container">
-                    <div className="row justify-content-start">
-                        <div className="col-6">
-                            <strong className="d-block mb-2" style={{ textTransform: 'uppercase', color: "#0097a7" }}>
-                                CÔNG TY TNHH THỜI TRANG SHOPIFY
-                            </strong>
+                    <div className="row">
+                        {/* VỀ SHOPIFY */}
+                        <div className="col-md-2 col-sm-6 mb-4">
+                            <h6 className="text-uppercase mb-3" style={{ color: "#0097a7" }}>
+                                Về Shopify
+                            </h6>
                             <ul className="list-unstyled">
-                                <li className="mb-1" style={{ color: "#00695c" }}>
-                                    Shopify đặt mục tiêu kinh doanh với chiến lược phát triển toàn diện, trong đó giá trị cộng đồng là yếu tố cốt lõi mà chúng tôi muốn hướng tới.
-                                </li>
-                                <li className="mb-1"></li>
-                                <hr />
-                            </ul>
-                            <ul className="list-unstyled">
-                                <li className="d-flex align-items-center mb-2 gap-2" style={{ color: "#00838f" }}>
-                                    <FaMapMarkerAlt />
-                                    <b>VPGD:</b>
-                                    <span>Trường Đại Học Cần Thơ</span>
-                                </li>
-                                <li className="d-flex align-items-center mb-2 gap-2" style={{ color: "#0288d1" }}>
-                                    <MdEmail />
-                                    <b>Email:</b>
-                                    <span>khaib2106839@student.ctu.edu.vn</span>
-                                </li>
-                                <li className="d-flex align-items-center mb-1 gap-2" style={{ color: "#43A047" }}>
-                                    <FaPhoneAlt />
-                                    <b>Hotline:</b>
-                                    <span>0834477131</span>
-                                </li>
-                            </ul>
-                        </div>
-
-                        <div className="col-2">
-                            <strong className="d-block mb-2" style={{ textTransform: 'uppercase', color: "#0097a7" }}>
-                                VỀ Shopify
-                            </strong>
-                            <ul className="list-unstyled mb-4">
-                                <li className="mb-1">
-                                    <Link className="text-decoration-none" style={{ color: "#00838f" }} to="#">
+                                <li className="mb-2">
+                                    <Link className="text-decoration-none" style={{ color: "#00838f" }} to="/about_us">
                                         Giới thiệu Shopify
                                     </Link>
                                 </li>
-                                <li className="mb-1">
-                                    <Link className="text-decoration-none" style={{ color: "#00838f" }} to="#">Tuyển dụng
+                                <li className="mb-2">
+                                    <Link className="text-decoration-none" style={{ color: "#00838f" }} to="/ai_thu_ao">
+                                        Trải nghiệm thử áo
                                     </Link>
                                 </li>
-                                <li className="mb-1">
-                                    <Link className="text-decoration-none" style={{ color: "#00838f" }} to="#">Hệ thống cửa hàng
-                                    </Link>
-                                </li>
-                                <li className="mb-1">
-                                    <Link className="text-decoration-none" style={{ color: "#00838f" }} to="#">Liên hệ
+
+                                <li className="mb-2">
+                                    <Link className="text-decoration-none" style={{ color: "#00838f" }} to="/contact">
+                                        Liên hệ
                                     </Link>
                                 </li>
                             </ul>
                         </div>
 
-                        <div className="col-2">
-                            <strong className="d-block mb-2" style={{ textTransform: 'uppercase', color: "#0097a7" }}>
-                                HƯỚNG DẪN
-                            </strong>
-                            <ul className="list-unstyled mb-4">
-                                <li className="mb-1">
-                                    <Link className="text-decoration-none" style={{ color: "#0288d1" }} to="#">
+                        {/* HƯỚNG DẪN */}
+                        <div className="col-md-3 col-sm-6 mb-4">
+                            <h6 className="text-uppercase mb-3" style={{ color: "#0097a7" }}>
+                                Hướng dẫn
+                            </h6>
+                            <ul className="list-unstyled">
+                                <li className="mb-2">
+                                    <Link className="text-decoration-none" style={{ color: "#0288d1" }} to="/huong_dan/huong_dan_mua_hang">
                                         Hướng dẫn mua hàng
                                     </Link>
                                 </li>
-                                <li className="mb-1">
-                                    <Link className="text-decoration-none" style={{ color: "#0288d1" }} to="#">
+                                <li className="mb-2">
+                                    <Link className="text-decoration-none" style={{ color: "#0288d1" }} to="/huong_dan/thiet_ke_ao">
+                                        Hướng dẫn thiết kế áo cá nhân
+                                    </Link>
+                                </li>
+                                <li className="mb-2">
+                                    <Link className="text-decoration-none" style={{ color: "#0288d1" }} to="/huong_dan/quy_trinh_doi_tra_hang">
                                         Quy trình đổi trả hàng
                                     </Link>
                                 </li>
-                                <li className="mb-1">
-                                    <Link className="text-decoration-none" style={{ color: "#0288d1" }} to="#">
-                                        Điều khoản mua hàng
+
+                            </ul>
+
+                        </div>
+
+                        {/* CHÍNH SÁCH */}
+                        <div className="col-md-2 col-sm-6 mb-4">
+                            <h6 className="text-uppercase mb-3" style={{ color: "#0097a7" }}>
+                                Chính sách
+                            </h6>
+                            <ul className="list-unstyled">
+                                <li className="mb-2">
+                                    <Link className="text-decoration-none" style={{ color: "#43A047" }} to="/chinh_sach/phuong_thuc_thanh_toan">
+                                        Phương thức thanh toán
+                                    </Link>
+                                </li>
+                                <li className="mb-2">
+                                    <Link className="text-decoration-none" style={{ color: "#43A047" }} to="/chinh_sach/phuong_thuc_giao_hang">
+                                        Phương thức giao hàng
+                                    </Link>
+                                </li>
+                                <li className="mb-2">
+                                    <Link className="text-decoration-none" style={{ color: "#43A047" }} to="/chinh_sach/chinh_sach_doi_tra">
+                                        Chính sách đổi trả
+                                    </Link>
+                                </li>
+                                <li className="mb-2">
+                                    <Link className="text-decoration-none" style={{ color: "#43A047" }} to="/chinh_sach/chinh_sach_bao_mat">
+                                        Chính sách bảo mật
+                                    </Link>
+                                </li>
+                                <li className="mb-2">
+                                    <Link className="text-decoration-none" style={{ color: "#43A047" }} to="/chinh_sach/dieu_khoan_thanh_toan">
+                                        Điều khoản thanh toán
                                     </Link>
                                 </li>
                             </ul>
                         </div>
 
-                        <div className="col-2">
-                            <strong className="d-block mb-2" style={{ textTransform: 'uppercase', color: "#0097a7" }}>
-                                Chính sách
-                            </strong>
-                            <ul className="list-unstyled mb-4">
-                                <li className="mb-1">
-                                    <Link className="text-decoration-none" style={{ color: "#43A047" }} to={'/phuong_thuc_thanh_toan'}>
-                                        Phương thức thanh toán
-                                    </Link>
+                        {/* LIÊN HỆ */}
+                        <div className="col-md-5 col-sm-6 mb-4">
+                            <h6 className="text-uppercase mb-3" style={{ color: "#0097a7" }}>
+                                Liên hệ
+                            </h6>
+                            <ul className="list-unstyled">
+                                <li className="mb-2" style={{ color: "#00695c" }}>
+                                    Shopify hướng đến giá trị cộng đồng trong kinh doanh thời trang ứng dụng AI cá nhân hoá.
                                 </li>
-                                <li className="mb-1">
-                                    <Link className="text-decoration-none" style={{ color: "#43A047" }} to={'/phuong_thuc_giao_hang'}>
-                                        Phương thức giao hàng
-                                    </Link>
+                                <li className="d-flex align-items-center gap-2 mb-2" style={{ color: "#00838f" }}>
+                                    <FaMapMarkerAlt />
+                                    <span>Trường Đại Học Cần Thơ</span>
                                 </li>
-                                <li className="mb-1">
-                                    <Link className="text-decoration-none" style={{ color: "#43A047" }} to={'/chinh_sach_doi_tra'}>
-                                        Chính sách đổi trả
-                                    </Link>
+                                <li className="d-flex align-items-center gap-2 mb-2" style={{ color: "#0288d1" }}>
+                                    <MdEmail />
+                                    <span>khaib2106839@student.ctu.edu.vn</span>
                                 </li>
-                                <li className="mb-1">
-                                    <Link className="text-decoration-none" style={{ color: "#43A047" }} to={'/chinh_sach_bao_mat'}>
-                                        Chính sách bảo mật
-                                    </Link>
+                                <li className="d-flex align-items-center gap-2" style={{ color: "#43A047" }}>
+                                    <FaPhoneAlt />
+                                    <span>0834 477 131</span>
                                 </li>
                             </ul>
                         </div>
                     </div>
+
                     <hr style={{ borderTop: "1px solid #0097a7" }} />
-                    <div className="row">
-                        <div className="col-12 text-center" style={{ color: "#00838f", fontWeight: 500 }}>
-                            © 2025 Shopify Fashion. All rights reserved.
-                        </div>
+
+                    <div className="text-center" style={{ color: "#00838f", fontWeight: 500 }}>
+                        © 2025 Shopify Fashion. All rights reserved.
                     </div>
                 </div>
             </div>

@@ -1,84 +1,187 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import { getDashboardData } from "../../api/Admin/products.api";
+import { getLatestConfirmedOrders } from "../../api/Order/order.api";
+import {
+  FaUsers,
+  FaBoxOpen,
+  FaShoppingCart,
+  FaMoneyBillWave,
+} from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 
-const AdminPage = () => {
-  const [dashboardData, setDashboardData] = useState({
-    totalCustomers: 0,
-    totalProducts: 0,
-    totalOrders28days: 0,
-  });
+// ✅ Hàm fetch dữ liệu dashboard
+function fetchDashboardData(setDashboardData, setLatestOrders, setError, setLoading) {
+  const fetchData = async () => {
+    try {
+      const [dashboardRes, orderRes] = await Promise.all([
+        getDashboardData(),
+        getLatestConfirmedOrders(5),
+      ]);
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+      console.log("📦 Kết quả gọi API đơn hàng:", orderRes);
 
-  useEffect(() => {
-    axios.get("http://localhost:4000/admin/dashboard")
-      .then((response) => {
-        setDashboardData({
-          totalCustomers: response.data.totalCustomers || 0,
-          totalProducts: response.data.totalProducts || 0,
-          totalOrders28days: response.data.totalOrders28days || 0,
-        });
-      })
-      .catch((error) => {
-        setError("Lỗi khi tải dữ liệu dashboard");
-        console.error(error);
-      })
-      .finally(() => {
-        setLoading(false);
+      setDashboardData({
+        totalCustomers: dashboardRes.totalCustomers || 0,
+        totalProducts: dashboardRes.totalProducts || 0,
+        totalOrders28days: dashboardRes.totalOrders28days || 0,
+        totalRevenue28days: dashboardRes.totalRevenue28days || 0,
       });
-  }, []);
 
-  if (loading) {
-    return (
-      <div className="container mt-4 text-center">
-        <h4>Đang tải dữ liệu...</h4>
-      </div>
-    );
-  }
+      const orders = Array.isArray(orderRes) ? orderRes : [];
+      setLatestOrders(orders);
+    } catch (err) {
+      console.error("❌ Lỗi khi tải dashboard:", err);
+      setError("Không thể tải dữ liệu dashboard.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  if (error) {
-    return (
-      <div className="container mt-4 text-center text-danger">
-        <h4>{error}</h4>
-      </div>
-    );
-  }
+  fetchData();
+}
 
+// ✅ Hiển thị loading
+function renderLoading() {
   return (
-    <div className="container">
-      <div className="card p-4 shadow-sm">
-        <h2 className="text-center mb-4">Trang Quản Trị Admin</h2>
+    <div className="container text-center mt-5">
+      <h6>Đang tải dữ liệu...</h6>
+    </div>
+  );
+}
 
-        <div className="row text-center">
-          <div className="col-6 col-md-3 mb-3">
-            <div className="border p-3 rounded shadow-sm bg-light">
-              <strong>Số lượng khách hàng</strong>
-              <div style={{ fontSize: "24px", marginTop: "8px" }}>
-                {dashboardData.totalCustomers}
-              </div>
-            </div>
-          </div>
-          <div className="col-6 col-md-3 mb-3">
-            <div className="border p-3 rounded shadow-sm bg-light">
-              <strong>Số lượng sản phẩm</strong>
-              <div style={{ fontSize: "24px", marginTop: "8px" }}>
-                {dashboardData.totalProducts}
-              </div>
-            </div>
-          </div>
-          <div className="col-6 col-md-3 mb-3">
-            <div className="border p-3 rounded shadow-sm bg-light">
-              <strong>Số đơn hàng (28 ngày)</strong>
-              <div style={{ fontSize: "24px", marginTop: "8px" }}>
-                {dashboardData.totalOrders28days}
-              </div>
-            </div>
+// ✅ Hiển thị lỗi
+function renderError(error) {
+  return (
+    <div className="container text-center mt-5 text-danger">
+      <h6>{error}</h6>
+    </div>
+  );
+}
+
+// ✅ Hiển thị các thẻ thống kê
+function renderStats(data) {
+  return (
+    <div className="row g-3">
+      {renderStatCard("Khách hàng", data.totalCustomers, "text-primary", <FaUsers size={24} />)}
+      {renderStatCard("Sản phẩm", data.totalProducts, "text-success", <FaBoxOpen size={24} />)}
+      {renderStatCard("Đơn hàng (28 ngày)", data.totalOrders28days, "text-warning", <FaShoppingCart size={24} />)}
+      {renderStatCard("Doanh thu (28 ngày)", data.totalRevenue28days, "text-danger", <FaMoneyBillWave size={24} />, true)}
+    </div>
+  );
+}
+
+// ✅ Component thẻ thống kê đơn lẻ
+function renderStatCard(label, value, colorClass, icon, isMoney = false) {
+  return (
+    <div className="col-6 col-md-3" key={label}>
+      <div className="card small-dashboard-card border-0 shadow-sm rounded-3">
+        <div className="card-body text-center py-3">
+          <div className="mb-1">{React.cloneElement(icon, { className: colorClass })}</div>
+          <div className="text-muted" style={{ fontSize: "0.85rem" }}>{label}</div>
+          <div className="fw-bold" style={{ fontSize: "1.1rem" }}>
+            {value.toLocaleString("vi-VN") + (isMoney ? "₫" : "")}
           </div>
         </div>
       </div>
     </div>
   );
-};
+}
 
-export default AdminPage;
+// ✅ Component chính
+function AdminDashboard() {
+  const [dashboardData, setDashboardData] = useState({
+    totalCustomers: 0,
+    totalProducts: 0,
+    totalOrders28days: 0,
+    totalRevenue28days: 0,
+  });
+
+  const [latestOrders, setLatestOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
+  useEffect(() => {
+    fetchDashboardData(setDashboardData, setLatestOrders, setError, setLoading);
+  }, []);
+
+  const handleViewOrder = (order) => {
+    if (order && order._id) {
+      navigate(`/admin/orders/${order._id}`); // <-- điều hướng đến chi tiết đơn hàng
+    }
+  };
+
+
+  if (loading) return renderLoading();
+  if (error) return renderError(error);
+
+  return (
+    <div className="container">
+      {/* Hàng 1: Thống kê full row */}
+      <div className="row">
+        <div className="col-12">{renderStats(dashboardData)}</div>
+      </div>
+
+      {/* Hàng 2: Đơn hàng mới nhất chiếm 6/12 (có thể chỉnh) */}
+      <div className="row">
+        <div className="col-12 col-md-6">
+          {renderLatestOrders(latestOrders, handleViewOrder)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ✅ Hiển thị bảng đơn hàng
+function renderLatestOrders(orders, handleViewOrder) {
+  return (
+    <div className="card border-2 shadow-sm rounded-3 mt-4">
+      <div className="card-header bg-white fw-bold text-center">Đơn hàng mới nhất</div>
+      <div className="card-body p-3">
+        {renderOrdersTable(orders, handleViewOrder)}
+      </div>
+    </div>
+  );
+}
+
+// ✅ Bảng đơn hàng
+function renderOrdersTable(orders, handleViewOrder) {
+  if (!Array.isArray(orders) || orders.length === 0) {
+    return <div className="text-center">Không có đơn hàng nào.</div>;
+  }
+
+  return (
+    <div className="table-responsive">
+      <table className="table table-sm ">
+        <thead className="table-light">
+          <tr>
+            <th>Ngày đặt</th>
+            <th>Khách hàng</th>
+            <th>Tổng tiền</th>
+            <th>Trạng thái</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {orders.map((order) => (
+            <tr key={order._id}>
+              <td>{new Date(order.ngaydat).toLocaleDateString("vi-VN")}</td>
+              <td>{order.hoten || "Ẩn danh"}</td>
+              <td>{order.tongtien?.toLocaleString("vi-VN") + "₫"}</td>
+              <td><span className="badge bg-success">Đã xác nhận</span></td>
+              <td>
+                <button
+                  className="btn btn-sm btn-outline-primary"
+                  onClick={() => handleViewOrder(order)}
+                >
+                  Xem chi tiết
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+export default AdminDashboard;

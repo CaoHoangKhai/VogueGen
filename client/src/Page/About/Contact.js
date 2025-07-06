@@ -22,7 +22,7 @@ const Contact = () => {
     };
 
     return (
-        <div className="container py-5">
+        <div className="container">
             <h1 className="text-center mb-5">Customer Support</h1>
 
             <div className="row">
@@ -30,8 +30,8 @@ const Contact = () => {
                 <div className="col-md-6 mb-4">
                     <div className="mb-3 p-4 bg-light border rounded shadow-sm">
                         <h5>Contact Info</h5>
-                        <p className="mb-1">📧 support@example.com</p>
-                        <p>📞 +84 123 456 789</p>
+                        <p className="mb-1">📧 khaib2106839@student.ctu.edu.vn</p>
+                        <p>📞 +84 834 477 131</p>
                     </div>
 
                     <div className="p-4 bg-light border rounded shadow-sm">

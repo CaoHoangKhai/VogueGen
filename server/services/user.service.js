@@ -28,11 +28,18 @@ class UserService {
         }
     }
 
-    async getListUser() {
-        return await this.User.find(
-            { VaiTro_id: 0 },
-            { projection: { matkhau: 0 } }
-        ).toArray();
+    async getUserLocations(userId) {
+        console.log("🔍 [LocationService] Tìm địa chỉ cho user:", userId);
+
+        let filter = {};
+        try {
+            filter = { manguoidung: new ObjectId(userId) };
+        } catch (error) {
+            console.warn("⚠️ [LocationService] Không thể chuyển userId thành ObjectId, dùng string:", userId);
+            filter = { manguoidung: userId };
+        }
+
+        return await this.locations.find(filter).toArray();
     }
 
     async adminDashboard() {
@@ -57,6 +64,13 @@ class UserService {
             console.error("Lỗi cập nhật trạng thái người dùng:", err.message);
             return false;
         }
+    }
+
+    async getListUser() {
+        return await this.User.find(
+            { VaiTro_id: 0 },
+            { projection: { matkhau: 0 } }
+        ).toArray();
     }
 
 }

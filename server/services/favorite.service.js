@@ -50,22 +50,46 @@ class FavoriteService {
             manguoidung: new ObjectId(userId),
         }).toArray();
 
+        console.log("🟢 Số lượng yêu thích:", favorites.length);
+
         const result = [];
 
         for (const fav of favorites) {
-            const productDetail = await this.productServer.getProductById(fav.masanpham.toString());
-            if (productDetail && productDetail.success) {
-                result.push({
-                    mayeuthich: fav._id, // _id của bảng yeuthich
-                    masanpham: fav.masanpham,
-                    manguoidung: fav.manguoidung,
-                    ...productDetail.data // dữ liệu sản phẩm
-                });
+            const productIdStr = fav.masanpham.toString();
+
+            // Lấy chi tiết sản phẩm
+            const productDetail = await this.productServer.getProductById(productIdStr);
+
+            if (!productDetail) {
+                console.warn("⚠️ Không tìm thấy sản phẩm yêu thích:", productIdStr);
+                continue;
             }
+
+            // Lấy màu đầu tiên
+            const firstColor = productDetail.mausanpham?.[0]?.mau;
+
+            let anhdaidien = null;
+            if (firstColor) {
+                try {
+                    const imageResult = await this.productServer.getImagesByColor(productIdStr, firstColor);
+                    anhdaidien = imageResult?.images?.[0] || null;
+                } catch (err) {
+                    console.warn("⚠️ Không lấy được ảnh theo màu:", firstColor, err.message);
+                }
+            }
+
+            result.push({
+                mayeuthich: fav._id,
+                masanpham: fav.masanpham,
+                manguoidung: fav.manguoidung,
+                anhdaidien,
+                ...productDetail,
+            });
         }
 
         return result;
     }
+
 
 
     async isFavorite(payload) {

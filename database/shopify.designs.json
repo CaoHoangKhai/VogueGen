@@ -1,0 +1,17 @@
+[{
+  "_id": {
+    "$oid": "686a26cd00de9f60e7681788"
+  },
+  "manguoidung": {
+    "$oid": "682d966ea875812e74511d96"
+  },
+  "masanpham": {
+    "$oid": "686a26c200de9f60e768177d"
+  },
+  "mau": "#000080",
+  "ngaytao": {
+    "$date": "2025-07-06T07:33:33.890Z"
+  },
+  "link": "polo-shirts/686a26cd00de9f60e7681788",
+  "ten": "Thiết kế 686a26cd00de9f60e7681788"
+}]

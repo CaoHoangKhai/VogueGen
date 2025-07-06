@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom';
 import Footer from './Footer';
 import Header from './Header';
 import CommonSidebar from './Sidebar/Sidebar';
-
+// import Breadcrumb from "./Breadcrumb";
 
 const Layout = ({ children }) => {
   const location = useLocation();
@@ -42,7 +42,8 @@ const Layout = ({ children }) => {
   return (
     <>
       <Header />
-      <div style={{ marginTop: '60px' }}>
+      {/* <Breadcrumb /> */}
+      <div>
         {children}
       </div>
       <Footer />

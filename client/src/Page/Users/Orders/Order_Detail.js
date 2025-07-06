@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { getOrderDetailById } from "../../../api/User/order.api";
+import { getOrderDetailById } from "../../../api/Order/order.api";
 import { colors } from "../../../config/colors"; // điều chỉnh đúng đường dẫn file của bạn
 const OrderDetail = () => {
     const { id } = useParams();
@@ -63,7 +63,7 @@ const OrderDetail = () => {
     };
 
     return (
-        <div className="container mt-4">
+        <div className="container">
             <div className="card shadow-sm p-4">
                 <h4 className="text-center mb-4">Chi Tiết Đơn Hàng</h4>
 

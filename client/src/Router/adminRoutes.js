@@ -59,7 +59,7 @@ const adminRoutes = [
   { path: '/admin/promotions/add', element: <PromotionsAdd /> },
 
   { path: '/admin/orders', element: <OrderList /> },
-  { path: '/admin/orders/:id', element: <OrderDetail /> },
+  { path: '/admin/orders/:orderId', element: <OrderDetail /> },
 ];
 
 

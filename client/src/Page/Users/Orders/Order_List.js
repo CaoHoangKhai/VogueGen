@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
-import { getOrdersByUserId } from "../../../api/User/order.api";
+import { getOrdersByUserId } from "../../../api/Order/order.api";
 import { useNavigate } from "react-router-dom";
 
 const OrderList = () => {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const ordersPerPage = 5;
 
     const navigate = useNavigate();
 
@@ -60,6 +62,18 @@ const OrderList = () => {
         navigate(`/user/order_detail/${madonhang}`);
     };
 
+    // PHÂN TRANG: cắt mảng orders hiện tại
+    const indexOfLastOrder = currentPage * ordersPerPage;
+    const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
+    const currentOrders = orders.slice(indexOfFirstOrder, indexOfLastOrder);
+    const totalPages = Math.ceil(orders.length / ordersPerPage);
+
+    const handlePageChange = (pageNumber) => {
+        if (pageNumber >= 1 && pageNumber <= totalPages) {
+            setCurrentPage(pageNumber);
+        }
+    };
+
     return (
         <div className="container">
             <div className="card p-4 shadow-sm">
@@ -72,37 +86,72 @@ const OrderList = () => {
                 ) : orders.length === 0 ? (
                     <p className="text-center">Chưa có đơn hàng nào.</p>
                 ) : (
-                    <table className="table table-bordered table-hover text-center">
-                        <thead className="table-light">
-                            <tr>
-                                <th>Mã Đơn Hàng</th>
-                                <th>Họ Tên</th>
-                                <th>Số điện thoại</th>
-                                <th>Địa chỉ</th>
-                                <th>Trạng thái</th>
-                                <th>Thao tác</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {orders.map((order) => (
-                                <tr key={order._id}>
-                                    <td>{order.madonhang}</td>
-                                    <td>{order.hoten}</td>
-                                    <td>{order.sodienthoai}</td>
-                                    <td>{order.diachinguoidung}</td>
-                                    <td>{renderStatus(order.trangthai)}</td>
-                                    <td>
-                                        <button
-                                            className="btn btn-primary btn-sm"
-                                            onClick={() => handleViewDetail(order.madonhang)}
-                                        >
-                                            Xem chi tiết
-                                        </button>
-                                    </td>
+                    <>
+                        <table className="table table-bordered table-hover text-center">
+                            <thead className="table-light">
+                                <tr>
+                                    <th>Mã Đơn Hàng</th>
+                                    <th>Họ Tên</th>
+                                    <th>Số điện thoại</th>
+                                    <th>Địa chỉ</th>
+                                    <th>Trạng thái</th>
+                                    <th>Thao tác</th>
                                 </tr>
+                            </thead>
+                            <tbody>
+                                {currentOrders.map((order) => (
+                                    <tr key={order._id}>
+                                        <td>{order.madonhang}</td>
+                                        <td>{order.hoten}</td>
+                                        <td>{order.sodienthoai}</td>
+                                        <td>{order.diachinguoidung}</td>
+                                        <td>{renderStatus(order.trangthai)}</td>
+                                        <td>
+                                            <button
+                                                className="btn btn-primary btn-sm"
+                                                onClick={() => handleViewDetail(order.madonhang)}
+                                            >
+                                                Xem chi tiết
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+
+                        {/* PHÂN TRANG */}
+                        <div className="d-flex justify-content-center align-items-center mt-3 gap-2 flex-wrap">
+                            <button
+                                className="btn btn-outline-secondary btn-sm"
+                                onClick={() => handlePageChange(currentPage - 1)}
+                                disabled={currentPage === 1}
+                            >
+                                ← Trước
+                            </button>
+
+                            {Array.from({ length: totalPages }, (_, i) => (
+                                <button
+                                    key={i + 1}
+                                    className={`btn btn-sm ${
+                                        currentPage === i + 1
+                                            ? "btn-primary"
+                                            : "btn-outline-primary"
+                                    }`}
+                                    onClick={() => handlePageChange(i + 1)}
+                                >
+                                    {i + 1}
+                                </button>
                             ))}
-                        </tbody>
-                    </table>
+
+                            <button
+                                className="btn btn-outline-secondary btn-sm"
+                                onClick={() => handlePageChange(currentPage + 1)}
+                                disabled={currentPage === totalPages}
+                            >
+                                Tiếp →
+                            </button>
+                        </div>
+                    </>
                 )}
             </div>
         </div>

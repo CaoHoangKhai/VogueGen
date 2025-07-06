@@ -48,3 +48,17 @@ export const getOrderDetailById = async (orderId) => {
         };
     }
 };
+
+/**
+ * Gửi yêu cầu đặt hàng
+ * @param {Object} orderData - Dữ liệu đơn hàng (xem ví dụ trong prompt)
+ * @returns {Promise} Promise trả về response từ server
+ */
+export const createOrder = async (orderData) => {
+  try {
+    const response = await axios.post(`${API_BASE_URL_ORDER}/order`, orderData);
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};

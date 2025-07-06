@@ -1,4 +1,5 @@
 const { ObjectId } = require("mongodb");
+
 function toSlug(str) {
     return str
         .normalize("NFD")
@@ -8,218 +9,216 @@ function toSlug(str) {
         .toLowerCase()
         .replace(/\s+/g, "_");
 }
+
 class DesignService {
     constructor(client) {
         this.design = client.db().collection("designs");
         this.theloaisanpham = client.db().collection("theloaisanpham");
         this.nguoidung = client.db().collection("nguoidung");
-        this.mauthietke = client.db().collection("mauthietke");
-        this.thietkecuanguoidung = client.db().collection("thietkecuanguoidung")
+        this.hinhanhsanpham = client.db().collection("hinhanhsanpham");
+        this.thietkecuanguoidung = client.db().collection("thietkecuanguoidung");
+        this.mausanpham = client.db().collection("mausanpham");
+        this.sanpham = client.db().collection("sanpham");
     }
 
-    async createDesign({ manguoidung, theloai }) {
+    async createDesign({ manguoidung, masanpham, mausac }) {
+        // 🛡️ Kiểm tra input
         if (!ObjectId.isValid(manguoidung)) throw new Error("ID người dùng không hợp lệ.");
-        if (!ObjectId.isValid(theloai)) throw new Error("ID thể loại không hợp lệ.");
+        if (!ObjectId.isValid(masanpham)) throw new Error("ID sản phẩm không hợp lệ.");
+        if (!mausac || typeof mausac !== "string" || !/^#[0-9A-Fa-f]{6}$/.test(mausac.trim())) {
+            throw new Error("Màu sắc không hợp lệ. Định dạng phải là mã hex ví dụ: #FF0000");
+        }
 
-        const user = await this.nguoidung.findOne({ _id: new ObjectId(manguoidung) });
+        const userId = new ObjectId(manguoidung);
+        const productId = new ObjectId(masanpham);
+        const mau = mausac.trim();
+
+        console.log("🟡 [CREATE DESIGN] User:", userId.toString());
+        console.log("🟡 [CREATE DESIGN] Product:", productId.toString());
+        console.log("🟡 [CREATE DESIGN] Color:", mau);
+
+        // 📌 Kiểm tra người dùng
+        const user = await this.nguoidung.findOne({ _id: userId });
         if (!user) {
-            return {
-                success: false,
-                message: "Vui lòng đăng ký để sử dụng tính năng thiết kế."
-            };
+            return { success: false, message: "Vui lòng đăng ký để sử dụng tính năng thiết kế." };
         }
 
-        const category = await this.theloaisanpham.findOne({ _id: new ObjectId(theloai) });
-        if (!category) {
-            return {
-                success: false,
-                message: "Thể loại không tồn tại. Vui lòng chọn thể loại hợp lệ."
-            };
+        // 📦 Lấy sản phẩm
+        const product = await this.sanpham.findOne({ _id: productId });
+        if (!product) {
+            return { success: false, message: "Không tìm thấy sản phẩm để thiết kế." };
         }
 
-        // 👉 Tạm thời insert trước để lấy ObjectId
+        // 📚 Lấy slug từ thể loại sản phẩm
+        let categoryId = null;
+        if (ObjectId.isValid(product.theloai)) {
+            categoryId = new ObjectId(product.theloai);
+        } else {
+            return { success: false, message: "ID thể loại trong sản phẩm không hợp lệ." };
+        }
+
+        const category = await this.theloaisanpham.findOne({ _id: categoryId });
+        if (!category || !category.slug) {
+            return { success: false, message: "Không tìm thấy danh mục sản phẩm." };
+        }
+
+        const slug = category.slug;
+
+        // ✅ Tạo bản thiết kế
         const tempResult = await this.design.insertOne({
-            manguoidung: new ObjectId(manguoidung),
-            theloai: new ObjectId(theloai),
+            manguoidung: userId,
+            masanpham: productId,
+            mau,
             ngaytao: new Date()
         });
 
         const insertedId = tempResult.insertedId;
-        const slugPrefix = category?.tendanhmuc ? toSlug(category.tendanhmuc) : "san-pham";
-        const link = `${slugPrefix}/${insertedId}`;
         const ten = `Thiết kế ${insertedId.toString()}`;
+        const link = `${slug}/${insertedId.toString()}`;
 
-        // 👉 Cập nhật lại với tên + link
-        await this.design.updateOne(
-            { _id: insertedId },
-            { $set: { link, ten } }
-        );
+        // 📝 Cập nhật tên & link cho thiết kế
+        await this.design.updateOne({ _id: insertedId }, { $set: { ten, link } });
 
+        // 🧩 Tạo thiết kế người dùng cho 2 mặt (front, back)
+        const inserts = ["front", "back"].map(vitri => ({
+            madesign: insertedId,
+            masanpham: productId,
+            vitri,
+            mau,
+            overlays: [],
+            createdAt: new Date()
+        }));
+
+        await this.thietkecuanguoidung.insertMany(inserts);
+
+        console.log("🟢 [CREATE DESIGN] Thiết kế và overlay đã được khởi tạo.");
+
+        // 📤 Trả kết quả
         return {
             success: true,
             message: "Khởi tạo thiết kế thành công.",
             id: insertedId,
-            link
+            link // ví dụ: "t-shirts/6868d5107b3ea89efb7ecf98"
         };
     }
-
-
+    
     async getDesignsByUser(manguoidung) {
-        if (!ObjectId.isValid(manguoidung)) throw new Error("ID người dùng không hợp lệ.");
+        try {
+            if (!ObjectId.isValid(manguoidung)) {
+                throw new Error("ID người dùng không hợp lệ.");
+            }
 
-        const designs = await this.design
-            .find({ manguoidung: new ObjectId(manguoidung) })
-            .sort({ ngaytao: -1 }) // 🆕 sắp xếp mới nhất lên đầu
-            .toArray();
+            if (!this.design) {
+                throw new Error("Collection 'design' chưa được khởi tạo.");
+            }
 
-
-        for (const design of designs) {
-            // Lấy thông tin thể loại
-            const theloai = await this.theloaisanpham.findOne({ _id: design.theloai });
-            design.theloai_info = theloai || null;
-
-            // Tạo slug từ tên danh mục
-            const slugPrefix = theloai?.tendanhmuc ? toSlug(theloai.tendanhmuc) : "san-pham";
-
-            // Lấy danh sách ảnh mẫu từ collection mauthietke theo theloai
-            const mauThietKeArr = await this.mauthietke
-                .find({ theloai: design.theloai })
+            const designs = await this.design
+                .find(
+                    { manguoidung: new ObjectId(manguoidung) },
+                    {
+                        projection: {
+                            _id: 1,
+                            manguoidung: 1,
+                            theloai: 1,
+                            ngaytao: 1,
+                            link: 1,
+                            ten: 1
+                        }
+                    }
+                )
+                .sort({ ngaytao: -1 }) // mới nhất lên trước
                 .toArray();
 
-            // Sắp xếp theo position: front → back → others
-            mauThietKeArr.sort((a, b) => {
-                const priority = { front: 1, back: 2 };
-                return (priority[a.position] || 3) - (priority[b.position] || 3);
-            });
+            return designs;
 
-            // Gắn link đường dẫn ảnh
-            design.hinhanh_mau = mauThietKeArr.map(mau => {
-                const fileName = mau.duongdan || mau.hinhanh || mau.anhthietke || null;
-                return fileName ? `http://localhost:4000/images/designs/${slugPrefix}/${fileName}` : null;
-            });
+        } catch (err) {
+            console.error("❌ Lỗi khi lấy danh sách thiết kế đơn giản:", err.message);
+            throw new Error("Lỗi server khi lấy danh sách thiết kế.");
         }
-
-        return designs;
     }
 
-    async getDesignById(designId) {
-        if (!ObjectId.isValid(designId)) throw new Error("ID thiết kế không hợp lệ.");
-
-        const design = await this.design.findOne({ _id: new ObjectId(designId) });
-        if (!design) return null;
-
-        // Lấy thông tin thể loại
-        const theloai = await this.theloaisanpham.findOne({ _id: design.theloai });
-        design.theloai_info = theloai || null;
-
-        // Tạo slug từ tên danh mục
-        const slugPrefix = theloai?.tendanhmuc ? toSlug(theloai.tendanhmuc) : "san-pham";
-
-        // Lấy danh sách ảnh mẫu từ collection mauthietke theo theloai
-        const mauThietKeArr = await this.mauthietke
-            .find({ theloai: design.theloai })
-            .toArray();
-
-        mauThietKeArr.sort((a, b) => {
-            const priority = { front: 1, back: 2 };
-            return (priority[a.position] || 3) - (priority[b.position] || 3);
-        });
-
-        design.hinhanh_mau = mauThietKeArr.map(mau => {
-            const fileName = mau.duongdan || mau.hinhanh || mau.anhthietke || mau.designImage || null;
-            return fileName
-                ? {
-                    url: `http://localhost:4000/images/designs/${slugPrefix}/${fileName}`,
-                    position: mau.position || null
-                }
-                : null;
-        }).filter(Boolean);
-
-        return design;
-
-    }
-
-    async saveUserDesignFull({ designId, color, designData }) {
-        if (!ObjectId.isValid(designId)) throw new Error("ID thiết kế không hợp lệ.");
-
-        // Kiểm tra thiết kế gốc có tồn tại không
-        const design = await this.design.findOne({ _id: new ObjectId(designId) });
+    async getDesignDetail(designId) {
+        const design = await this.design.findOne({ _id: designId });
         if (!design) {
-            return { success: false, message: "Thiết kế không tồn tại." };
+            return { success: false, message: "Không tìm thấy thiết kế." };
         }
 
-        const operations = [];
-
-        // Duyệt qua cả hai mặt: front, back
-        for (const side of ["front", "back"]) {
-            const data = {
-                id_thietke: new ObjectId(designId),
-                side,
-                color,
-                texts: designData[side]?.texts || [],
-                images: designData[side]?.images || [],
-                updated_at: new Date()
-            };
-
-            // Thêm created_at nếu là tạo mới
-            operations.push(
-                this.thietkecuanguoidung.updateOne(
-                    { id_thietke: data.id_thietke, side: side },
-                    {
-                        $set: data,
-                        $setOnInsert: { created_at: new Date() }
-                    },
-                    { upsert: true }
-                )
-            );
-        }
-
-        // Thực hiện song song
-        await Promise.all(operations);
+        const images = await this.thietkecuanguoidung.find({ madesign: designId }).toArray();
 
         return {
             success: true,
-            message: "Đã lưu hoặc cập nhật thiết kế người dùng (2 mặt)."
+            message: "Lấy chi tiết thiết kế thành công.",
+            design,
+            images // chứa ảnh front, back, overlay v.v.
         };
     }
 
-    async getUserDesignByDesignId(designId) {
-        if (!ObjectId.isValid(designId)) throw new Error("ID thiết kế không hợp lệ.");
+    async getColorFromDesign(designId) {
+        try {
+            const objectId = new ObjectId(designId);
 
-        const data = await this.thietkecuanguoidung
-            .find({ id_thietke: new ObjectId(designId) })
-            .toArray();
+            // 1. Lấy thông tin thiết kế
+            const designDoc = await this.thietkecuanguoidung.findOne({ madesign: objectId });
 
-        if (!data || data.length === 0) {
+            if (!designDoc || !designDoc.masanpham) {
+                return {
+                    success: false,
+                    message: "Không tìm thấy thông tin sản phẩm từ thiết kế."
+                };
+            }
+
+            const productId = designDoc.masanpham;
+            const designColor = designDoc.mau;
+
+            // 2. Lấy danh sách màu từ bảng mausanpham
+            const colorDocs = await this.mausanpham
+                .find({ masanpham: productId })
+                .project({ mau: 1 })
+                .toArray();
+
+            if (!colorDocs || colorDocs.length === 0) {
+                return {
+                    success: false,
+                    message: "Không tìm thấy màu nào cho sản phẩm này."
+                };
+            }
+
+            const uniqueColors = [...new Set(colorDocs.map(doc => doc.mau))];
+
+            const matchedColor = uniqueColors.includes(designColor) ? designColor : uniqueColors[0];
+
             return {
-                success: false,
-                message: "Chưa có thiết kế người dùng cho ID này."
+                success: true,
+                color: matchedColor,
+                colors: uniqueColors
             };
+        } catch (error) {
+            console.error("🔥 Lỗi getColorFromDesign:", error);
+            return { success: false, message: "Lỗi server." };
+        }
+    }
+
+    async deleteDesign(designId) {
+        if (!ObjectId.isValid(designId)) {
+            return { success: false, message: "ID không hợp lệ." };
         }
 
-        // Gom dữ liệu theo mặt áo (front/back)
-        const designData = {
-            front: { texts: [], images: [] },
-            back: { texts: [], images: [] }
-        };
+        const objectId = new ObjectId(designId);
+        console.log("🗑️ Đang xóa thiết kế có ID:", objectId);
 
-        let color = null;
+        // Xóa thiết kế chính
+        const result = await this.design.deleteOne({ _id: objectId });
+        console.log("✅ Kết quả xóa thiết kế:", result);
 
-        data.forEach((entry) => {
-            if (entry.side === "front" || entry.side === "back") {
-                designData[entry.side] = {
-                    texts: entry.texts || [],
-                    images: entry.images || []
-                };
-                color = entry.color || color;
-            }
-        });
+        // Xóa thiết kế người dùng liên quan (2 mặt)
+        const relatedDelete = await this.thietkecuanguoidung.deleteMany({ madesign: objectId });
+        console.log("🧹 Đã xóa thiết kế người dùng liên quan:", relatedDelete.deletedCount);
 
         return {
-            success: true,
-            message: "Lấy thiết kế người dùng thành công.",
-            tshirtColor: color,
-            designData
+            success: result.deletedCount === 1,
+            message: result.deletedCount === 1
+                ? "Đã xóa thiết kế và dữ liệu liên quan."
+                : "Không tìm thấy thiết kế để xóa."
         };
     }
 
@@ -234,28 +233,6 @@ class DesignService {
             message: result.modifiedCount === 1 ? "Đã đổi tên thành công" : "Không tìm thấy thiết kế"
         };
     }
-
-    async deleteDesign(designId) {
-        if (!ObjectId.isValid(designId)) {
-            return { success: false, message: "ID không hợp lệ." };
-        }
-
-        const objectId = new ObjectId(designId);
-
-        // Xóa thiết kế chính
-        const result = await this.design.deleteOne({ _id: objectId });
-
-        // Xóa thiết kế người dùng liên quan (2 mặt)
-        await this.thietkecuanguoidung.deleteMany({ id_thietke: objectId });
-
-        return {
-            success: result.deletedCount === 1,
-            message: result.deletedCount === 1
-                ? "Đã xóa thiết kế và dữ liệu liên quan."
-                : "Không tìm thấy thiết kế để xóa."
-        };
-    }
-
 
 }
 

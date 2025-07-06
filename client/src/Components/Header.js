@@ -2,20 +2,22 @@ import { useEffect, useState } from 'react';
 import Logo from '../assets/images/header/VogueGen.jpg';
 import { Link, useLocation } from 'react-router-dom';
 import { FaShoppingCart, FaUser } from "react-icons/fa";
+import { getAllCategories } from "../api/Category/category.api";
 
 const navLinks = [
-    { to: "/products", label: "Products" },
-    { to: "/services", label: "Services" },
-    { to: "/shipping", label: "Shipping" },
-    { to: "/help-center", label: "Help Center" },
-    { to: "/contact", label: "Contact" },
-    { to: "/summer-sale", label: "Summer Sale", className: "text-pink fw-bold" }
+//   { to: "/products", label: "Tất cả sản phẩm" },
+  { to: "/try-on", label: "Thử áo ảo" },
+  { to: "/contact", label: "Liên hệ" },
+  { to: "/news", label: "Tin tức" }
 ];
+
 
 const Header = () => {
     const [user, setUser] = useState(null);
+    const [categories, setCategories] = useState([]);
     const location = useLocation();
 
+    // Lấy thông tin user từ localStorage
     useEffect(() => {
         const userData = localStorage.getItem('user');
         if (userData) {
@@ -23,6 +25,7 @@ const Header = () => {
         }
     }, []);
 
+    // Lắng nghe sự kiện đăng nhập thành công
     useEffect(() => {
         const handleLoginSuccess = () => {
             const userData = localStorage.getItem('user');
@@ -32,15 +35,27 @@ const Header = () => {
         };
 
         window.addEventListener('loginSuccess', handleLoginSuccess);
+        return () => window.removeEventListener('loginSuccess', handleLoginSuccess);
+    }, []);
 
-        return () => {
-            window.removeEventListener('loginSuccess', handleLoginSuccess);
+    // Gọi API lấy danh sách danh mục
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const res = await getAllCategories();
+                setCategories(res);
+            } catch (err) {
+                console.error("Lỗi tải danh mục:", err);
+            }
         };
+
+        fetchCategories();
     }, []);
 
     return (
         <>
             <div className="header">
+                {/* Banner top */}
                 <div style={{ background: "linear-gradient(90deg, #C2185B 0%, #7B1FA2 100%)" }} className="text-white py-2">
                     <div className="container">
                         <p className="mb-0 text-center">
@@ -49,24 +64,28 @@ const Header = () => {
                     </div>
                 </div>
 
+                {/* Main header */}
                 <div className="container mt-3">
                     <div className="row align-items-center">
 
+                        {/* Logo */}
                         <div className="col-sm-2">
                             <Link to={'/'}>
                                 <img src={Logo} alt="VogueGen Logo" className="logo-img" />
                             </Link>
                         </div>
 
+                        {/* Navigation menu */}
                         <div className="col-sm-6">
-                            <div className="d-flex gap-4 align-items-center">
-                                {navLinks.map(link => (
+                            <div className="d-flex gap-3 align-items-center flex-wrap">
+
+                                {/* Menu Tĩnh */}
+                                {navLinks.map((link, idx) => (
                                     <Link
                                         key={link.to}
                                         to={link.to}
-                                        className={`nav-link px-0 ${link.className || ""} ${location.pathname === link.to ? "active-link" : ""}`}
+                                        className={`nav-link px-0 ${location.pathname === link.to ? "active-link" : ""}`}
                                         style={{
-                                            textDecoration: "none",
                                             fontWeight: link.to === "/summer-sale" ? 700 : 500,
                                             color: link.to === "/summer-sale" ? "#E91E63" : "#7B1FA2"
                                         }}
@@ -74,9 +93,32 @@ const Header = () => {
                                         {link.label}
                                     </Link>
                                 ))}
+
+                                {/* Menu danh mục động */}
+                                <div className="dropdown">
+                                    <span
+                                        className="nav-link dropdown-toggle"
+                                        role="button"
+                                        data-bs-toggle="dropdown"
+                                        aria-expanded="false"
+                                        style={{ cursor: "pointer", color: "#7B1FA2", fontWeight: 500 }}
+                                    >
+                                        Danh mục
+                                    </span>
+                                    <ul className="dropdown-menu">
+                                        {categories.map((cate) => (
+                                            <li key={cate._id}>
+                                                <Link className="dropdown-item" to={`/category/${cate.slug}`}>
+                                                    {cate.tendanhmuc}
+                                                </Link>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
                             </div>
                         </div>
 
+                        {/* User / Cart */}
                         <div className="col-sm-4 d-flex justify-content-end gap-3">
                             {user ? (
                                 user.VaiTro_id === 0 ? (
@@ -106,6 +148,8 @@ const Header = () => {
                 </div>
             </div>
             <hr />
+
+            {/* CSS nội tuyến */}
             <style>
                 {`
                 .nav-link.active-link {

@@ -2,90 +2,89 @@ const fs = require("fs");
 const path = require("path");
 const ProductServer = require("../services/product.service");
 const MongoDB = require("../utils/mongodb.util");
+const crypto = require("crypto");
+const { ObjectId } = require("mongodb");
 
-exports.createProduct = async (req, res, next) => {
+exports.createProduct = async (req, res) => {
   try {
-    console.log("📦 DỮ LIỆU CLIENT GỬI LÊN:");
-    console.log("Body:", req.body);
-
-    // Xử lý kichthuoc
-    // Kích thước có thể nằm trong req.body.kichthuoc hoặc req.body.sizes
-    let kichthuocParsed = [];
-    const kichthuocRaw = req.body.kichthuoc || req.body.sizes || "[]";
+    console.log("🟡 [CREATE PRODUCT] Nhận dữ liệu:", req.body);
+    let kichthuoc = [];
     try {
-      kichthuocParsed = typeof kichthuocRaw === "string" ? JSON.parse(kichthuocRaw) : kichthuocRaw;
+      const raw = req.body.kichthuoc || req.body.sizes || "[]";
+      kichthuoc = typeof raw === "string" ? JSON.parse(raw) : raw;
+      console.log("✅ Parsed kích thước:", kichthuoc);
     } catch {
+      console.warn("❌ Không parse được kích thước");
       return res.status(400).json({ error: "Dữ liệu kích thước không hợp lệ" });
     }
 
-    // Màu sắc có thể nằm trong req.body.mausac hoặc req.body.colors
-    let mausacParsed = [];
-    const mausacRaw = req.body.mausac || req.body.colors || "[]";
+    let mausanpham = [];
     try {
-      mausacParsed = typeof mausacRaw === "string" ? JSON.parse(mausacRaw) : mausacRaw;
+      const raw = req.body.mausac || req.body.colors?.[""] || "[]";
+      mausanpham = typeof raw === "string" ? JSON.parse(raw) : raw;
+      console.log("✅ Parsed màu sắc:", mausanpham);
     } catch {
+      console.warn("❌ Không parse được màu sắc");
       return res.status(400).json({ error: "Dữ liệu màu sắc không hợp lệ" });
     }
 
+    let hinhanh = [];
+    if (req.files && Array.isArray(req.files)) {
+      console.log(`📦 Đang xử lý ${req.files.length} file ảnh...`);
+      for (let index = 0; index < req.files.length; index++) {
+        const file = req.files[index];
+        const fileBuffer = fs.readFileSync(file.path);
+        const hash = crypto.createHash("md5").update(fileBuffer).digest("hex");
 
-    // Xử lý images
-    let images = [];
-    if (req.files && Array.isArray(req.files) && req.files.length > 0) {
-      images = req.files.map((file) => ({
-        tenfile: file.filename,
-      }));
-    } else if (Array.isArray(req.body.images)) {
-      images = req.body.images;
-    } else if (typeof req.body.images === "string") {
-      try {
-        images = JSON.parse(req.body.images);
-      } catch {
-        return res.status(400).json({ error: "Dữ liệu hình ảnh không hợp lệ" });
+        const imageData = {
+          hash,
+          data: fileBuffer,
+          contentType: file.mimetype,
+          tenfile: file.originalname,
+          color: req.body.colors?.[index] || null,
+          position: req.body.positions?.[index] || null,
+        };
+        hinhanh.push(imageData);
+
+        console.log(`✅ Ảnh ${index + 1}:`, {
+          tenfile: file.originalname,
+          color: imageData.color,
+          position: imageData.position,
+          hash,
+        });
+
+        await fs.promises.unlink(file.path);
       }
+    } else {
+      console.log("⚠️ Không có file ảnh nào được gửi lên.");
     }
 
-    // Parse giá sản phẩm chuẩn (chỉ số nguyên)
     const giaSanPham = Number(req.body.giasanpham) || 0;
 
-    // Tạo object để gọi service
     const newProductData = {
       tensanpham: req.body.tensanpham || "",
       giasanpham: giaSanPham,
       theloai: req.body.theloai || "",
       mota: req.body.mota || "",
       ngaythem: new Date(),
-      kichthuoc: kichthuocParsed,
-      mausanpham: mausacParsed, // Đã đổi tên trường cho đồng bộ
-      hinhanh: images,          // Đã đổi tên trường cho đồng bộ
+      kichthuoc,
+      mausanpham,
+      hinhanh,
     };
 
-    // Gọi service tạo sản phẩm
+    console.log("📤 Dữ liệu chuẩn bị insert:", newProductData);
+
     const productService = new ProductServer(MongoDB.client);
     const result = await productService.createProduct(newProductData);
 
-    // Di chuyển file ảnh nếu có upload
-    if (req.files && Array.isArray(req.files) && req.files.length > 0) {
-      const destDir = path.join(__dirname, "..", "public", "images");
-      if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
-
-      for (const file of req.files) {
-        const oldPath = file.path;
-        const newPath = path.join(destDir, file.filename);
-        try {
-          await fs.promises.rename(oldPath, newPath);
-          console.log(`✅ Đã di chuyển: ${file.originalname} -> ${file.filename}`);
-        } catch (err) {
-          console.error("❌ Lỗi khi di chuyển ảnh:", err);
-        }
-      }
-    }
-
     if (result.success) {
+      console.log("✅ Tạo sản phẩm thành công:", result.productId);
       res.status(201).json({
         message: "Tạo sản phẩm thành công",
-        id: result.productId || result.id,
+        id: result.productId,
       });
     } else {
+      console.warn("❌ Không thể tạo sản phẩm:", result.message);
       res.status(400).json({ error: result.message || "Không thể tạo sản phẩm" });
     }
   } catch (error) {
@@ -94,175 +93,107 @@ exports.createProduct = async (req, res, next) => {
   }
 };
 
+exports.getProductById = async (req, res) => {
+  const { productId } = req.params;
+  console.log("📥 Lấy sản phẩm theo ID:", productId);
+
+  const productService = new ProductServer(MongoDB.client);
+  const product = await productService.getProductById(productId);
+
+  if (product) {
+    console.log("✅ Tìm thấy sản phẩm:", product._id);
+    res.json(product);
+  } else {
+    console.warn("❌ Không tìm thấy sản phẩm");
+    res.status(404).json({ error: "Không tìm thấy sản phẩm" });
+  }
+};
+
 
 exports.getAllProducts = async (req, res) => {
+  console.log("📥 Yêu cầu lấy tất cả sản phẩm");
+  const productService = new ProductServer(MongoDB.client);
+  const products = await productService.getAllProducts();
+  console.log(`✅ Trả về ${products.length} sản phẩm`);
+  res.json(products);
+};
+
+exports.getImagesByColor = async (req, res) => {
   try {
+    const { productId, color } = req.params;
+    console.log("📥 Nhận yêu cầu lấy ảnh theo màu:", { productId, color });
+
+    if (!ObjectId.isValid(productId)) {
+      console.warn("❌ ID không hợp lệ:", productId);
+      return res.status(400).json({ error: "ID sản phẩm không hợp lệ" });
+    }
+
     const productService = new ProductServer(MongoDB.client);
-    const products = await productService.getAllProducts();
+    const result = await productService.getImagesByColor(productId, color);
+
+    if (result.success) {
+      console.log(`✅ Tìm thấy ${result.images.length} ảnh cho màu ${color}`);
+      return res.status(200).json(result.images);
+    } else {
+      console.warn("⚠️ Không có ảnh hoặc lỗi truy vấn:", result.message);
+      return res.status(404).json({ error: result.message || "Không tìm thấy ảnh" });
+    }
+  } catch (error) {
+    console.error("❌ Lỗi controller getImagesByColor:", error);
+    return res.status(500).json({ error: "Lỗi server khi lấy ảnh theo màu" });
+  }
+};
+
+exports.getFullProductsByCategorySlug = async (req, res) => {
+  try {
+    const { slug } = req.params;
+    console.log("📥 Lấy sản phẩm theo slug danh mục:", slug);
+
+    const productService = new ProductServer(MongoDB.client);
+    const products = await productService.getFullProductsByCategorySlug(slug);
+
+    if (!products || products.length === 0) {
+      console.warn("⚠️ Không tìm thấy sản phẩm với slug:", slug);
+      return res.status(404).json({ message: "Không tìm thấy sản phẩm trong danh mục này." });
+    }
+
+    console.log(`✅ Tìm thấy ${products.length} sản phẩm với slug ${slug}`);
     res.json(products);
   } catch (error) {
-    console.error("Lỗi khi lấy danh sách sản phẩm:", error);
-    res.status(500).json({ error: "Lỗi server khi lấy sản phẩm" });
+    console.error("❌ Lỗi getProductByCategorySlug:", error);
+    res.status(500).json({ message: "Lỗi máy chủ." });
   }
-}
+};
 
-exports.getAllProductsHome = async (req, res) => {
+exports.getColorsByProductId = async (req, res) => {
   try {
-    const productService = new ProductServer(MongoDB.client);
-    const products = await productService.getAllProductsHome();
-    res.json(products);
-  } catch (error) {
-    console.error("Lỗi khi lấy danh sách sản phẩm:", error);
-    res.status(500).json({ error: "Lỗi server khi lấy sản phẩm" });
-  }
-}
+    const { id } = req.params;
+    console.log("📥 Lấy màu theo productId:", id);
 
-exports.getProductById = async (req, res) => {
-  try {
-    console.log("Product ID nhận được:", req.params.id);
+    if (!ObjectId.isValid(id)) {
+      console.warn("❌ ID sản phẩm không hợp lệ:", id);
+      return res.status(400).json({
+        success: false,
+        message: "ID sản phẩm không hợp lệ.",
+      });
+    }
 
     const productService = new ProductServer(MongoDB.client);
-    const result = await productService.getProductById(req.params.id);
+    const result = await productService.getColorsByProductId(new ObjectId(id));
 
     if (!result.success) {
-      return res.status(404).json({ message: result.message || "Không tìm thấy sản phẩm" });
+      console.warn("❌ Không lấy được màu:", result.message);
+      return res.status(500).json(result);
     }
 
-    return res.status(200).json(result.data);
-  } catch (error) {
-    console.error("Lỗi khi lấy sản phẩm theo ID:", error);
-    res.status(500).json({ error: "Lỗi server khi lấy sản phẩm" });
-  }
-};
-
-exports.updateProduct = async (req, res) => {
-  try {
-    console.log("📦 DỮ LIỆU CLIENT GỬI LÊN:");
-    console.log("Body:", req.body);
-    console.log("Files:", req.files);
-
-    // 1. Parse kích thước
-    let kichthuocParsed = [];
-    if (req.body.kichthuoc) {
-      try {
-        kichthuocParsed = typeof req.body.kichthuoc === 'string'
-          ? JSON.parse(req.body.kichthuoc)
-          : req.body.kichthuoc;
-      } catch {
-        return res.status(400).json({ error: "❌ Dữ liệu kích thước không hợp lệ" });
-      }
-    }
-
-    // 2. Parse màu sắc
-    let mauParsed = [];
-    if (req.body.mausanpham) {
-      try {
-        mauParsed = typeof req.body.mausanpham === 'string'
-          ? JSON.parse(req.body.mausanpham)
-          : req.body.mausanpham;
-      } catch {
-        return res.status(400).json({ error: "❌ Dữ liệu màu sắc không hợp lệ" });
-      }
-    }
-
-    // 3. Parse hình ảnh cũ (giữ lại)
-    let hinhanhCu = [];
-    if (req.body.hinhanhCu) {
-      try {
-        hinhanhCu = typeof req.body.hinhanhCu === "string"
-          ? JSON.parse(req.body.hinhanhCu)
-          : req.body.hinhanhCu;
-      } catch {
-        return res.status(400).json({ error: "❌ Dữ liệu hình ảnh cũ không hợp lệ" });
-      }
-    }
-
-    // 4. Parse danh sách _id ảnh cần xóa
-    let hinhanhXoa = [];
-    if (req.body.hinhanhXoa) {
-      try {
-        hinhanhXoa = typeof req.body.hinhanhXoa === "string"
-          ? JSON.parse(req.body.hinhanhXoa)
-          : req.body.hinhanhXoa;
-      } catch {
-        return res.status(400).json({ error: "❌ Dữ liệu hình ảnh xóa không hợp lệ" });
-      }
-    }
-
-    // 5. Thêm ảnh mới từ req.files (nếu có upload)
-    if (req.files && Array.isArray(req.files) && req.files.length > 0) {
-      const destDir = path.join(__dirname, "..", "public", "images");
-      if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
-
-      for (const file of req.files) {
-        const oldPath = file.path;
-        const newPath = path.join(destDir, file.filename);
-        try {
-          await fs.promises.rename(oldPath, newPath);
-          console.log(`✅ Đã di chuyển: ${file.originalname} -> ${file.filename}`);
-        } catch (err) {
-          console.error("❌ Lỗi khi di chuyển ảnh:", err);
-        }
-      }
-    }
-
-    // 6. Parse giá sản phẩm
-    const giaSanPham = parseInt(
-      req.body.giasanpham?.toString().replace(/[^\d]/g, ""),
-      10
-    ) || 0;
-
-    // 7. Parse ngày thêm sản phẩm (nếu có)
-    const ngayThem = req.body.ngaythem ? new Date(req.body.ngaythem) : new Date();
-
-    // 8. Tạo payload truyền sang service
-    const updateData = {
-      tensanpham: req.body.tensanpham,
-      giasanpham: giaSanPham,
-      theloai: req.body.theloai,
-      mota: req.body.mota,
-      ngaythem: ngayThem,
-      kichthuoc: kichthuocParsed,
-      mausanpham: mauParsed,
-      hinhanhCu: hinhanhCu,   // Ảnh giữ lại
-      hinhanhXoa: hinhanhXoa  // _id ảnh cần xóa
-    };
-
-    // 9. Gọi service xử lý cập nhật
-    const productService = new ProductServer(MongoDB.client);
-    const result = await productService.updateProduct(req.params.id, updateData, req.files);
-
-    return res.status(result.success ? 200 : 400).json(result);
-
-  } catch (error) {
-    console.error("❌ Lỗi server khi cập nhật sản phẩm:", error);
-    return res.status(500).json({ success: false, message: "Cập nhật sản phẩm thất bại." });
-  }
-};
-
-exports.deleteProduct = async (req, res) => {
-  try {
-    const productService = new ProductServer(MongoDB.client);
-    const result = await productService.deleteProduct(req.params.id);
+    console.log(`✅ Lấy thành công ${result.colors?.length || 0} màu`);
     res.json(result);
   } catch (error) {
-    console.error("Lỗi khi xoá sản phẩm:", error);
-    res.status(500).json({ error: "Lỗi server khi xoá sản phẩm" });
+    console.error("🔴 [GET COLORS BY PRODUCT ID] Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi server khi lấy màu theo sản phẩm.",
+      error: error.message,
+    });
   }
-}
-
-
-exports.searchProducts = async (req, res) => {
-  try {
-    const keyword = req.query.q;
-    if (!keyword) {
-      return res.status(400).json({ error: "Thiếu từ khoá tìm kiếm" });
-    }
-    const results = await productService.searchProductByName(keyword);
-    res.json(results);
-  } catch (error) {
-    console.error("Lỗi tìm kiếm sản phẩm:", error);
-    res.status(500).json({ error: "Lỗi server khi tìm kiếm sản phẩm" });
-  }
-}
-
+};

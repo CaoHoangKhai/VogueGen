@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { getDesignsByUser, renameDesign, deleteDesignById } from "../../api/Design/design.api";
 import { Link } from "react-router-dom";
-import Toast from "../../Components/Toast";
+import Toast from "../../Components/Toast"; // Không destructure
 
 const MyDesign = () => {
     const [designs, setDesigns] = useState([]);
@@ -37,7 +37,6 @@ const MyDesign = () => {
         if (userId) fetchDesigns();
     }, [userId]);
 
-
     if (loading) return <div className="text-center mt-5">Đang tải...</div>;
 
     const handleRename = async (designId, oldName) => {
@@ -61,6 +60,7 @@ const MyDesign = () => {
             setToast({ type: "error", message: "❌ Đã xảy ra lỗi khi đổi tên." });
         }
     };
+
     const handleDelete = async (designId) => {
         const confirm = window.confirm("Bạn có chắc chắn muốn xóa thiết kế này?");
         if (!confirm) return;
@@ -80,38 +80,29 @@ const MyDesign = () => {
     };
 
     return (
-
         <div className="container">
             <h3 className="mb-4 text-center">Thiết kế của tôi</h3>
 
             {designs.length === 0 ? (
-                <div>Không có thiết kế nào.</div>
+                <div className="text-center">Không có thiết kế nào.</div>
             ) : (
                 <div className="row">
                     {designs.map((d) => (
                         <div className="col-12 col-sm-6 col-md-4 col-lg-3 mb-4" key={d._id}>
-                            <Link
-                                to={`/design/${d.link}`}
-                                className="text-decoration-none text-dark"
-                            >
+                            <Link to={`/design/${d.link}`} className="text-decoration-none text-dark">
                                 <div className="card h-100 shadow-sm">
                                     <div className="card-body position-relative">
-                                        {/* Nút ⋯ */}
                                         <div className="position-absolute top-0 end-0 m-2">
                                             <button
                                                 className="btn btn-sm btn-light"
                                                 onClick={(e) => {
                                                     e.preventDefault();
                                                     e.stopPropagation();
-                                                    setOpenMenuId(
-                                                        openMenuId === d._id ? null : d._id
-                                                    );
+                                                    setOpenMenuId(openMenuId === d._id ? null : d._id);
                                                 }}
                                             >
                                                 ⋯
                                             </button>
-
-                                            {/* Dropdown menu */}
                                             {openMenuId === d._id && (
                                                 <div
                                                     className="bg-white border rounded shadow-sm mt-1"
@@ -157,15 +148,17 @@ const MyDesign = () => {
                             </Link>
                         </div>
                     ))}
-                    {toast && (
-                        <Toast
-                            type={toast.type}
-                            message={toast.message}
-                            onClose={() => setToast(null)}
-                        />
-                    )}
-
                 </div>
+            )}
+
+            {/* ✅ Hiển thị Toast nếu có */}
+            {toast && (
+                <Toast
+                    show={true}
+                    type={toast.type}
+                    message={toast.message}
+                    onClose={() => setToast(null)}
+                />
             )}
         </div>
     );
