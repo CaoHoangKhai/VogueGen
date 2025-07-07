@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { getOrderDetailById } from "../../../api/Order/order.api";
+import { getOrderDetailById, cancelOrder } from "../../../api/Order/order.api";
 import { colors } from "../../../config/colors"; // điều chỉnh đúng đường dẫn file của bạn
 const OrderDetail = () => {
-    const { id } = useParams();
+    const { orderId } = useParams();
     const [order, setOrder] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -30,7 +30,7 @@ const OrderDetail = () => {
     useEffect(() => {
         const fetchOrderDetail = async () => {
             try {
-                const result = await getOrderDetailById(id);
+                const result = await getOrderDetailById(orderId);
                 if (result.success) {
                     setOrder(result.data);
                     setError(null);
@@ -45,20 +45,22 @@ const OrderDetail = () => {
         };
 
         fetchOrderDetail();
-    }, [id]);
+    }, [orderId]);
 
-    const renderStatus = (status) => {
-        switch (status) {
-            case 1:
-                return "Chờ xác nhận";
-            case 2:
-                return "Đang giao";
-            case 3:
-                return "Hoàn tất";
-            case 4:
-                return "Đã huỷ";
-            default:
-                return "Không rõ";
+    const handleCancelOrder = async () => {
+        if (!window.confirm("Bạn có chắc muốn huỷ đơn hàng này không?")) return;
+
+        try {
+            const res = await cancelOrder(orderId);
+            if (res.success) {
+                alert("✅ Huỷ đơn hàng thành công.");
+                setOrder(prev => ({ ...prev, trangthai: 4, trangthaidonhang: "Đã huỷ", class: "bg-danger text-white" }));
+            } else {
+                alert(res.message || "❌ Không thể huỷ đơn hàng.");
+            }
+        } catch (error) {
+            console.error("❌ Lỗi khi huỷ đơn:", error);
+            alert("Lỗi không xác định khi huỷ đơn hàng.");
         }
     };
 
@@ -96,15 +98,31 @@ const OrderDetail = () => {
                                     <strong>Ghi chú:</strong> {order.ghichu || "Không có"}
                                 </div>
                                 <div className="col-md-6 mb-2">
-                                    <strong>Phương thức thanh toán:</strong> {order.phuongthucthanhtoan.toUpperCase()}
+                                    <strong>Phương thức thanh toán:</strong> {order.phuongthucthanhtoan?.toUpperCase()}
                                 </div>
                                 <div className="col-md-6 mb-2">
-                                    <strong>Trạng thái:</strong> {renderStatus(order.trangthai)}
+                                    <strong>Trạng thái:</strong>{" "}
+                                    <span className={`badge ${order.class}`}>
+                                        {order.trangthaidonhang || "Không rõ"}
+                                    </span>
                                 </div>
+
+                                {order.trangthai === 1 && (
+                                    <div className="col-md-6 mb-2">
+                                        <button
+                                            className="btn btn-outline-danger btn-sm mt-1"
+                                            onClick={handleCancelOrder}
+                                        >
+                                            ❌ Hủy đơn hàng
+                                        </button>
+                                    </div>
+                                )}
+
                                 <div className="col-md-6 mb-2">
                                     <strong>Tổng tiền:</strong> {order.tongtien.toLocaleString()}đ
                                 </div>
                             </div>
+
                         </div>
 
                         {/* PHẦN 2: Danh sách sản phẩm */}

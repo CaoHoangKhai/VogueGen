@@ -13,6 +13,11 @@ router.get("/", orderController.getAllOrdersSorted);
 // Lấy đơn hàng theo userId
 router.get("/user/:userId", orderController.getOrdersByUserId);
 router.get("/latest", orderController.getLatestConfirmedOrders);
+router.get("/count/:userId", orderController.countOrdersByUser);
+router.get("/spent/:userId", orderController.getTotalSpentByUser);
+router.put("/cancel/:orderId", orderController.cancelOrder);
+router.put("/update-status/:orderId", orderController.updateOrderStatus);
+
 // Lấy chi tiết đơn hàng theo orderId
 router.get("/:orderId", orderController.getOrderDetailById);
 

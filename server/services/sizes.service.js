@@ -10,4 +10,10 @@ class SizesService {
     }
 }
 
+// {
+//   "_id": {
+//     "$oid": "683fda79e5356aeab20e2bfd"
+//   },
+//   "size": "One-Size"
+// }
 module.exports = SizesService;

@@ -211,7 +211,7 @@ const Order = () => {
                 </div>
                 {/* Bên phải: Thông tin đặt hàng */}
                 <div className="col-md-5">
-                    <div className="card">
+                    <div className="card" style={{ position: "sticky", top: "80px", zIndex: 10 }}>
                         <div className="card-header fw-bold">Thông tin đặt hàng</div>
                         <div className="card-body">
                             <form onSubmit={handleOrder}>
@@ -225,6 +225,7 @@ const Order = () => {
                                         onChange={handleChange}
                                     />
                                 </div>
+
                                 <div className="mb-3">
                                     <label className="form-label">Số điện thoại</label>
                                     <input
@@ -235,6 +236,7 @@ const Order = () => {
                                         onChange={handleChange}
                                     />
                                 </div>
+
                                 <div className="mb-3">
                                     <label className="form-label">Chọn địa chỉ có sẵn</label>
                                     <select
@@ -252,17 +254,19 @@ const Order = () => {
                                                 {getCityName(addr.thanhpho)}, {getDistrictName(addr.thanhpho, addr.quan_huyen)}, {addr.diachi}
                                             </option>
                                         ))}
-
-                                        <input
-                                            type="hidden"
-                                            className="form-control"
-                                            name="diachinguoidung"
-                                            value={form.diachinguoidung}
-                                            onChange={handleChange}
-                                            placeholder="Nhập địa chỉ giao hàng"
-                                        />
                                     </select>
+
+                                    {/* Hidden input dùng để giữ giá trị địa chỉ */}
+                                    <input
+                                        type="hidden"
+                                        className="form-control"
+                                        name="diachinguoidung"
+                                        value={form.diachinguoidung}
+                                        onChange={handleChange}
+                                        placeholder="Nhập địa chỉ giao hàng"
+                                    />
                                 </div>
+
                                 <div className="mb-3">
                                     <label className="form-label">Ghi chú</label>
                                     <textarea
@@ -272,6 +276,7 @@ const Order = () => {
                                         onChange={handleChange}
                                     />
                                 </div>
+
                                 <div className="mb-3">
                                     <label className="form-label">Phương thức thanh toán</label>
                                     <select
@@ -284,6 +289,7 @@ const Order = () => {
                                         <option value="bank">Chuyển khoản ngân hàng</option>
                                     </select>
                                 </div>
+
                                 <button
                                     type="submit"
                                     className="btn btn-success w-100"

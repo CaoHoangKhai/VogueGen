@@ -23,6 +23,8 @@ router.post("/is-favorite", favoriteController.isFavorite);
  */
 router.get("/user/:userId", favoriteController.getFavoritesByUser);
 
+
+
 /**
  * Xoá bản ghi yêu thích theo ID
  * DELETE /favorite/:id

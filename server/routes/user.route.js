@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const userController = require("../controllers/user.controller");
-
+const favoriteController = require("../controllers/favorite.controller");
 // ================== ROUTES NGƯỜI DÙNG ==================
 
 /**
@@ -29,4 +29,7 @@ router.post("/location", userController.addUserLocation);
  */
 router.delete("/location/:id", userController.deleteUserLocation);
 
+
+
+router.get("/favorite/:userId", favoriteController.countFavoritesByUser);
 module.exports = router;

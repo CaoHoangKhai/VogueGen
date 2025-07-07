@@ -5,6 +5,7 @@ class OrderService {
         this.donhang = client.db().collection("donhang");
         this.chitietdonhang = client.db().collection("chitietdonhang");
         this.giohang = client.db().collection("giohang");
+        this.trangthaidonhang = client.db().collection("trangthaidonhang");
     }
 
     extractOrderData(payload) {
@@ -79,20 +80,68 @@ class OrderService {
     }
 
     async getAllOrdersSorted() {
-        return await this.donhang.find().sort({ ngaydat: -1 }).toArray();
+        try {
+            const orders = await this.donhang.find().sort({ ngaydat: -1 }).toArray();
+
+            const enrichedOrders = await Promise.all(
+                orders.map(async (order) => {
+                    const trangthaiInfo = await this.getTrangThaiDonHangInfo(order.trangthai);
+                    return {
+                        ...order,
+                        ...trangthaiInfo
+                    };
+                })
+            );
+
+            return enrichedOrders;
+        } catch (error) {
+            console.error("❌ [getAllOrdersSorted] Lỗi:", error.message);
+            return [];
+        }
     }
 
     async getOrdersByUserId(userId) {
         try {
             if (!userId) throw new Error("Thiếu mã người dùng.");
+
             const oid = ObjectId.isValid(userId) ? new ObjectId(userId) : null;
 
             const query = oid
                 ? { $or: [{ manguoidung: oid }, { manguoidung: userId }] }
                 : { manguoidung: userId };
 
-            const data = await this.donhang.find(query).sort({ ngaydat: -1 }).toArray();
-            return { success: true, data };
+            const orders = await this.donhang.find(query).sort({ ngaydat: -1 }).toArray();
+
+            // Lấy danh sách mã trạng thái duy nhất từ đơn hàng
+            const trangthaiList = [...new Set(orders.map(o => o.trangthai))];
+
+            // Lấy thông tin trạng thái cho từng mã
+            const statusMap = {};
+            const trangthaiDocs = await this.trangthaidonhang
+                .find({ trangthai: { $in: trangthaiList } })
+                .toArray();
+
+            for (const doc of trangthaiDocs) {
+                statusMap[doc.trangthai] = {
+                    trangthaidonhang: doc.ten,
+                    class: doc.class
+                };
+            }
+
+            // Gắn trạng thái vào từng đơn
+            const enrichedOrders = orders.map(order => {
+                const info = statusMap[order.trangthai] || {
+                    trangthaidonhang: "Không rõ",
+                    class: "bg-secondary text-white"
+                };
+                return {
+                    ...order,
+                    ...info
+                };
+            });
+
+            return { success: true, data: enrichedOrders };
+
         } catch (error) {
             return {
                 success: false,
@@ -101,6 +150,33 @@ class OrderService {
             };
         }
     }
+
+    async getTrangThaiDonHangInfo(trangthai) {
+        try {
+            const trangthaiNumber = typeof trangthai === "string" ? parseInt(trangthai) : trangthai;
+
+            const result = await this.trangthaidonhang.findOne({ trangthai: trangthaiNumber });
+
+            if (!result) {
+                return {
+                    trangthaidonhang: "Không rõ",
+                    class: "bg-secondary text-white"
+                };
+            }
+
+            return {
+                trangthaidonhang: result.ten,
+                class: result.class
+            };
+        } catch (err) {
+            console.error("❌ Lỗi lấy trạng thái đơn hàng:", err);
+            return {
+                trangthaidonhang: "Không rõ",
+                class: "bg-secondary text-white"
+            };
+        }
+    }
+
 
     async getOrderByIdWithDetails(orderId) {
         try {
@@ -111,14 +187,20 @@ class OrderService {
                 : { madonhang: orderId };
 
             const order = await this.donhang.findOne(query);
-
             if (!order) return { success: false, message: "Không tìm thấy đơn hàng." };
 
             const chitiet = await this.chitietdonhang.find({ madonhang: order.madonhang }).toArray();
 
+            // Lấy thông tin trạng thái (tên + màu class)
+            const trangthaiInfo = await this.getTrangThaiDonHangInfo(order.trangthai);
+
             return {
                 success: true,
-                data: { ...order, chitiet }
+                data: {
+                    ...order,
+                    chitiet,
+                    ...trangthaiInfo
+                }
             };
         } catch (error) {
             return {
@@ -128,6 +210,7 @@ class OrderService {
             };
         }
     }
+
 
 
     // Lấy đơn hàng trong 28 ngày gần nhất
@@ -210,8 +293,150 @@ class OrderService {
             };
         }
     }
+    // Lấy tổng số đơn hàng của người dùng
+    async getTotalOrdersByUserId(userId) {
+        try {
+            if (!userId) throw new Error("Thiếu mã người dùng.");
+            const oid = ObjectId.isValid(userId) ? new ObjectId(userId) : userId;
 
+            const count = await this.donhang.countDocuments({
+                $or: [{ manguoidung: oid }, { manguoidung: userId }]
+            });
 
+            return {
+                success: true,
+                total: count
+            };
+        } catch (error) {
+            console.error("❌ [getTotalOrdersByUserId] Lỗi:", error.message);
+            return {
+                success: false,
+                message: "Không thể tính tổng đơn hàng.",
+                error: error.message
+            };
+        }
+    }
+
+    // Tính tổng tiền đã tiêu của người dùng
+    async getTotalSpentByUserId(userId) {
+        try {
+            if (!userId) throw new Error("Thiếu mã người dùng.");
+            const oid = ObjectId.isValid(userId) ? new ObjectId(userId) : userId;
+
+            const result = await this.donhang.aggregate([
+                {
+                    $match: {
+                        $or: [
+                            { manguoidung: oid },
+                            { manguoidung: userId }
+                        ]
+                    }
+                },
+                {
+                    $group: {
+                        _id: null,
+                        totalSpent: { $sum: "$tongtien" }
+                    }
+                }
+            ]).toArray();
+
+            const total = result[0]?.totalSpent || 0;
+
+            return {
+                success: true,
+                totalSpent: total
+            };
+        } catch (error) {
+            console.error("❌ [getTotalSpentByUserId] Lỗi:", error.message);
+            return {
+                success: false,
+                message: "Không thể tính tổng tiền đã tiêu.",
+                error: error.message
+            };
+        }
+    }
+
+    // Huỷ đơn hàng (chỉ khi trạng thái hiện tại là "Chờ xác nhận")
+    async cancelOrder(orderId) {
+        try {
+            if (!orderId) throw new Error("Thiếu mã đơn hàng.");
+
+            const query = ObjectId.isValid(orderId)
+                ? { _id: new ObjectId(orderId) }
+                : { madonhang: orderId };
+
+            const order = await this.donhang.findOne(query);
+            if (!order) return { success: false, message: "Không tìm thấy đơn hàng." };
+
+            // Chỉ huỷ được nếu đơn hàng đang ở trạng thái "Chờ xác nhận" (1)
+            if (order.trangthai !== 1) {
+                return {
+                    success: false,
+                    message: "Chỉ có thể huỷ đơn hàng khi đang chờ xác nhận."
+                };
+            }
+
+            await this.donhang.updateOne(query, {
+                $set: { trangthai: 4 }
+            });
+
+            return {
+                success: true,
+                message: "Đơn hàng đã được huỷ thành công."
+            };
+        } catch (error) {
+            console.error("❌ [cancelOrder] Lỗi:", error.message);
+            return {
+                success: false,
+                message: "Không thể huỷ đơn hàng.",
+                error: error.message
+            };
+        }
+    }
+
+    async updateTrangThaiDonHang(orderId, trangthai) {
+        try {
+            if (!orderId || typeof trangthai === 'undefined') {
+                throw new Error("Thiếu thông tin mã đơn hàng hoặc trạng thái.");
+            }
+
+            const query = ObjectId.isValid(orderId)
+                ? { _id: new ObjectId(orderId) }
+                : { madonhang: orderId };
+
+            const order = await this.donhang.findOne(query);
+            if (!order) {
+                return {
+                    success: false,
+                    message: "Không tìm thấy đơn hàng."
+                };
+            }
+
+            const validStatuses = [1, 2, 3, 4]; // Chờ xác nhận, Đang giao, Hoàn tất, Đã huỷ
+            if (!validStatuses.includes(parseInt(trangthai))) {
+                return {
+                    success: false,
+                    message: "Trạng thái không hợp lệ."
+                };
+            }
+
+            await this.donhang.updateOne(query, {
+                $set: { trangthai: parseInt(trangthai) }
+            });
+
+            return {
+                success: true,
+                message: "Cập nhật trạng thái đơn hàng thành công."
+            };
+        } catch (error) {
+            console.error("❌ [updateTrangThaiDonHang] Lỗi:", error.message);
+            return {
+                success: false,
+                message: "Không thể cập nhật trạng thái đơn hàng.",
+                error: error.message
+            };
+        }
+    }
 }
 
 module.exports = OrderService;

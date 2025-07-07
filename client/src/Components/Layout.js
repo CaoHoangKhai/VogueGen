@@ -1,13 +1,10 @@
 import { useLocation } from 'react-router-dom';
-
 import Footer from './Footer';
 import Header from './Header';
 import CommonSidebar from './Sidebar/Sidebar';
-// import Breadcrumb from "./Breadcrumb";
 
 const Layout = ({ children }) => {
   const location = useLocation();
-
 
   const isAdmin = location.pathname.startsWith('/admin');
   const isUser = location.pathname.startsWith('/user');
@@ -16,9 +13,7 @@ const Layout = ({ children }) => {
   if (isDesign) {
     return (
       <>
-        <div        >
-          {children}
-        </div>
+        <div>{children}</div>
       </>
     );
   }
@@ -27,11 +22,28 @@ const Layout = ({ children }) => {
     return (
       <>
         <div>
-          <CommonSidebar role={isAdmin ? "admin" : "user"} />
-          <div style={{
-            marginLeft: '250px',
-            marginTop: '0px',
-          }}>
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              height: '100vh',
+              width: '250px',
+              backgroundColor: '#fff',
+              borderRight: '1px solid #ddd',
+              zIndex: 1000,
+              overflowY: 'auto',
+            }}
+          >
+            <CommonSidebar role={isAdmin ? 'admin' : 'user'} />
+          </div>
+
+          <div
+            style={{
+              marginLeft: '250px',
+              padding: '20px',
+            }}
+          >
             {children}
           </div>
         </div>
@@ -42,10 +54,7 @@ const Layout = ({ children }) => {
   return (
     <>
       <Header />
-      {/* <Breadcrumb /> */}
-      <div>
-        {children}
-      </div>
+      <div>{children}</div>
       <Footer />
     </>
   );

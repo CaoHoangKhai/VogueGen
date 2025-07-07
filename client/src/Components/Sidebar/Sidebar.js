@@ -1,15 +1,15 @@
 // components/Sidebar.jsx
 import { Link, useNavigate } from 'react-router-dom';
-import { FaSignOutAlt, FaChevronDown } from 'react-icons/fa';
+import { FaSignOutAlt,  } from 'react-icons/fa';//FaChevronDown
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { useState } from 'react';
+// import { useState } from 'react';
 import sidebarConfig from '../../config/sidebar';
 
 import '../Sidebar/Sidebar.css';
 
 const Sidebar = ({ role }) => {
   const navigate = useNavigate();
-  const [openMenu, setOpenMenu] = useState(null);
+  // const [openMenu, setOpenMenu] = useState(null);
 
   const handleLogout = () => {
     localStorage.removeItem('user');
@@ -17,9 +17,9 @@ const Sidebar = ({ role }) => {
     navigate('/auth/signin');
   };
 
-  const toggleMenu = (index) => {
-    setOpenMenu(openMenu === index ? null : index);
-  };
+  // const toggleMenu = (index) => {
+  //   setOpenMenu(openMenu === index ? null : index);
+  // };
 
   const menuItems = sidebarConfig[role] || [];
 
@@ -29,7 +29,7 @@ const Sidebar = ({ role }) => {
         <h4 className="p-3 border-bottom">SHOPIFY</h4>
       </Link>
 
-      <ul className="list-group list-group-flush">
+      {/* <ul className="list-group list-group-flush">
         {menuItems.map((item, index) => (
           item.children ? (
             <div key={index}>
@@ -70,7 +70,44 @@ const Sidebar = ({ role }) => {
         >
           <FaSignOutAlt className="me-2" /> Đăng xuất
         </button>
+      </ul> */}
+
+      <ul className="list-group list-group-flush">
+        {menuItems.map((item, index) => (
+          item.children ? (
+            <div key={index}>
+              <li className="list-group-item list-group-item-action d-flex align-items-center fw-bold">
+                <item.icon className="me-2" /> {item.label}
+              </li>
+              {item.children.map((subItem, subIndex) => (
+                <Link
+                  key={subIndex}
+                  to={subItem.path}
+                  className="list-group-item list-group-item-action ps-5 text-start d-flex align-items-center"
+                >
+                  <subItem.icon className="me-2" /> {subItem.label}
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <Link
+              key={index}
+              to={item.path}
+              className="list-group-item list-group-item-action d-flex align-items-center"
+            >
+              <item.icon className="me-2" /> {item.label}
+            </Link>
+          )
+        ))}
+
+        <button
+          className="list-group-item list-group-item-action d-flex align-items-center border-0 bg-transparent"
+          onClick={handleLogout}
+        >
+          <FaSignOutAlt className="me-2" /> Đăng xuất
+        </button>
       </ul>
+
     </div>
   );
 };

@@ -240,22 +240,27 @@ const Cart = () => {
                 </div>
                 {/* Bên phải: 3 cột */}
                 <div className="col-md-3">
-                    <div className="card">
+                    <div className="card" style={{ position: "sticky", top: "80px", zIndex: 10 }}>
                         <div className="card-header fw-bold">Thanh toán</div>
                         <div className="card-body">
-                            <p>Tổng tiền: {total.toLocaleString("vi-VN")}đ</p>
-                            <button
-                                className="btn btn-primary w-100"
-                                disabled={cartItems.length === 0}
-                                onClick={() => {
-                                    if (cartItems.length > 0) {
-                                        window.location.href = "/auth/order"; // hoặc dùng navigate
-                                    }
-                                }}
-                            >
-                                Đặt hàng
-                            </button>
-
+                            {cartItems.length > 0 ? (
+                                <>
+                                    <p>Tổng tiền: {total.toLocaleString("vi-VN")}đ</p>
+                                    <button
+                                        className="btn btn-primary w-100"
+                                        onClick={() => window.location.href = "/auth/order"}
+                                    >
+                                        Đặt hàng
+                                    </button>
+                                </>
+                            ) : (
+                                <div className="text-muted text-center small">
+                                    <p>Không có sản phẩm.</p>
+                                    <button className="btn btn-secondary w-100" disabled>
+                                        Đặt hàng
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

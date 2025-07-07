@@ -1,107 +1,105 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import 'bootstrap/dist/css/bootstrap.min.css';
+import { getUserById, countFavoritesByUser } from '../../api/User/user.api';
+import { getTotalOrdersByUserId,getTotalSpentByUser } from '../../api/Order/order.api';
 import { Link } from 'react-router-dom';
+import 'bootstrap/dist/css/bootstrap.min.css';
+
 const Profile = () => {
-    const [user, setUser] = useState({
-        _id: '',
-        hoten: '',
-        sodienthoai: '',
-        email: '',
-        sodiachi: 0,
-        tongChiTieu: 0,
-        soDonHang: 0,
-        ngayTao: null
-    });
+    const [user, setUser] = useState(null);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const userData = localStorage.getItem('user');
-        if (userData) {
-            const parsed = JSON.parse(userData);
 
-            // Gọi API lấy thông tin user từ backend
-            axios.get(`http://localhost:4000/user/${parsed._id}`)
-                .then(res => {
-                    // Giả sử server trả về dữ liệu user đầy đủ
-                    setUser({
-                        _id: res.data._id,
-                        hoten: res.data.hoten,
-                        sodienthoai: res.data.sodienthoai,
-                        email: res.data.email,
-                        sodiachi: res.data.sodiachi ?? 0,
-                        tongChiTieu: res.data.tongChiTieu ?? 0,
-                        soDonHang: res.data.soDonHang ?? 0,
-                        ngayTao: res.data.ngayTao ?? null,
-                    });
+        if (!userData) {
+            console.warn("⚠️ Không có dữ liệu người dùng trong localStorage.");
+            setLoading(false);
+            return;
+        }
+
+        try {
+            const parsed = JSON.parse(userData);
+            const userFromStorage = parsed?.data || parsed;
+            const userId = userFromStorage._id;
+
+            if (!userId) {
+                setLoading(false);
+                return;
+            }
+
+            // Hiển thị tạm
+            setUser(userFromStorage);
+
+            // Gọi các API để cập nhật thông tin
+            Promise.all([
+                getUserById(userId),
+                getTotalOrdersByUserId(userId),
+                countFavoritesByUser(userId),
+                getTotalSpentByUser(userId)
+            ])
+                .then(([resUser, resOrderCount, resFavorites, resTotalSpent]) => {
+                    const data = resUser?.data || resUser;
+                    data.soDonHang = resOrderCount?.total ?? 0;
+                    data.soYeuThich = resFavorites?.data?.favoriteCount ?? 0;
+                    data.tongChiTieu = resTotalSpent?.totalSpent ?? 0;
+                    setUser(data);
+                    localStorage.setItem('user', JSON.stringify(data));
+                    console.log("❤️ Kết quả favorites từ API:", resFavorites);
+                    console.log("❤️ Kết quả đơn hàng từ API:", resOrderCount);
+                    console.log("❤️ Kết quả tổng chi tiêu từ API:", resTotalSpent);
                 })
-                .catch(err => {
-                    console.error('Lỗi khi lấy thông tin user:', err);
-                    // Nếu lỗi thì fallback dùng data từ localStorage
-                    setUser({
-                        _id: parsed._id,
-                        hoten: parsed.hoten,
-                        sodienthoai: parsed.sodienthoai,
-                        email: parsed.email,
-                        sodiachi: parsed.sodiachi ?? 0,
-                        tongChiTieu: parsed.tongChiTieu ?? 0,
-                        soDonHang: parsed.soDonHang ?? 0,
-                        ngayTao: parsed.ngayTao ?? null
-                    });
-                });
+                .catch((err) => {
+                    console.warn("❌ Lỗi khi gọi API:", err.message);
+                })
+                .finally(() => setLoading(false));
+        } catch (err) {
+            console.error("❌ Lỗi khi parse localStorage:", err.message);
+            setLoading(false);
         }
     }, []);
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setUser(prevUser => ({
-            ...prevUser,
-            [name]: value
-        }));
-    };
+    if (loading) return <div className="container mt-4">Đang tải thông tin người dùng...</div>;
+    if (!user) return <div className="container mt-4">Không tìm thấy thông tin người dùng.</div>;
 
     return (
         <div className="container">
             <h3 className="text-center mb-4">Thông tin người dùng</h3>
 
-            {/* Bốn khối thông tin */}
             <div className="row text-center mb-4">
                 <div className="col-md-3">
-                    <Link className="text-decoration-none quick-link text-secondary" to={'/user/orders'}>
+                    <Link className="text-decoration-none text-secondary" to="/user/orders">
                         <div className="border p-3 rounded shadow-sm">
                             <strong>Đã tiêu</strong>
-                            <div>{user.tongChiTieu.toLocaleString()}₫</div>
+                            <div>{(user.tongChiTieu || 0).toLocaleString()}₫</div>
                         </div>
                     </Link>
                 </div>
-
                 <div className="col-md-3">
-                    <Link className="text-decoration-none quick-link text-secondary" to={'/user/location'}>
+                    <Link className="text-decoration-none text-secondary" to="/user/location">
                         <div className="border p-3 rounded shadow-sm">
                             <strong>Số địa chỉ</strong>
-                            <div>{user.sodiachi}/5</div>
+                            <div>{user.sodiachi ?? 0}/5</div>
                         </div>
                     </Link>
-
                 </div>
-
                 <div className="col-md-3">
-                    <Link className="text-decoration-none quick-link text-secondary" to={'/user/orders'}>
+                    <Link className="text-decoration-none text-secondary" to="/user/orders">
                         <div className="border p-3 rounded shadow-sm">
                             <strong>Số đơn hàng</strong>
-                            <div>{user.soDonHang}</div>
+                            <div>{user.soDonHang ?? 0}</div>
                         </div>
                     </Link>
                 </div>
-
-                {/* <div className="col-md-3">
-                    <div className="border p-3 rounded shadow-sm">
-                        <strong>Ngày tạo</strong>
-                        <div>{user.ngayTao ? new Date(user.ngayTao).toLocaleDateString() : '---'}</div>
-                    </div>
-                </div> */}
+                <div className="col-md-3">
+                    <Link className="text-decoration-none text-secondary" to="/user/favorites">
+                        <div className="border p-3 rounded shadow-sm">
+                            <strong>Yêu thích</strong>
+                            <div>{user.soYeuThich ?? 0}</div>
+                        </div>
+                    </Link>
+                </div>
             </div>
 
-            {/* Form chỉnh sửa */}
             <div className="row mb-3">
                 <div className="col-md-6">
                     <label className="form-label">Mã người dùng</label>
@@ -109,35 +107,18 @@ const Profile = () => {
                 </div>
                 <div className="col-md-6">
                     <label className="form-label">Họ tên</label>
-                    <input
-                        type="text"
-                        className="form-control"
-                        name="hoten"
-                        value={user.hoten}
-                        onChange={handleChange}
-                    />
+                    <input type="text" className="form-control" value={user.hoten} disabled />
                 </div>
             </div>
+
             <div className="row">
                 <div className="col-md-6">
                     <label className="form-label">Số điện thoại</label>
-                    <input
-                        type="text"
-                        className="form-control"
-                        name="sodienthoai"
-                        value={user.sodienthoai}
-                        onChange={handleChange}
-                    />
+                    <input type="text" className="form-control" value={user.sodienthoai} disabled />
                 </div>
                 <div className="col-md-6">
                     <label className="form-label">Email</label>
-                    <input
-                        type="email"
-                        className="form-control"
-                        name="email"
-                        value={user.email}
-                        onChange={handleChange}
-                    />
+                    <input type="email" className="form-control" value={user.email} disabled />
                 </div>
             </div>
         </div>

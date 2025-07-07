@@ -8,7 +8,7 @@ import {
   FaMoneyBillWave,
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-
+import { Link } from "react-router-dom"; // đảm bảo đã import Link
 // ✅ Hàm fetch dữ liệu dashboard
 function fetchDashboardData(setDashboardData, setLatestOrders, setError, setLoading) {
   const fetchData = async () => {
@@ -58,80 +58,35 @@ function renderError(error) {
   );
 }
 
-// ✅ Hiển thị các thẻ thống kê
 function renderStats(data) {
   return (
     <div className="row g-3">
-      {renderStatCard("Khách hàng", data.totalCustomers, "text-primary", <FaUsers size={24} />)}
-      {renderStatCard("Sản phẩm", data.totalProducts, "text-success", <FaBoxOpen size={24} />)}
-      {renderStatCard("Đơn hàng (28 ngày)", data.totalOrders28days, "text-warning", <FaShoppingCart size={24} />)}
-      {renderStatCard("Doanh thu (28 ngày)", data.totalRevenue28days, "text-danger", <FaMoneyBillWave size={24} />, true)}
+      {renderStatCard("Khách hàng", data.totalCustomers, "text-primary", <FaUsers size={24} />, false, "/admin/users")}
+      {renderStatCard("Sản phẩm", data.totalProducts, "text-success", <FaBoxOpen size={24} />, false, "/admin/products")}
+      {renderStatCard("Đơn hàng (28 ngày)", data.totalOrders28days, "text-warning", <FaShoppingCart size={24} />, false, "/admin/orders")}
+      {renderStatCard("Doanh thu (28 ngày)", data.totalRevenue28days, "text-danger", <FaMoneyBillWave size={24} />, true, "/admin/orders")}
     </div>
   );
 }
 
-// ✅ Component thẻ thống kê đơn lẻ
-function renderStatCard(label, value, colorClass, icon, isMoney = false) {
+function renderStatCard(label, value, colorClass, icon, isMoney = false, to = "#") {
   return (
     <div className="col-6 col-md-3" key={label}>
-      <div className="card small-dashboard-card border-0 shadow-sm rounded-3">
-        <div className="card-body text-center py-3">
-          <div className="mb-1">{React.cloneElement(icon, { className: colorClass })}</div>
-          <div className="text-muted" style={{ fontSize: "0.85rem" }}>{label}</div>
-          <div className="fw-bold" style={{ fontSize: "1.1rem" }}>
-            {value.toLocaleString("vi-VN") + (isMoney ? "₫" : "")}
+      <Link to={to} style={{ textDecoration: "none" }}>
+        <div className="card small-dashboard-card border-0 shadow-sm rounded-3 hover-card">
+          <div className="card-body text-center py-3">
+            <div className="mb-1">{React.cloneElement(icon, { className: colorClass })}</div>
+            <div className="text-muted" style={{ fontSize: "0.85rem" }}>{label}</div>
+            <div className="fw-bold" style={{ fontSize: "1.1rem" }}>
+              {value.toLocaleString("vi-VN") + (isMoney ? "₫" : "")}
+            </div>
           </div>
         </div>
-      </div>
+      </Link>
     </div>
   );
 }
 
-// ✅ Component chính
-function AdminDashboard() {
-  const [dashboardData, setDashboardData] = useState({
-    totalCustomers: 0,
-    totalProducts: 0,
-    totalOrders28days: 0,
-    totalRevenue28days: 0,
-  });
-
-  const [latestOrders, setLatestOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const navigate = useNavigate();
-  useEffect(() => {
-    fetchDashboardData(setDashboardData, setLatestOrders, setError, setLoading);
-  }, []);
-
-  const handleViewOrder = (order) => {
-    if (order && order._id) {
-      navigate(`/admin/orders/${order._id}`); // <-- điều hướng đến chi tiết đơn hàng
-    }
-  };
-
-
-  if (loading) return renderLoading();
-  if (error) return renderError(error);
-
-  return (
-    <div className="container">
-      {/* Hàng 1: Thống kê full row */}
-      <div className="row">
-        <div className="col-12">{renderStats(dashboardData)}</div>
-      </div>
-
-      {/* Hàng 2: Đơn hàng mới nhất chiếm 6/12 (có thể chỉnh) */}
-      <div className="row">
-        <div className="col-12 col-md-6">
-          {renderLatestOrders(latestOrders, handleViewOrder)}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ✅ Hiển thị bảng đơn hàng
 function renderLatestOrders(orders, handleViewOrder) {
   return (
     <div className="card border-2 shadow-sm rounded-3 mt-4">
@@ -180,6 +135,49 @@ function renderOrdersTable(orders, handleViewOrder) {
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+function AdminDashboard() {
+  const [dashboardData, setDashboardData] = useState({
+    totalCustomers: 0,
+    totalProducts: 0,
+    totalOrders28days: 0,
+    totalRevenue28days: 0,
+  });
+
+  const [latestOrders, setLatestOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
+  useEffect(() => {
+    fetchDashboardData(setDashboardData, setLatestOrders, setError, setLoading);
+  }, []);
+
+  const handleViewOrder = (order) => {
+    if (order && order._id) {
+      navigate(`/admin/orders/${order._id}`);
+    }
+  };
+
+
+  if (loading) return renderLoading();
+  if (error) return renderError(error);
+
+  return (
+    <div className="container">
+      {/* Hàng 1: Thống kê full row */}
+      <div className="row">
+        <div className="col-12">{renderStats(dashboardData)}</div>
+      </div>
+
+      {/* Hàng 2: Đơn hàng mới nhất chiếm 6/12 (có thể chỉnh) */}
+      <div className="row">
+        <div className="col-12 col-md-6">
+          {renderLatestOrders(latestOrders, handleViewOrder)}
+        </div>
+      </div>
     </div>
   );
 }

@@ -33,7 +33,21 @@ exports.getFavoritesByUser = async (req, res) => {
     }
 };
 
+exports.countFavoritesByUser = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        console.log("📥 [countFavoritesByUser] userId nhận vào:", userId);
 
+        const service = new FavoriteService(MongoDB.client);
+        const result = await service.countFavoritesByUser(userId);
+
+        console.log("✅ [countFavoritesByUser] Kết quả:", result);
+        return res.status(200).json(result);
+    } catch (error) {
+        console.error("❌ Lỗi khi đếm yêu thích:", error);
+        return res.status(500).json({ message: "Lỗi server khi đếm yêu thích." });
+    }
+};
 
 // ❓ Kiểm tra có yêu thích hay không
 exports.isFavorite = async (req, res) => {

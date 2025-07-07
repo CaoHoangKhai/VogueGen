@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import diachiData from '../../assets/data/vietnam_administrative_data.json';
+import diachiData from '../../../assets/data/vietnam_administrative_data.json';
 import {
     getUserLocations,
     addUserLocation,
     deleteUserLocation
-} from '../../api/User/user.api';
+} from '../../../api/User/user.api';
 
 const UserLocation = () => {
     const userData = localStorage.getItem('user');
@@ -20,7 +20,7 @@ const UserLocation = () => {
     });
     const [addressList, setAddressList] = useState([]);
 
-    // ===== Helper lấy tên tỉnh/thành và quận/huyện =====
+    // ===== Helper =====
     const getCityName = (cityCode) => {
         const city = diachiData.find(c => c.Id === cityCode);
         return city ? city.Name : cityCode;
@@ -33,7 +33,7 @@ const UserLocation = () => {
         return district ? district.Name : districtCode;
     };
 
-    // ===== Xử lý dữ liệu địa lý =====
+    // ===== Load danh sách tỉnh thành =====
     useEffect(() => {
         const cities = diachiData.map(city => ({
             code: city.Id,
@@ -42,6 +42,7 @@ const UserLocation = () => {
         setCityList(cities);
     }, []);
 
+    // ===== Load danh sách quận huyện khi chọn tỉnh =====
     useEffect(() => {
         const selectedCity = diachiData.find(c => c.Id === form.city);
         if (selectedCity) {
@@ -55,31 +56,32 @@ const UserLocation = () => {
         }
     }, [form.city]);
 
-    // ===== Gọi API: lấy danh sách địa chỉ =====
-    const fetchAddressList = async () => {
-        try {
-            const res = await getUserLocations(manguoidung);
-            setAddressList(Array.isArray(res.data) ? res.data : []);
-        } catch (err) {
-            console.error('❌ Lỗi lấy danh sách địa chỉ:', err);
-        }
-    };
-
+    // ===== Lấy danh sách địa chỉ của người dùng =====
     useEffect(() => {
-        if (manguoidung) fetchAddressList();
+        const fetchData = async () => {
+            if (!manguoidung) return;
+
+            try {
+                const res = await getUserLocations(manguoidung);
+                setAddressList(Array.isArray(res.data) ? res.data : []);
+            } catch (err) {
+                console.error('❌ Lỗi lấy danh sách địa chỉ:', err);
+            }
+        };
+        fetchData();
     }, [manguoidung]);
 
-    // ===== Sự kiện thay đổi input =====
+    // ===== Xử lý thay đổi input =====
     const handleChange = (e) => {
         const { name, value } = e.target;
         setForm(prev => ({
             ...prev,
             [name]: value,
-            ...(name === "city" && { district: '' }) // reset district khi đổi thành phố
+            ...(name === "city" && { district: '' }) // reset district nếu đổi city
         }));
     };
 
-    // ===== Submit form: Thêm địa chỉ =====
+    // ===== Thêm địa chỉ =====
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -93,8 +95,11 @@ const UserLocation = () => {
         try {
             const res = await addUserLocation(payload);
             alert(res.data?.message || "✅ Thêm địa chỉ thành công");
-            fetchAddressList();
             setForm({ city: '', district: '', address: '' });
+
+            // Làm mới danh sách
+            const refresh = await getUserLocations(manguoidung);
+            setAddressList(Array.isArray(refresh.data) ? refresh.data : []);
         } catch (err) {
             alert(err.response?.data?.message || "❌ Lỗi thêm địa chỉ");
             console.error('Lỗi khi thêm địa chỉ:', err);
@@ -108,7 +113,10 @@ const UserLocation = () => {
         try {
             const res = await deleteUserLocation(id);
             alert(res.data?.message || "✅ Xóa thành công");
-            fetchAddressList();
+
+            // Làm mới danh sách
+            const refresh = await getUserLocations(manguoidung);
+            setAddressList(Array.isArray(refresh.data) ? refresh.data : []);
         } catch (err) {
             alert(err.response?.data?.message || "❌ Xóa thất bại");
             console.error('Lỗi khi xóa địa chỉ:', err);
@@ -116,8 +124,8 @@ const UserLocation = () => {
     };
 
     return (
-        <div>
-            <h5 className='text-center'>THÊM ĐỊA CHỈ</h5>
+        <div className="px-3 mt-2">
+            <h3 className='text-center mb-4'>Địa chỉ của người dùng</h3>
             <form className="card container p-4 mb-4" onSubmit={handleSubmit}>
                 <div className="row mb-3">
                     <div className="col-md-6">
@@ -177,7 +185,7 @@ const UserLocation = () => {
             <div className="card container p-4">
                 <h5>📍 Danh sách địa chỉ của tôi</h5>
                 {addressList.length === 0 ? (
-                    <p className="text-muted">Bạn chưa có địa chỉ nào.</p>
+                    <p className="text-center">Bạn chưa có địa chỉ nào.</p>
                 ) : (
                     <ul className="list-group">
                         {addressList.map(addr => (

@@ -43,26 +43,10 @@ const OrderList = () => {
         }
     };
 
-    const renderStatus = (status) => {
-        switch (status) {
-            case 1:
-                return "Chờ xác nhận";
-            case 2:
-                return "Đang giao";
-            case 3:
-                return "Hoàn tất";
-            case 4:
-                return "Đã huỷ";
-            default:
-                return "Không rõ";
-        }
-    };
-
     const handleViewDetail = (madonhang) => {
         navigate(`/user/order_detail/${madonhang}`);
     };
 
-    // PHÂN TRANG: cắt mảng orders hiện tại
     const indexOfLastOrder = currentPage * ordersPerPage;
     const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
     const currentOrders = orders.slice(indexOfFirstOrder, indexOfLastOrder);
@@ -105,7 +89,9 @@ const OrderList = () => {
                                         <td>{order.hoten}</td>
                                         <td>{order.sodienthoai}</td>
                                         <td>{order.diachinguoidung}</td>
-                                        <td>{renderStatus(order.trangthai)}</td>
+                                        <td> <span className={`badge ${order.class}`}>
+                                            {order.trangthaidonhang}
+                                        </span></td>
                                         <td>
                                             <button
                                                 className="btn btn-primary btn-sm"
@@ -132,11 +118,10 @@ const OrderList = () => {
                             {Array.from({ length: totalPages }, (_, i) => (
                                 <button
                                     key={i + 1}
-                                    className={`btn btn-sm ${
-                                        currentPage === i + 1
-                                            ? "btn-primary"
-                                            : "btn-outline-primary"
-                                    }`}
+                                    className={`btn btn-sm ${currentPage === i + 1
+                                        ? "btn-primary"
+                                        : "btn-outline-primary"
+                                        }`}
                                     onClick={() => handlePageChange(i + 1)}
                                 >
                                     {i + 1}

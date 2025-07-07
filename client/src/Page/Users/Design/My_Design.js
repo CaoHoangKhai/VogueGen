@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { getDesignsByUser, renameDesign, deleteDesignById } from "../../api/Design/design.api";
+import { getDesignsByUser, renameDesign, deleteDesignById } from "../../../api/Design/design.api";
 import { Link } from "react-router-dom";
-import Toast from "../../Components/Toast"; // Không destructure
+import Toast from "../../../Components/Toast"; // Không destructure
 
 const MyDesign = () => {
     const [designs, setDesigns] = useState([]);

@@ -89,6 +89,20 @@ class FavoriteService {
 
         return result;
     }
+    async countFavoritesByUser(userId) {
+        if (!ObjectId.isValid(userId)) {
+            throw new Error("UserId không hợp lệ.");
+        }
+
+        const count = await this.favorite.countDocuments({
+            manguoidung: new ObjectId(userId),
+        });
+
+        return {
+            userId,
+            favoriteCount: count,
+        };
+    }
 
 
 

@@ -21,3 +21,7 @@ export const addUserLocation = (data) => {
 export const deleteUserLocation = (id) => {
     return axios.delete(`${API_BASE_URL_USER}/location/${id}`);
 };
+
+export const countFavoritesByUser = (userId) => {
+    return axios.get(`${API_BASE_URL_USER}/favorite/${userId}`);
+}

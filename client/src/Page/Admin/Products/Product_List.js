@@ -1,31 +1,38 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { getAllProducts } from '../../../api/Product/product.api';
-import { getAllCategories } from '../../../api/Category/category.api';
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { getAllProducts } from "../../../api/Product/product.api";
+import { getAllCategories } from "../../../api/Category/category.api";
+
+const PRODUCTS_PER_PAGE = 8;
 
 const ProductList = () => {
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [searchName, setSearchName] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [searchName, setSearchName] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
 
-  // Format
+  const totalPages = Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE);
+  const paginatedProducts = filteredProducts.slice(
+    (currentPage - 1) * PRODUCTS_PER_PAGE,
+    currentPage * PRODUCTS_PER_PAGE
+  );
+
   const formatDate = (dateStr) => {
     const d = new Date(dateStr);
-    return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1)
+    return `${d.getDate().toString().padStart(2, "0")}/${(d.getMonth() + 1)
       .toString()
-      .padStart(2, '0')}/${d.getFullYear()}`;
+      .padStart(2, "0")}/${d.getFullYear()}`;
   };
 
   const formatCurrency = (value) =>
-    new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
+    new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
       minimumFractionDigits: 0,
     }).format(value);
 
-  // Fetch dữ liệu
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -41,13 +48,12 @@ const ProductList = () => {
           setCategories(categoryData);
         }
       } catch (error) {
-        console.error('❌ Lỗi khi gọi API:', error);
+        console.error("❌ Lỗi khi gọi API:", error);
       }
     };
     fetchData();
   }, []);
 
-  // Xử lý lọc khi nhập hoặc chọn
   useEffect(() => {
     let result = products;
 
@@ -59,11 +65,19 @@ const ProductList = () => {
     if (selectedCategory) {
       result = result.filter((p) => p.theloai === selectedCategory);
     }
+
     setFilteredProducts(result);
+    setCurrentPage(1); // reset về trang đầu mỗi khi lọc
   }, [searchName, selectedCategory, products]);
 
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
   return (
-    <div className="container py-4">
+    <div className="container">
       <div className="card shadow-sm">
         <div className="card-header bg-dark text-white text-center">
           <h4>📦 Danh Sách Sản Phẩm</h4>
@@ -99,8 +113,8 @@ const ProductList = () => {
               <button
                 className="btn btn-outline-secondary"
                 onClick={() => {
-                  setSearchName('');
-                  setSelectedCategory('');
+                  setSearchName("");
+                  setSelectedCategory("");
                 }}
               >
                 🔄 Reset
@@ -121,23 +135,20 @@ const ProductList = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredProducts.length === 0 ? (
+                {paginatedProducts.length === 0 ? (
                   <tr>
                     <td colSpan="5" className="text-muted">
                       Không có sản phẩm nào phù hợp
                     </td>
                   </tr>
                 ) : (
-                  filteredProducts.map((product) => (
+                  paginatedProducts.map((product) => (
                     <tr key={product._id}>
                       <td>{product.tensanpham}</td>
                       <td>{formatCurrency(product.giasanpham)}</td>
                       <td>
-                        {
-                          categories.find((c) => c._id === product.theloai)?.tendanhmuc || 'Không rõ'
-                        }
+                        {categories.find((c) => c._id === product.theloai)?.tendanhmuc || "Không rõ"}
                       </td>
-
                       <td>{formatDate(product.ngaythem)}</td>
                       <td>
                         <Link
@@ -153,6 +164,34 @@ const ProductList = () => {
               </tbody>
             </table>
           </div>
+
+          {/* Phân trang */}
+          {totalPages > 1 && (
+            <div className="d-flex justify-content-end mt-3">
+              <ul className="pagination">
+                <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
+                  <button className="page-link" onClick={() => handlePageChange(currentPage - 1)}>
+                    &laquo;
+                  </button>
+                </li>
+                {Array.from({ length: totalPages }, (_, i) => (
+                  <li
+                    key={i}
+                    className={`page-item ${currentPage === i + 1 ? "active" : ""}`}
+                  >
+                    <button className="page-link" onClick={() => handlePageChange(i + 1)}>
+                      {i + 1}
+                    </button>
+                  </li>
+                ))}
+                <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
+                  <button className="page-link" onClick={() => handlePageChange(currentPage + 1)}>
+                    &raquo;
+                  </button>
+                </li>
+              </ul>
+            </div>
+          )}
         </div>
       </div>
     </div>

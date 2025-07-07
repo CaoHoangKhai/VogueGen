@@ -98,17 +98,115 @@ exports.getOrderDetailById = async (req, res) => {
 };
 
 exports.getLatestConfirmedOrders = async (req, res) => {
-  try {
-    const orderService = new OrderService(MongoDB.client);
-    const result = await orderService.getLatestConfirmedOrders(5);
+    try {
+        const orderService = new OrderService(MongoDB.client);
+        const result = await orderService.getLatestConfirmedOrders(5);
 
-    if (!result.success) {
-      return res.status(500).json({ message: result.message });
+        if (!result.success) {
+            return res.status(500).json({ message: result.message });
+        }
+
+        return res.json(result.data);
+    } catch (error) {
+        console.error("❌ [getLatestConfirmedOrders] Lỗi:", error.message);
+        return res.status(500).json({ message: "Lỗi khi lấy đơn hàng mới nhất" });
     }
-
-    return res.json(result.data);
-  } catch (error) {
-    console.error("❌ [getLatestConfirmedOrders] Lỗi:", error.message);
-    return res.status(500).json({ message: "Lỗi khi lấy đơn hàng mới nhất" });
-  }
 };
+
+exports.countOrdersByUser = async (req, res) => {
+    try {
+        const userId = req.params.userId;
+        const orderService = new OrderService(MongoDB.client);
+        console.log("📥 [countOrdersByUser] Yêu cầu đếm đơn hàng của người dùng:", userId);
+        const result = await orderService.getTotalOrdersByUserId(userId);
+        res.send(result);
+    } catch (error) {
+        console.error("❌ [countOrdersByUser] Lỗi:", error.message);
+        res.status(500).send({
+            success: false,
+            message: "Lỗi server khi tính tổng đơn hàng.",
+            error: error.message
+        });
+    }
+};
+
+exports.getTotalSpentByUser = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const orderService = new OrderService(MongoDB.client);
+        const result = await orderService.getTotalSpentByUserId(userId);
+
+        if (!result.success) {
+            return res.status(400).json({
+                success: false,
+                message: result.message || "Không thể tính tổng tiền đã tiêu."
+            });
+        }
+
+        return res.status(200).json(result);
+    } catch (error) {
+        console.error("❌ [getTotalSpentByUser] Controller Lỗi:", error.message);
+        return res.status(500).json({
+            success: false,
+            message: "Đã xảy ra lỗi khi lấy tổng tiền đã tiêu.",
+            error: error.message
+        });
+    }
+};
+exports.cancelOrder = async (req, res) => {
+    try {
+        const { orderId } = req.params;
+
+        if (!orderId) {
+            return res.status(400).json({
+                success: false,
+                message: "Thiếu mã đơn hàng.",
+            });
+        }
+        const orderService = new OrderService(MongoDB.client);
+        const result = await orderService.cancelOrder(orderId);
+
+        if (!result.success) {
+            return res.status(400).json(result);
+        }
+
+        return res.status(200).json(result);
+    } catch (error) {
+        console.error("❌ [cancelOrder] Lỗi controller:", error.message);
+        return res.status(500).json({
+            success: false,
+            message: "Lỗi server khi huỷ đơn hàng.",
+            error: error.message,
+        });
+    }
+};
+
+exports.updateOrderStatus = async (req, res) => {
+    try {
+        const { orderId } = req.params;
+        const { trangthai } = req.body;
+
+        console.log("➡️ [updateOrderStatus] orderId:", orderId);
+        console.log("➡️ [updateOrderStatus] trangthai (body):", trangthai);
+
+        const orderService = new OrderService(MongoDB.client);
+        const result = await orderService.updateTrangThaiDonHang(orderId, trangthai);
+
+        console.log("✅ [updateOrderStatus] Kết quả update:", result);
+
+        if (!result.success) {
+            console.warn("⚠️ [updateOrderStatus] Không thành công:", result.message);
+            return res.status(400).json(result);
+        }
+
+        return res.status(200).json(result);
+    } catch (error) {
+        console.error("❌ [updateOrderStatus] Lỗi controller:", error.message);
+        return res.status(500).json({
+            success: false,
+            message: "Lỗi server khi cập nhật trạng thái đơn hàng.",
+            error: error.message
+        });
+    }
+};
+

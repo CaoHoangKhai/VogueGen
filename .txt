@@ -166,7 +166,8 @@ design text bị lỗi
 
 
 
-nên tách api ra riêng để dễ quản lý
+nên tách api ra riêng để dễ quản lý (XONG)
+phân trang order của user
 
 
 
