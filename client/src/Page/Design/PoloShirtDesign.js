@@ -1,8 +1,7 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
-import { getDesignDetail } from "../../api/Design/design.api";
+import { getDesignDetail,getImagesByColor } from "../../api/Design/design.api";
 import LeftSidebarDesign from "../../Components/Sidebar/LeftSidebarDesign";
-import { getImagesByColor } from "../../api/products.api";
 import { Rnd } from "react-rnd";
 import html2canvas from "html2canvas";
 const toolBtnStyle = {

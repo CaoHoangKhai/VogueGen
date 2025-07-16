@@ -101,7 +101,7 @@ class DesignService {
             link // ví dụ: "t-shirts/6868d5107b3ea89efb7ecf98"
         };
     }
-    
+
     async getDesignsByUser(manguoidung) {
         try {
             if (!ObjectId.isValid(manguoidung)) {
@@ -233,6 +233,23 @@ class DesignService {
             message: result.modifiedCount === 1 ? "Đã đổi tên thành công" : "Không tìm thấy thiết kế"
         };
     }
+
+    async getImagesByColorDesign(productId, colorHex) {
+        try {
+            const images = await this.hinhanhsanpham.find({
+                masanpham: new ObjectId(productId),
+                mau: colorHex,
+                vitri: { $in: ["front", "back"] }
+            }).toArray();
+
+            return { success: true, images };
+        } catch (error) {
+            console.error("❌ getImagesByColor error:", error);
+            return { success: false, message: error.message };
+        }
+    }
+
+
 
 }
 

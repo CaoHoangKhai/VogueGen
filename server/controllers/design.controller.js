@@ -151,3 +151,26 @@ exports.getColorFromDesign = async (req, res) => {
         return res.status(500).json({ success: false, message: "Lỗi server.", error: err.message });
     }
 };
+
+
+exports.getImagesByColorDesign = async (req, res) => {
+    try {
+        const { productId, color } = req.params;
+
+        // Kiểm tra hợp lệ
+        if (!ObjectId.isValid(productId) || !/^#[0-9A-Fa-f]{6}$/.test(decodeURIComponent(color))) {
+            return res.status(400).json({
+                success: false,
+                message: "Tham số không hợp lệ (productId hoặc color)"
+            });
+        }
+
+        const designService = new DesignService(MongoDB.client);
+        const result = await designService.getImagesByColorDesign(productId, decodeURIComponent(color));
+
+        return res.status(result.success ? 200 : 500).json(result);
+    } catch (err) {
+        console.error("🔥 Lỗi tại controller getImagesByColorDesign:", err);
+        return res.status(500).json({ success: false, message: "Lỗi server." });
+    }
+};

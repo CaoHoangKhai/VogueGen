@@ -45,3 +45,23 @@ export const getColorByDesignId = async (id) => {
     const res = await axios.get(`${API_URL_DESIGN}/colors/${id}`);
     return res.data;
 }
+
+export const getImagesByColor = async (productId, color) => {
+  try {
+    if (!productId || !color) throw new Error("Thiếu productId hoặc color.");
+
+    const encodedColor = encodeURIComponent(color);
+    const url = `${API_URL_DESIGN}/${productId}/images/${encodedColor}`;
+
+    const res = await axios.get(url);
+    if (res.data.success) {
+      return res.data.images;
+    } else {
+      console.warn("Không có ảnh hợp lệ:", res.data.message);
+      return [];
+    }
+  } catch (error) {
+    console.error("❌ Lỗi khi lấy ảnh theo màu:", error.message);
+    return [];
+  }
+};

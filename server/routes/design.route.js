@@ -12,5 +12,7 @@ router.get("/user-design/:designId", designController.getUserDesignByDesignId);
 router.patch("/rename/:designId", designController.renameDesign); // ✅
 router.get("/colors/:designId", designController.getColorFromDesign);
 router.delete("/:designId", designController.deleteDesign); // ✅
+// routes/design.routes.js
+router.get("/:productId/images/:color", designController.getImagesByColorDesign);
 
 module.exports = router;

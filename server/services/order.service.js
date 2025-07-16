@@ -6,6 +6,7 @@ class OrderService {
         this.chitietdonhang = client.db().collection("chitietdonhang");
         this.giohang = client.db().collection("giohang");
         this.trangthaidonhang = client.db().collection("trangthaidonhang");
+        this.sanpham = client.db().collection("sanpham");
     }
 
     extractOrderData(payload) {
@@ -179,37 +180,55 @@ class OrderService {
 
 
     async getOrderByIdWithDetails(orderId) {
-        try {
-            if (!orderId) throw new Error("Thiếu mã đơn hàng.");
+    try {
+        if (!orderId) throw new Error("Thiếu mã đơn hàng.");
 
-            const query = ObjectId.isValid(orderId)
-                ? { $or: [{ _id: new ObjectId(orderId) }, { madonhang: orderId }] }
-                : { madonhang: orderId };
+        const query = ObjectId.isValid(orderId)
+            ? { $or: [{ _id: new ObjectId(orderId) }, { madonhang: orderId }] }
+            : { madonhang: orderId };
 
-            const order = await this.donhang.findOne(query);
-            if (!order) return { success: false, message: "Không tìm thấy đơn hàng." };
+        const order = await this.donhang.findOne(query);
+        if (!order) return { success: false, message: "Không tìm thấy đơn hàng." };
 
-            const chitiet = await this.chitietdonhang.find({ madonhang: order.madonhang }).toArray();
+        const chitiet = await this.chitietdonhang.find({ madonhang: order.madonhang }).toArray();
 
-            // Lấy thông tin trạng thái (tên + màu class)
-            const trangthaiInfo = await this.getTrangThaiDonHangInfo(order.trangthai);
+        // Chuyển string -> ObjectId để truy vấn sanpham
+        const masanphamList = chitiet.map(ct => new ObjectId(ct.masanpham));
+        const sanphams = await this.sanpham.find({ _id: { $in: masanphamList } }).toArray();
 
+        const sanphamMap = {};
+        sanphams.forEach(sp => {
+            sanphamMap[sp._id.toString()] = sp;
+        });
+
+        const chitietWithTen = chitiet.map(ct => {
+            const sp = sanphamMap[ct.masanpham];
             return {
-                success: true,
-                data: {
-                    ...order,
-                    chitiet,
-                    ...trangthaiInfo
-                }
+                ...ct,
+                tensanpham: sp?.tensanpham || "Không rõ"
             };
-        } catch (error) {
-            return {
-                success: false,
-                message: "Không thể lấy chi tiết đơn hàng.",
-                error: error.message
-            };
-        }
+        });
+
+        // Lấy thông tin trạng thái
+        const trangthaiInfo = await this.getTrangThaiDonHangInfo(order.trangthai);
+
+        return {
+            success: true,
+            data: {
+                ...order,
+                chitiet: chitietWithTen,
+                ...trangthaiInfo
+            }
+        };
+    } catch (error) {
+        return {
+            success: false,
+            message: "Không thể lấy chi tiết đơn hàng.",
+            error: error.message
+        };
     }
+}
+
 
 
 
