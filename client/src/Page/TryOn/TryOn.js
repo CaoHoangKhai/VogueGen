@@ -1,221 +1,188 @@
-// import React, { useRef, useState } from "react";
-// import * as bodyPix from "@tensorflow-models/body-pix";
-// import "@tensorflow/tfjs";
-// import { FaUpload } from "react-icons/fa";
+import React, { useState } from "react";
+import { BASE_URL_TRY_ON } from "../../api/TryOn/tryon.api";
 
-// const TryOn = () => {
-//   const [personImage, setPersonImage] = useState(null);
-//   const [maskedPerson, setMaskedPerson] = useState(null);
-//   const [shirtImage, setShirtImage] = useState(null);
-//   const [tryOnResult, setTryOnResult] = useState(null);
-//   const [loading, setLoading] = useState(false);
+function TryOnForm() {
+  const [humanFile, setHumanFile] = useState(null);
+  const [clothFile, setClothFile] = useState(null);
+  const [resultImageUrl, setResultImageUrl] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [elapsedTime, setElapsedTime] = useState(null);
 
-//   const personInputRef = useRef();
-//   const shirtInputRef = useRef();
+  const handleTryOn = async () => {
+    if (!humanFile || !clothFile) {
+      setError("Vui lòng chọn cả ảnh người và ảnh áo.");
+      return;
+    }
 
-//   // Handle chọn ảnh người và mask bằng BodyPix
-//   const handlePersonUpload = async (e) => {
-//     const file = e.target.files[0];
-//     if (!file) return;
+    setLoading(true);
+    setError("");
+    setResultImageUrl(null);
+    setElapsedTime(null);
 
-//     const imgURL = URL.createObjectURL(file);
-//     setPersonImage(imgURL);
-//     setTryOnResult(null);
+    const start = Date.now();
 
-//     const img = new Image();
-//     img.src = imgURL;
-//     img.crossOrigin = "anonymous";
-//     img.onload = async () => {
-//       const maskedBase64 = await runBodyPix(img);
-//       setMaskedPerson(maskedBase64);
-//     };
-//   };
+    try {
+      const formData = new FormData();
+      formData.append("human_img", humanFile);
+      formData.append("cloth_img", clothFile);
+      formData.append("description", "");
 
-//   // Handle chọn ảnh áo
-//   const handleShirtUpload = (e) => {
-//     const file = e.target.files[0];
-//     if (!file) return;
-//     setShirtImage(URL.createObjectURL(file));
-//     setTryOnResult(null);
-//   };
+      const response = await fetch(BASE_URL_TRY_ON, {
+        method: "POST",
+        body: formData,
+      });
 
-//   // Chạy BodyPix để mask áo
-//   const runBodyPix = async (imgElement) => {
-//     const net = await bodyPix.load();
-//     const segmentation = await net.segmentPersonParts(imgElement, {
-//       internalResolution: "medium",
-//       segmentationThreshold: 0.7,
-//     });
+      const end = Date.now();
+      setElapsedTime(end - start); // Cập nhật luôn thời gian
 
-//     const torsoParts = ["torso-front", "torso-back"];
-//     const mask = bodyPix.toMask(segmentation, (part) =>
-//       torsoParts.includes(part.part)
-//     );
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData?.message || "Server lỗi.");
+      }
 
-//     const canvas = document.createElement("canvas");
-//     canvas.width = imgElement.width;
-//     canvas.height = imgElement.height;
-//     bodyPix.drawMask(canvas, imgElement, mask, 0.7, 0, false);
+      const blob = await response.blob();
+      const imageUrl = URL.createObjectURL(blob);
 
-//     return canvas.toDataURL("image/jpeg");
-//   };
+      setResultImageUrl(imageUrl); // ✅ HIỆN ẢNH NGAY
+    } catch (err) {
+      setError("Lỗi khi tạo ảnh: " + err.message);
+    } finally {
+      setLoading(false); // Tắt loading sau cùng
+    }
+  };
 
-//   // Gửi ảnh mask + áo lên backend
-//   const handleTryOn = async () => {
-//     if (!maskedPerson || !shirtImage) return;
+  const IMAGE_SIZE = 360;
 
-//     setLoading(true);
-
-//     try {
-//       const maskedBlob = await (await fetch(maskedPerson)).blob();
-//       const clothBlob = await (await fetch(shirtImage)).blob();
-
-//       const formData = new FormData();
-//       formData.append("masked_person", maskedBlob, "masked.jpg");
-//       formData.append("cloth", clothBlob, "cloth.jpg");
-
-//       const response = await fetch("https://your-colab-url/predict", {
-//         method: "POST",
-//         body: formData,
-//       });
-
-//       const resultBlob = await response.blob();
-//       const resultUrl = URL.createObjectURL(resultBlob);
-//       setTryOnResult(resultUrl);
-//     } catch (err) {
-//       console.error("❌ Lỗi khi thử áo:", err);
-//       alert("Có lỗi xảy ra khi gọi API.");
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   return (
-//     <div className="container py-4">
-//       <div className="row g-4">
-//         {/* Cột 1 - Ảnh người */}
-//         <div className="col-md-4">
-//           <div className="p-3 border bg-light rounded text-center">
-//             <h5>Ảnh người</h5>
-//             <div
-//               onClick={() => personInputRef.current.click()}
-//               className="upload-box"
-//             >
-//               <FaUpload size={30} className="text-primary" />
-//               <span className="mt-2 text-secondary">Chọn ảnh người</span>
-//             </div>
-//             <input
-//               type="file"
-//               accept="image/*"
-//               ref={personInputRef}
-//               onChange={handlePersonUpload}
-//               style={{ display: "none" }}
-//             />
-//             {personImage && (
-//               <div className="preview-box mt-3">
-//                 <img src={personImage} alt="Người" />
-//               </div>
-//             )}
-//             {maskedPerson && (
-//               <div className="preview-box mt-2">
-//                 <h6>Áo đã mask:</h6>
-//                 <img src={maskedPerson} alt="Masked Person" />
-//               </div>
-//             )}
-//           </div>
-//         </div>
-
-//         {/* Cột 2 - Ảnh áo */}
-//         <div className="col-md-4">
-//           <div className="p-3 border bg-light rounded text-center">
-//             <h5>Ảnh áo</h5>
-//             <div
-//               onClick={() => shirtInputRef.current.click()}
-//               className="upload-box"
-//             >
-//               <FaUpload size={30} className="text-success" />
-//               <span className="mt-2 text-secondary">Chọn ảnh áo</span>
-//             </div>
-//             <input
-//               type="file"
-//               accept="image/*"
-//               ref={shirtInputRef}
-//               onChange={handleShirtUpload}
-//               style={{ display: "none" }}
-//             />
-//             {shirtImage && (
-//               <div className="preview-box mt-3">
-//                 <img src={shirtImage} alt="Áo" />
-//               </div>
-//             )}
-//           </div>
-//         </div>
-
-//         {/* Cột 3 - Kết quả */}
-//         <div className="col-md-4">
-//           <div className="p-3 border bg-light rounded text-center">
-//             <h5>Kết quả thử áo</h5>
-//             {maskedPerson && shirtImage ? (
-//               <>
-//                 <button
-//                   className="btn btn-primary mb-3"
-//                   onClick={handleTryOn}
-//                   disabled={loading}
-//                 >
-//                   {loading ? "Đang xử lý..." : "🧪 Thử áo"}
-//                 </button>
-//                 {tryOnResult && (
-//                   <div className="preview-box mt-2">
-//                     <img src={tryOnResult} alt="Kết quả" />
-//                   </div>
-//                 )}
-//               </>
-//             ) : (
-//               <p className="text-muted">Vui lòng chọn đủ ảnh người và áo.</p>
-//             )}
-//           </div>
-//         </div>
-//       </div>
-
-//       {/* CSS */}
-//       <style>{`
-//         .upload-box {
-//           cursor: pointer;
-//           padding: 20px;
-//           border: 2px dashed #ccc;
-//           border-radius: 8px;
-//           background: #fff;
-//         }
-//         .preview-box {
-//           width: 200px;
-//           height: 300px;
-//           overflow: hidden;
-//           margin: 0 auto;
-//           border: 1px solid #ccc;
-//           background: #f8f9fa;
-//           display: flex;
-//           justify-content: center;
-//           align-items: center;
-//         }
-//         .preview-box img {
-//           max-width: 100%;
-//           max-height: 100%;
-//           object-fit: contain;
-//         }
-//       `}</style>
-//     </div>
-//   );
-// };
-
-// export default TryOn;
-const TryOn = ()=> {
-  return (
-    <div className="container">
-      <h1 className="text-center my-5">Trang thử đồ</h1>
-      <p className="text-center">Chức năng này đang được phát triển.</p>
-      <p className="text-center">Vui lòng quay lại sau.</p>
+  const renderUploadBox = (file, setFile, label) => (
+    <div className="text-center mb-4">
+      <p className="fw-bold">{label}</p>
+      <label
+        style={{
+          display: "inline-block",
+          width: `${IMAGE_SIZE}px`,
+          height: `${IMAGE_SIZE}px`,
+          border: "2px dashed #bbb",
+          borderRadius: "12px",
+          background: "#fdfdfd",
+          cursor: "pointer",
+          overflow: "hidden",
+          position: "relative",
+        }}
+      >
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(e) => setFile(e.target.files[0])}
+          style={{ display: "none" }}
+        />
+        {file ? (
+          <img
+            src={URL.createObjectURL(file)}
+            alt="Preview"
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "contain",
+              backgroundColor: "#f0f0f0",
+            }}
+          />
+        ) : (
+          <div
+            className="d-flex flex-column align-items-center justify-content-center"
+            style={{
+              height: "100%",
+              fontSize: 32,
+              color: "#999",
+            }}
+          >
+            <div>📤</div>
+            <div style={{ fontSize: 14 }}>Tải lên</div>
+          </div>
+        )}
+      </label>
     </div>
   );
-};
 
-export default TryOn;
+  return (
+    <div className="container py-4">
+      <h3 className="mb-4 text-center">🧥 Virtual Try-On Demo</h3>
+
+      <div className="row text-center justify-content-center">
+        <div className="col-md-4">{renderUploadBox(humanFile, setHumanFile, "🧍 Ảnh người")}</div>
+        <div className="col-md-4">{renderUploadBox(clothFile, setClothFile, "👕 Ảnh áo")}</div>
+        <div className="col-md-4">
+          <p className="fw-bold mb-2">🖼️ Kết quả</p>
+          <div
+            className={`d-flex align-items-center justify-content-center ${loading ? "loading-border" : ""}`}
+            style={{
+              width: `${IMAGE_SIZE}px`,
+              height: `${IMAGE_SIZE}px`,
+              border: "2px dashed #ccc",
+              borderRadius: 12,
+              background: "#f7f7f7",
+              margin: "0 auto",
+              padding: 10,
+              position: "relative",
+              overflow: "hidden",
+            }}
+          >
+            {loading ? (
+              <div className="text-muted">Đang xử lý...</div>
+            ) : resultImageUrl ? (
+              <img
+                src={resultImageUrl}
+                alt="Try-On Result"
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "contain",
+                  borderRadius: 12,
+                }}
+              />
+            ) : (
+              <div className="text-muted">{error ? error : "Chưa có ảnh"}</div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="text-center mt-4">
+        <button
+          className="btn btn-primary px-4 py-2"
+          onClick={handleTryOn}
+          disabled={loading}
+        >
+          {loading ? "Đang xử lý..." : "Tạo ảnh Try-On"}
+        </button>
+        {elapsedTime !== null && (
+          <p className="mt-2 text-muted">
+            ⏱️ Thời gian xử lý: <strong>{(elapsedTime / 1000).toFixed(1)} giây</strong>
+          </p>
+        )}
+        {error && <div className="alert alert-danger mt-3">{error}</div>}
+      </div>
+
+      <style>
+        {`
+          .loading-border::after {
+            content: "";
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, rgba(255,255,255,0.1), rgba(0,0,0,0.05), rgba(255,255,255,0.1));
+            animation: loadingScan 1.2s infinite linear;
+            z-index: 2;
+          }
+
+          @keyframes loadingScan {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+          }
+        `}
+      </style>
+    </div>
+  );
+}
+
+export default TryOnForm;

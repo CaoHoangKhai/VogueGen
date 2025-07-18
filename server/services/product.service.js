@@ -9,6 +9,7 @@ class ProductServer {
     this.mausanpham = db.collection("mausanpham");
     this.hinhanhsanpham = db.collection("hinhanhsanpham");
     this.theloaisanpham = db.collection("theloaisanpham");
+    this.chitietdonhang = client.db().collection("chitietdonhang");
   }
 
   async createProduct(productData) {
@@ -243,5 +244,52 @@ class ProductServer {
     }
   }
 
+  async getBestSellingProducts() {
+    try {
+      const bestProductsData = await this.chitietdonhang.aggregate([
+        {
+          $group: {
+            _id: "$masanpham",
+            tong_soluong: { $sum: "$soluong" }
+          }
+        },
+        {
+          $sort: { tong_soluong: -1 }
+        },
+        {
+          $limit: 5
+        }
+      ]).toArray();
+
+      if (bestProductsData.length === 0) return [];
+
+      const results = await Promise.all(
+        bestProductsData.map(async (item) => {
+          try {
+            const productId = new ObjectId(item._id); // ép kiểu nếu cần
+            const product = await this.sanpham.findOne({ _id: productId });
+
+            if (!product) return null;
+
+            return {
+              ...product,
+              tong_soluong: item.tong_soluong
+            };
+          } catch (err) {
+            console.warn("⚠️ Lỗi khi xử lý sản phẩm:", item._id, err.message);
+            return null;
+          }
+        })
+      );
+
+      // Lọc bỏ null nếu có sản phẩm không tìm thấy
+      return results.filter((p) => p !== null);
+    } catch (error) {
+      console.error("❌ [ProductService.getBestSellingProducts] Lỗi:", error.message);
+      throw error;
+    }
+
+  }
 }
+
 module.exports = ProductServer;

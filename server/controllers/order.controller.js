@@ -97,10 +97,10 @@ exports.getOrderDetailById = async (req, res) => {
     }
 };
 
-exports.getLatestConfirmedOrders = async (req, res) => {
+exports.getLatestPendingOrders = async (req, res) => {
     try {
         const orderService = new OrderService(MongoDB.client);
-        const result = await orderService.getLatestConfirmedOrders(5);
+        const result = await orderService.getLatestPendingOrders(5);
 
         if (!result.success) {
             return res.status(500).json({ message: result.message });
@@ -108,7 +108,7 @@ exports.getLatestConfirmedOrders = async (req, res) => {
 
         return res.json(result.data);
     } catch (error) {
-        console.error("❌ [getLatestConfirmedOrders] Lỗi:", error.message);
+        console.error("❌ [getLatestPendingOrders] Lỗi:", error.message);
         return res.status(500).json({ message: "Lỗi khi lấy đơn hàng mới nhất" });
     }
 };

@@ -83,26 +83,63 @@ exports.deleteDesign = async (req, res) => {
         res.status(500).json({ success: false, message: "Lỗi khi xóa thiết kế", error: err.message });
     }
 };
+// exports.saveUserDesign = async (req, res) => {
+//     try {
+//         const { designId, tshirtColor, designData } = req.body;
+//         console.log("📝 [SAVE USER DESIGN] req.body:", req.body);
+
+//         if (!designId || !designData || !tshirtColor) {
+//             console.warn("⚠️ [SAVE USER DESIGN] Missing fields");
+//             return res.status(400).json({ success: false, message: "Thiếu dữ liệu: designId, tshirtColor hoặc designData." });
+//         }
+
+//         const designService = new DesignService(MongoDB.client);
+//         const result = await designService.saveUserDesignFull({ designId, color: tshirtColor, designData });
+
+//         console.log("✅ [SAVE USER DESIGN] Result:", result);
+//         return res.status(200).json(result);
+//     } catch (error) {
+//         console.error("❌ [SAVE USER DESIGN] Error:", error);
+//         return res.status(500).json({ success: false, message: "Lỗi server khi lưu thiết kế.", error: error.message });
+//     }
+// };
+
 exports.saveUserDesign = async (req, res) => {
     try {
         const { designId, tshirtColor, designData } = req.body;
-        console.log("📝 [SAVE USER DESIGN] req.body:", req.body);
+
+        console.log("📝 [SAVE USER DESIGN] Dữ liệu nhận từ frontend:");
+        console.log("👉 designId:", designId);
+        console.log("👉 tshirtColor:", tshirtColor);
+        console.log("👉 designData:", JSON.stringify(designData, null, 2));
 
         if (!designId || !designData || !tshirtColor) {
-            console.warn("⚠️ [SAVE USER DESIGN] Missing fields");
-            return res.status(400).json({ success: false, message: "Thiếu dữ liệu: designId, tshirtColor hoặc designData." });
+            return res.status(400).json({
+                success: false,
+                message: "Thiếu dữ liệu: designId, tshirtColor hoặc designData.",
+            });
         }
 
-        const designService = new DesignService(MongoDB.client);
-        const result = await designService.saveUserDesignFull({ designId, color: tshirtColor, designData });
-
-        console.log("✅ [SAVE USER DESIGN] Result:", result);
-        return res.status(200).json(result);
+        // ❌ Không lưu vào DB, chỉ phản hồi lại cho frontend
+        return res.status(200).json({
+            success: true,
+            message: "Đã nhận dữ liệu thành công!",
+            received: {
+                designId,
+                tshirtColor,
+                designData,
+            },
+        });
     } catch (error) {
         console.error("❌ [SAVE USER DESIGN] Error:", error);
-        return res.status(500).json({ success: false, message: "Lỗi server khi lưu thiết kế.", error: error.message });
+        return res.status(500).json({
+            success: false,
+            message: "Lỗi server khi xử lý dữ liệu.",
+            error: error.message,
+        });
     }
 };
+
 
 exports.getUserDesignByDesignId = async (req, res) => {
     try {
@@ -129,10 +166,10 @@ exports.getUserDesignByDesignId = async (req, res) => {
 exports.getColorFromDesign = async (req, res) => {
     try {
         const { designId } = req.params;
-        console.log("🎨 [GET COLOR FROM DESIGN] designId:", designId);
+        // console.log("🎨 [GET COLOR FROM DESIGN] designId:", designId);
 
         if (!ObjectId.isValid(designId)) {
-            console.warn("⚠️ [GET COLOR FROM DESIGN] ID không hợp lệ");
+            // console.warn("⚠️ [GET COLOR FROM DESIGN] ID không hợp lệ");
             return res.status(400).json({ success: false, message: "Mã thiết kế không hợp lệ." });
         }
 
@@ -140,37 +177,73 @@ exports.getColorFromDesign = async (req, res) => {
         const result = await designService.getColorFromDesign(designId);
 
         if (!result.success) {
-            console.warn("⚠️ [GET COLOR FROM DESIGN] Không tìm thấy màu");
+            // console.warn("⚠️ [GET COLOR FROM DESIGN] Không tìm thấy màu");
             return res.status(404).json(result);
         }
 
-        console.log("✅ [GET COLOR FROM DESIGN] Result:", result);
+        // console.log("✅ [GET COLOR FROM DESIGN] Result:", result);
         return res.status(200).json(result);
     } catch (err) {
-        console.error("🔥 [GET COLOR FROM DESIGN] Error:", err);
+        // console.error("🔥 [GET COLOR FROM DESIGN] Error:", err);
         return res.status(500).json({ success: false, message: "Lỗi server.", error: err.message });
     }
 };
-
 
 exports.getImagesByColorDesign = async (req, res) => {
     try {
         const { productId, color } = req.params;
 
+        // console.log("📥 [getImagesByColorDesign] Nhận request với params:");
+        // console.log("➡️ productId:", productId);
+        // console.log("➡️ color:", color);
+
         // Kiểm tra hợp lệ
         if (!ObjectId.isValid(productId) || !/^#[0-9A-Fa-f]{6}$/.test(decodeURIComponent(color))) {
+            console.warn("⚠️ Tham số không hợp lệ:", { productId, color });
             return res.status(400).json({
                 success: false,
                 message: "Tham số không hợp lệ (productId hoặc color)"
             });
         }
 
+        const decodedColor = decodeURIComponent(color);
+        // console.log("✅ Màu sau decode:", decodedColor);
+
         const designService = new DesignService(MongoDB.client);
-        const result = await designService.getImagesByColorDesign(productId, decodeURIComponent(color));
+
+        // console.log("🔍 Đang gọi service getImagesByColorDesign...");
+        const result = await designService.getImagesByColorDesign(productId, decodedColor);
+
+        // console.log("✅ Kết quả trả về từ service:", result);
 
         return res.status(result.success ? 200 : 500).json(result);
     } catch (err) {
         console.error("🔥 Lỗi tại controller getImagesByColorDesign:", err);
         return res.status(500).json({ success: false, message: "Lỗi server." });
+    }
+};
+
+
+exports.saveUserDesign = async (req, res) => {
+    try {
+        const designService = new DesignService(MongoDB.client);
+        const { madesign, masanpham, vitri, mau, overlays } = req.body;
+
+        const result = await designService.saveUserDesign({
+            madesign,
+            masanpham,
+            vitri,
+            mau,
+            overlays
+        });
+
+        return res.status(200).json(result);
+    } catch (error) {
+        console.error("❌ Lỗi khi lưu thiết kế:", error.message);
+        return res.status(500).json({
+            success: false,
+            message: "Lỗi khi lưu thiết kế",
+            error: error.message
+        });
     }
 };

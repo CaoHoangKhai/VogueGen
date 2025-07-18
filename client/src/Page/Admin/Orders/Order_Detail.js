@@ -147,6 +147,7 @@ const OrderDetail = () => {
                   <tr>
                     <th>STT</th>
                     <th>Mã sản phẩm</th>
+                    <th>Tên sản phẩm</th>
                     <th>Màu</th>
                     <th>Size</th>
                     <th>Số lượng</th>
@@ -159,6 +160,7 @@ const OrderDetail = () => {
                       <tr key={index}>
                         <td>{index + 1}</td>
                         <td>{item.masanpham}</td>
+                        <td>{item.tensanpham}</td>
                         <td>
                           <div className="d-flex align-items-center justify-content-center gap-2">
                             <div style={{

@@ -80,3 +80,14 @@ export const createProduct = async (formData) => {
         return { success: false, error: error.message };
     }
 };
+
+// 📌 Lấy top sản phẩm bán chạy (mặc định là 5)
+export const getTopSellingProducts = async () => {
+    try {
+        const res = await axios.get(`${BASE_URL_PRODUCTS}/best-selling`);
+        return res.data.products; // hoặc res.data tùy theo structure bạn trả từ server
+    } catch (error) {
+        console.error("❌ Lỗi khi lấy sản phẩm bán chạy:", error);
+        return [];
+    }
+};

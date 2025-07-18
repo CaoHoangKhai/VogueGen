@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { getDashboardData } from "../../api/Admin/products.api";
+import {
+  getDashboardData
+} from "../../api/Admin/products.api";
 import { getLatestConfirmedOrders } from "../../api/Order/order.api";
+import { getTopSellingProducts } from "../../api/Product/product.api";
 import {
   FaUsers,
   FaBoxOpen,
   FaShoppingCart,
   FaMoneyBillWave,
 } from "react-icons/fa";
-import { useNavigate } from "react-router-dom";
-import { Link } from "react-router-dom"; // đảm bảo đã import Link
+import { useNavigate, Link } from "react-router-dom";
 // ✅ Hàm fetch dữ liệu dashboard
 function fetchDashboardData(setDashboardData, setLatestOrders, setError, setLoading) {
   const fetchData = async () => {
@@ -17,8 +19,6 @@ function fetchDashboardData(setDashboardData, setLatestOrders, setError, setLoad
         getDashboardData(),
         getLatestConfirmedOrders(5),
       ]);
-
-      console.log("📦 Kết quả gọi API đơn hàng:", orderRes);
 
       setDashboardData({
         totalCustomers: dashboardRes.totalCustomers || 0,
@@ -58,6 +58,7 @@ function renderError(error) {
   );
 }
 
+// ✅ Cards thống kê
 function renderStats(data) {
   return (
     <div className="row g-3">
@@ -87,6 +88,7 @@ function renderStatCard(label, value, colorClass, icon, isMoney = false, to = "#
   );
 }
 
+// ✅ Bảng đơn hàng mới nhất
 function renderLatestOrders(orders, handleViewOrder) {
   return (
     <div className="card border-2 shadow-sm rounded-3 mt-4">
@@ -98,7 +100,6 @@ function renderLatestOrders(orders, handleViewOrder) {
   );
 }
 
-// ✅ Bảng đơn hàng
 function renderOrdersTable(orders, handleViewOrder) {
   if (!Array.isArray(orders) || orders.length === 0) {
     return <div className="text-center">Không có đơn hàng nào.</div>;
@@ -106,7 +107,7 @@ function renderOrdersTable(orders, handleViewOrder) {
 
   return (
     <div className="table-responsive">
-      <table className="table table-sm ">
+      <table className="table table-sm">
         <thead className="table-light">
           <tr>
             <th>Ngày đặt</th>
@@ -122,12 +123,9 @@ function renderOrdersTable(orders, handleViewOrder) {
               <td>{new Date(order.ngaydat).toLocaleDateString("vi-VN")}</td>
               <td>{order.hoten || "Ẩn danh"}</td>
               <td>{order.tongtien?.toLocaleString("vi-VN") + "₫"}</td>
-              <td><span className="badge bg-success">Đã xác nhận</span></td>
+              <td>{order.trangthaidonhang}</td>
               <td>
-                <button
-                  className="btn btn-sm btn-outline-primary"
-                  onClick={() => handleViewOrder(order)}
-                >
+                <button className="btn btn-sm btn-outline-primary" onClick={() => handleViewOrder(order)}>
                   Xem chi tiết
                 </button>
               </td>
@@ -139,6 +137,52 @@ function renderOrdersTable(orders, handleViewOrder) {
   );
 }
 
+// ✅ Bảng sản phẩm bán chạy
+function renderTopSellingProducts(products) {
+  if (!Array.isArray(products) || products.length === 0) {
+    return (
+      <div className="card border-2 shadow-sm rounded-3 mt-4">
+        <div className="card-header bg-white fw-bold text-center">Sản phẩm bán chạy</div>
+        <div className="card-body text-center">Không có dữ liệu.</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="card border-2 shadow-sm rounded-3 mt-4">
+      <div className="card-header bg-white fw-bold text-center">🔥 Top sản phẩm bán chạy</div>
+      <div className="card-body p-3">
+        <div className="table-responsive">
+          <table className="table table-sm">
+            <thead className="table-light">
+              <tr>
+                <th>Tên sản phẩm</th>
+                <th>Giá</th>
+                <th>Đã bán</th>
+              </tr>
+            </thead>
+            <tbody>
+              {products.map((p) => (
+                <tr key={p._id}>
+                  <td>
+                    <Link to={`/products/detail/${p._id}`} style={{ textDecoration: "none" }}>
+                      {p.tensanpham}
+                    </Link>
+                  </td>
+                  <td>{p.giasanpham.toLocaleString("vi-VN")}₫</td>
+                  <td className="text-center">{p.tong_soluong}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+// ✅ Component chính
 function AdminDashboard() {
   const [dashboardData, setDashboardData] = useState({
     totalCustomers: 0,
@@ -146,13 +190,20 @@ function AdminDashboard() {
     totalOrders28days: 0,
     totalRevenue28days: 0,
   });
-
   const [latestOrders, setLatestOrders] = useState([]);
+  const [topSellingProducts, setTopSellingProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+
   useEffect(() => {
     fetchDashboardData(setDashboardData, setLatestOrders, setError, setLoading);
+
+    getTopSellingProducts()
+      .then((data) => setTopSellingProducts(data || []))
+      .catch((err) => {
+        console.error("❌ Lỗi khi lấy sản phẩm bán chạy:", err);
+      });
   }, []);
 
   const handleViewOrder = (order) => {
@@ -161,22 +212,20 @@ function AdminDashboard() {
     }
   };
 
-
   if (loading) return renderLoading();
   if (error) return renderError(error);
 
   return (
     <div className="container">
-      {/* Hàng 1: Thống kê full row */}
+      {/* Hàng 1: Cards thống kê */}
       <div className="row">
         <div className="col-12">{renderStats(dashboardData)}</div>
       </div>
 
-      {/* Hàng 2: Đơn hàng mới nhất chiếm 6/12 (có thể chỉnh) */}
+      {/* Hàng 2: Đơn hàng mới nhất và sản phẩm bán chạy */}
       <div className="row">
-        <div className="col-12 col-md-6">
-          {renderLatestOrders(latestOrders, handleViewOrder)}
-        </div>
+        <div className="col-12 col-md-7">{renderLatestOrders(latestOrders, handleViewOrder)}</div>
+        <div className="col-12 col-md-5">{renderTopSellingProducts(topSellingProducts)}</div>
       </div>
     </div>
   );

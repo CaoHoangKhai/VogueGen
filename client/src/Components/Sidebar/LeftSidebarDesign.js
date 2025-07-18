@@ -20,7 +20,9 @@ const LeftSidebarDesign = ({
     onTextChange,
     onExportImages,
     exportFormat,
-    onExportFormatChange
+    onExportFormatChange,
+    LeftSidebarDesign,
+    onSaveDesign 
 }) => {
 
     const navigate = useNavigate();
@@ -67,10 +69,6 @@ const LeftSidebarDesign = ({
                 if (res.success) {
                     const allowed = res.colors.map(c => c.toUpperCase());
                     const defaultColor = res.color.toUpperCase();
-
-                    // console.log("🎯 Allowed colors:", allowed);
-                    // console.log("🎯 Default color:", defaultColor);
-
                     setAllowedColors(allowed);
                     setSelectedColor(defaultColor);
                     onColorChange?.(defaultColor);
@@ -365,7 +363,10 @@ const LeftSidebarDesign = ({
             <div className="mt-3 text-light" style={{ fontSize: 12 }}>
                 * Lưu ý: Ảnh sẽ không bao gồm khung giới hạn và nút điều khiển.
             </div>
+
         </div>
+
+
     );
 
 
@@ -410,6 +411,30 @@ const LeftSidebarDesign = ({
                     <FaHome />
                 </button>
                 {menu.map(renderMenuButton)}
+                <button
+                    onClick={() => {
+                        onSaveDesign?.();
+                        showToast("💾 Thiết kế đã được lưu!", "success");
+                    }}
+                    title="Lưu thiết kế"
+                    style={{
+                        width: 48,
+                        height: 48,
+                        marginTop: "auto", // đẩy nút xuống cuối
+                        marginBottom: 20,
+                        borderRadius: 12,
+                        background: "#198754",
+                        color: "#fff",
+                        border: "none",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: 20,
+                        cursor: "pointer",
+                    }}
+                >
+                    💾
+                </button>
             </div>
             <div style={{ width: 325, background: "#2b2f38", padding: 14, borderRadius: "0 8px 8px 0", boxShadow: "2px 2px 8px rgba(0,0,0,0.2)", position: "fixed", top: 0, left: 64, height: "100vh", zIndex: 999, color: "#fff" }}>
                 {activeTab === "color" && renderColorPanel()}

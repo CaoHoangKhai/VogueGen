@@ -51,7 +51,7 @@ const ProductDetail = () => {
 
     useEffect(() => {
         if (!id || !activeColor) return;
-          console.log("🟡 gọi getImagesByColor với:", id, activeColor); // ← CHECK
+        console.log("🟡 gọi getImagesByColor với:", id, activeColor); // ← CHECK
         getImagesByColor(id, activeColor).then((images) => {
             if (images?.length) {
                 const grouped = {};
@@ -274,7 +274,7 @@ const ProductDetail = () => {
                         <div style={{ marginRight: 12 }}>
                             {Object.entries(imagesByPosition).map(([pos, imgs]) => (
                                 <div key={pos} className="mb-2">
-                                    <div style={{ display: "flex", gap: 8 }}>
+                                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                                         {imgs.map((img) => {
                                             const base64 = getBase64Image(img);
                                             return (
@@ -340,8 +340,6 @@ const ProductDetail = () => {
                         <p>
                             <strong>Danh mục:</strong> {product.tendanhmuc}
                         </p>
-
-                        {/* Màu */}
                         {/* Màu sắc */}
                         <div className="mb-3">
                             <strong className="d-block mb-2">Màu sắc:</strong>

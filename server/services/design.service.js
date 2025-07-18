@@ -143,13 +143,18 @@ class DesignService {
             return { success: false, message: "Không tìm thấy thiết kế." };
         }
 
-        const images = await this.thietkecuanguoidung.find({ madesign: designId }).toArray();
+        const thietKeCu = await this.thietkecuanguoidung.find({ madesign: designId }).toArray();
+
+        const overlays = thietKeCu.map(item => ({
+            vitri: item.vitri,
+            overlays: item.overlays || []
+        }));
 
         return {
             success: true,
-            message: "Lấy chi tiết thiết kế thành công.",
+            message: "Lấy chi tiết thiết kế thành cônghehehe.",
             design,
-            images // chứa ảnh front, back, overlay v.v.
+            overlays // ✅ cấu trúc phù hợp với frontend
         };
     }
 
@@ -249,7 +254,78 @@ class DesignService {
         }
     }
 
+    async saveUserDesign({ madesign, mau, overlays }) {
+        if (!madesign || !mau || !Array.isArray(overlays)) {
+            throw new Error("Thiếu madesign, màu hoặc overlays không hợp lệ");
+        }
 
+        const madesignId = new ObjectId(madesign);
+
+        // 1. Cập nhật màu cho document gốc trong "designs"
+        const designUpdateResult = await this.design.updateOne(
+            { _id: madesignId },
+            {
+                $set: {
+                    mau,
+                    updatedAt: new Date()
+                }
+            }
+        );
+
+        const updateResults = [];
+
+        // 2. Cập nhật hoặc chèn từng mặt
+        for (const item of overlays) {
+            const { vitri, overlays: overlayList } = item;
+
+            const existing = await this.thietkecuanguoidung.findOne({
+                madesign: madesignId,
+                vitri
+            });
+
+            let result;
+
+            if (existing) {
+                result = await this.thietkecuanguoidung.updateOne(
+                    { _id: existing._id },
+                    {
+                        $set: {
+                            overlays: overlayList,
+                            mau,
+                            updatedAt: new Date()
+                        }
+                    }
+                );
+            } else {
+                result = await this.thietkecuanguoidung.insertOne({
+                    madesign: madesignId,
+                    masanpham: existing?.masanpham || new ObjectId(), // fallback nếu cần
+                    vitri,
+                    overlays: overlayList,
+                    mau,
+                    createdAt: new Date(),
+                    updatedAt: new Date()
+                });
+            }
+
+            updateResults.push({
+                vitri,
+                modified: result.modifiedCount || 0,
+                insertedId: result.insertedId || null
+            });
+        }
+
+        return {
+            success: true,
+            message: "Lưu overlays và màu thành công",
+            result: {
+                designRoot: {
+                    modified: designUpdateResult.modifiedCount
+                },
+                overlays: updateResults
+            }
+        };
+    }
 
 }
 

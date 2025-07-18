@@ -5,9 +5,10 @@ const designController = require("../controllers/design.controller");
 // ================== ROUTES THIẾT KẾ ==================
 
 router.post("/create", designController.createDesign);
+router.post("/save", designController.saveUserDesign);
 router.get("/user/:manguoidung", designController.getDesignsByUser);
 router.get("/:designId", designController.getDesignDetail);
-router.post("/save-user-design", designController.saveUserDesign);
+// router.post("/save-user-design", designController.saveUserDesign);
 router.get("/user-design/:designId", designController.getUserDesignByDesignId);
 router.patch("/rename/:designId", designController.renameDesign); // ✅
 router.get("/colors/:designId", designController.getColorFromDesign);

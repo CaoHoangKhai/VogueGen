@@ -197,3 +197,29 @@ exports.getColorsByProductId = async (req, res) => {
     });
   }
 };
+
+exports.getTopSellingProducts = async (req, res) => {
+  try {
+    const productService = new ProductServer(MongoDB.client);
+    const topProducts = await productService.getBestSellingProducts();
+
+    if (topProducts.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Không tìm thấy sản phẩm bán chạy."
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      products: topProducts
+    });
+  } catch (error) {
+    console.error("🔥 [getTopSellingProducts] Lỗi:", error.message);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi truy vấn sản phẩm bán chạy.",
+      error: error.message
+    });
+  }
+};

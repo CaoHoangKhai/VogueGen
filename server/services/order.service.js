@@ -180,57 +180,54 @@ class OrderService {
 
 
     async getOrderByIdWithDetails(orderId) {
-    try {
-        if (!orderId) throw new Error("Thiếu mã đơn hàng.");
+        try {
+            if (!orderId) throw new Error("Thiếu mã đơn hàng.");
 
-        const query = ObjectId.isValid(orderId)
-            ? { $or: [{ _id: new ObjectId(orderId) }, { madonhang: orderId }] }
-            : { madonhang: orderId };
+            const query = ObjectId.isValid(orderId)
+                ? { $or: [{ _id: new ObjectId(orderId) }, { madonhang: orderId }] }
+                : { madonhang: orderId };
 
-        const order = await this.donhang.findOne(query);
-        if (!order) return { success: false, message: "Không tìm thấy đơn hàng." };
+            const order = await this.donhang.findOne(query);
+            if (!order) return { success: false, message: "Không tìm thấy đơn hàng." };
 
-        const chitiet = await this.chitietdonhang.find({ madonhang: order.madonhang }).toArray();
+            const chitiet = await this.chitietdonhang.find({ madonhang: order.madonhang }).toArray();
 
-        // Chuyển string -> ObjectId để truy vấn sanpham
-        const masanphamList = chitiet.map(ct => new ObjectId(ct.masanpham));
-        const sanphams = await this.sanpham.find({ _id: { $in: masanphamList } }).toArray();
+            // Chuyển string -> ObjectId để truy vấn sanpham
+            const masanphamList = chitiet.map(ct => new ObjectId(ct.masanpham));
+            const sanphams = await this.sanpham.find({ _id: { $in: masanphamList } }).toArray();
 
-        const sanphamMap = {};
-        sanphams.forEach(sp => {
-            sanphamMap[sp._id.toString()] = sp;
-        });
+            const sanphamMap = {};
+            sanphams.forEach(sp => {
+                sanphamMap[sp._id.toString()] = sp;
+            });
 
-        const chitietWithTen = chitiet.map(ct => {
-            const sp = sanphamMap[ct.masanpham];
+            const chitietWithTen = chitiet.map(ct => {
+                const sp = sanphamMap[ct.masanpham];
+                return {
+                    ...ct,
+                    tensanpham: sp?.tensanpham || "Không rõ"
+                };
+            });
+
+            // Lấy thông tin trạng thái
+            const trangthaiInfo = await this.getTrangThaiDonHangInfo(order.trangthai);
+
             return {
-                ...ct,
-                tensanpham: sp?.tensanpham || "Không rõ"
+                success: true,
+                data: {
+                    ...order,
+                    chitiet: chitietWithTen,
+                    ...trangthaiInfo
+                }
             };
-        });
-
-        // Lấy thông tin trạng thái
-        const trangthaiInfo = await this.getTrangThaiDonHangInfo(order.trangthai);
-
-        return {
-            success: true,
-            data: {
-                ...order,
-                chitiet: chitietWithTen,
-                ...trangthaiInfo
-            }
-        };
-    } catch (error) {
-        return {
-            success: false,
-            message: "Không thể lấy chi tiết đơn hàng.",
-            error: error.message
-        };
+        } catch (error) {
+            return {
+                success: false,
+                message: "Không thể lấy chi tiết đơn hàng.",
+                error: error.message
+            };
+        }
     }
-}
-
-
-
 
     // Lấy đơn hàng trong 28 ngày gần nhất
     async getOrdersInLast28Days() {
@@ -291,23 +288,30 @@ class OrderService {
         }
     }
 
-    // Lấy 5 đơn hàng mới nhất đã xác nhận
-    async getLatestConfirmedOrders(limit = 5) {
+    // Lấy 5 đơn hàng mới nhất đang chờ xác nhận
+    async getLatestPendingOrders(limit = 5) {
         try {
             const orders = await this.donhang.find({ trangthai: 1 })
-                .sort({ ngaydat: -1 }) // Mới nhất trước
+                .sort({ ngaydat: -1 })
                 .limit(limit)
                 .toArray();
 
-            return {
-                success: true,
-                data: orders
-            };
+            const enriched = await Promise.all(
+                orders.map(async (order) => {
+                    const statusInfo = await this.getTrangThaiDonHangInfo(order.trangthai);
+                    return {
+                        ...order,
+                        ...statusInfo
+                    };
+                })
+            );
+
+            return { success: true, data: enriched };
         } catch (error) {
-            console.error("❌ [getLatestConfirmedOrders] Lỗi:", error.message);
+            console.error("❌ [getLatestPendingOrders] Lỗi:", error.message);
             return {
                 success: false,
-                message: "Không thể lấy đơn hàng đã xác nhận.",
+                message: "Không thể lấy đơn hàng đang chờ xác nhận.",
                 error: error.message
             };
         }
