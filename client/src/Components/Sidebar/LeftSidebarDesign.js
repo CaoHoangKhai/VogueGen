@@ -314,7 +314,7 @@ const LeftSidebarDesign = ({
                 </div>
             </div>
 
-            <div className="mb-3">
+            {/* <div className="mb-3">
                 <label className="form-label">Màu chữ</label>
                 <input
                     type="color"
@@ -322,7 +322,7 @@ const LeftSidebarDesign = ({
                     value={textColor}
                     onChange={(e) => setTextColor(e.target.value)}
                 />
-            </div>
+            </div> */}
 
             <button
                 onClick={handleAddText}

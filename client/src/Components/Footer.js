@@ -20,7 +20,7 @@ const Footer = () => {
                                     </Link>
                                 </li>
                                 <li className="mb-2">
-                                    <Link className="text-decoration-none" style={{ color: "#00838f" }} to="/ai_thu_ao">
+                                    <Link className="text-decoration-none" style={{ color: "#00838f" }} to="/try-on">
                                         Trải nghiệm thử áo
                                     </Link>
                                 </li>

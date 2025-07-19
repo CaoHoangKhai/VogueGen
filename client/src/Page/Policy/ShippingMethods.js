@@ -45,7 +45,7 @@ const ShippingMethods = () => (
         </ul>
 
         <p className="mt-4">
-            Mọi thắc mắc liên quan đến giao hàng vui lòng liên hệ hotline <strong>0900 123 456</strong> hoặc Zalo CSKH để được hỗ trợ ngay.
+            Mọi thắc mắc liên quan đến giao hàng vui lòng liên hệ hotline <strong>0834477131</strong> hoặc Zalo CSKH để được hỗ trợ ngay.
         </p>
     </div>
 );

@@ -50,10 +50,13 @@ const OrderList = () => {
     let filtered = [...orders];
 
     if (searchName.trim()) {
+      const keyword = searchName.toLowerCase();
       filtered = filtered.filter((o) =>
-        o.hoten?.toLowerCase().includes(searchName.toLowerCase())
+        o.hoten?.toLowerCase().includes(keyword) ||
+        o.madonhang?.toLowerCase().includes(keyword)
       );
     }
+
 
     if (selectedStatus) {
       filtered = filtered.filter((o) => o.trangthai === Number(selectedStatus));

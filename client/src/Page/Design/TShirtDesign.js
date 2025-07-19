@@ -79,7 +79,7 @@ const DesignPage = () => {
 
     const handleSaveDesign = async () => {
         if (!design?._id || !selectedColor) {
-            alert("Thiếu thông tin thiết kế hoặc màu sắc");
+            // alert("Thiếu thông tin thiết kế hoặc màu sắc");
             return;
         }
 
@@ -103,14 +103,14 @@ const DesignPage = () => {
 
             if (res.success) {
                 setSavedInfo(savedData); // Nếu bạn muốn hiện lại thông tin đã lưu
-                alert("💾 Thiết kế đã được lưu!", "success");
+                // alert("💾 Thiết kế đã được lưu!", "success");
             } else {
                 console.error("❌ Lỗi khi lưu:", res.message);
                 alert("❌ Lưu thiết kế thất bại: " + res.message, "error");
             }
         } catch (err) {
             console.error("❌ Lỗi khi gọi API:", err);
-            alert("⚠️ Có lỗi xảy ra khi lưu thiết kế", "error");
+            // alert("⚠️ Có lỗi xảy ra khi lưu thiết kế", "error");
         }
     };
 

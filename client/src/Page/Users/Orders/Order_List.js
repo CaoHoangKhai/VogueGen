@@ -15,14 +15,14 @@ const OrderList = () => {
         const userData = localStorage.getItem("user");
         if (userData) {
             const parsedUser = JSON.parse(userData);
-            if (parsedUser._id) {
+            if (parsedUser?._id) {
                 fetchOrders(parsedUser._id);
             } else {
-                setError("Không tìm thấy userId.");
+                setError("Không tìm thấy thông tin người dùng.");
                 setLoading(false);
             }
         } else {
-            setError("Chưa đăng nhập.");
+            setError("Bạn cần đăng nhập để xem đơn hàng.");
             setLoading(false);
         }
     }, []);
@@ -34,10 +34,10 @@ const OrderList = () => {
                 setOrders(Array.isArray(result.data) ? result.data : []);
                 setError(null);
             } else {
-                setError(result.message || "Không thể lấy đơn hàng.");
+                setError(result.message || "Không thể lấy danh sách đơn hàng.");
             }
         } catch (err) {
-            setError("Lỗi khi gọi API.");
+            setError("Đã xảy ra lỗi khi gọi API.");
         } finally {
             setLoading(false);
         }
@@ -58,52 +58,66 @@ const OrderList = () => {
         }
     };
 
+    const formatCurrency = (value) => {
+        if (!value) return "0 ₫";
+        return new Intl.NumberFormat("vi-VN", {
+            style: "currency",
+            currency: "VND",
+        }).format(value);
+    };
+
     return (
-        <div className="container">
+        <div className="container py-4">
             <div className="card p-4 shadow-sm">
-                <h4 className="text-center mb-3">Danh Sách Đơn Hàng</h4>
+                <h4 className="text-center mb-4">Lịch Sử Đơn Hàng</h4>
 
                 {loading ? (
-                    <p className="text-center">Đang tải dữ liệu...</p>
+                    <p className="text-center">Đang tải đơn hàng...</p>
                 ) : error ? (
                     <p className="text-danger text-center">Lỗi: {error}</p>
                 ) : orders.length === 0 ? (
-                    <p className="text-center">Chưa có đơn hàng nào.</p>
+                    <p className="text-center">Bạn chưa có đơn hàng nào.</p>
                 ) : (
                     <>
-                        <table className="table table-bordered table-hover text-center">
-                            <thead className="table-light">
-                                <tr>
-                                    <th>Mã Đơn Hàng</th>
-                                    <th>Họ Tên</th>
-                                    <th>Số điện thoại</th>
-                                    <th>Địa chỉ</th>
-                                    <th>Trạng thái</th>
-                                    <th>Thao tác</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {currentOrders.map((order) => (
-                                    <tr key={order._id}>
-                                        <td>{order.madonhang}</td>
-                                        <td>{order.hoten}</td>
-                                        <td>{order.sodienthoai}</td>
-                                        <td>{order.diachinguoidung}</td>
-                                        <td> <span className={`badge ${order.class}`}>
-                                            {order.trangthaidonhang}
-                                        </span></td>
-                                        <td>
-                                            <button
-                                                className="btn btn-primary btn-sm"
-                                                onClick={() => handleViewDetail(order.madonhang)}
-                                            >
-                                                Xem chi tiết
-                                            </button>
-                                        </td>
+                        <div className="table-responsive">
+                            <table className="table table-bordered table-hover text-center">
+                                <thead className="table-light">
+                                    <tr>
+                                        <th>Mã Đơn</th>
+                                        <th>Họ Tên</th>
+                                        <th>Điện Thoại</th>
+                                        <th>Địa Chỉ</th>
+                                        <th>Tổng Tiền</th>
+                                        <th>Trạng Thái</th>
+                                        <th>Hành Động</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {currentOrders.map((order) => (
+                                        <tr key={order._id || order.madonhang}>
+                                            <td>{order.madonhang}</td>
+                                            <td>{order.hoten}</td>
+                                            <td>{order.sodienthoai}</td>
+                                            <td>{order.diachinguoidung}</td>
+                                            <td>{formatCurrency(order.tongtien)}</td>
+                                            <td>
+                                                <span className={`badge ${order.class}`}>
+                                                    {order.trangthaidonhang}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <button
+                                                    className="btn btn-sm btn-outline-primary"
+                                                    onClick={() => handleViewDetail(order.madonhang)}
+                                                >
+                                                    Xem chi tiết
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
 
                         {/* PHÂN TRANG */}
                         <div className="d-flex justify-content-center align-items-center mt-3 gap-2 flex-wrap">
@@ -118,10 +132,7 @@ const OrderList = () => {
                             {Array.from({ length: totalPages }, (_, i) => (
                                 <button
                                     key={i + 1}
-                                    className={`btn btn-sm ${currentPage === i + 1
-                                        ? "btn-primary"
-                                        : "btn-outline-primary"
-                                        }`}
+                                    className={`btn btn-sm ${currentPage === i + 1 ? "btn-primary" : "btn-outline-primary"}`}
                                     onClick={() => handlePageChange(i + 1)}
                                 >
                                     {i + 1}
