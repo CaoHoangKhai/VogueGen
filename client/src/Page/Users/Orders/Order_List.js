@@ -67,7 +67,7 @@ const OrderList = () => {
     };
 
     return (
-        <div className="container py-4">
+        <div className="container">
             <div className="card p-4 shadow-sm">
                 <h4 className="text-center mb-4">Lịch Sử Đơn Hàng</h4>
 

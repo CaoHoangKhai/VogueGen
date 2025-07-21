@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { getOrderDetailById, updateOrderStatus } from "../../../api/Order/order.api";
 import { format } from "date-fns";
 import vi from "date-fns/locale/vi";
 import { colors } from "../../../config/colors";
+import html2pdf from "html2pdf.js";
 
 const OrderDetail = () => {
   const { orderId } = useParams();
@@ -12,6 +13,7 @@ const OrderDetail = () => {
   const [loading, setLoading] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState("");
+  const printRef = useRef(); // ref cho vùng in
 
   useEffect(() => {
     if (orderId) fetchOrder();
@@ -64,7 +66,7 @@ const OrderDetail = () => {
       const res = await updateOrderStatus(orderId, statusUpdate);
       if (res.success) {
         alert("✅ Cập nhật trạng thái thành công");
-        fetchOrder(); // reload dữ liệu mới
+        fetchOrder();
       } else {
         alert(res.message || "❌ Không thể cập nhật trạng thái");
       }
@@ -76,12 +78,92 @@ const OrderDetail = () => {
     }
   };
 
+  const handlePrint = () => {
+    const printContent = printRef.current;
+    const printWindow = window.open('', '', 'width=800,height=600');
+    if (printWindow) {
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Hóa Đơn Đơn Hàng</title>
+            <style>
+              body {
+                font-family: Arial, sans-serif;
+                padding: 20px;
+              }
+              table {
+                width: 100%;
+                border-collapse: collapse;
+              }
+              th, td {
+                border: 1px solid #ddd;
+                padding: 8px;
+              }
+              th {
+                background-color: #f2f2f2;
+              }
+              h4, h5 {
+                text-align: center;
+              }
+              .color-circle {
+                display: inline-block;
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                border: 1px solid #ccc;
+                margin-right: 5px;
+              }
+            </style>
+          </head>
+          <body>
+            ${printContent.innerHTML}
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.print();
+      printWindow.close();
+    }
+  };
+
+  const handleExportPDF = () => {
+    const element = printRef.current;
+    const opt = {
+      margin: 0.5,
+      filename: `hoa-don-${order?.madonhang || "donhang"}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+    };
+    html2pdf().set(opt).from(element).save();
+  };
+
   if (loading) return <div className="container"><p>Đang tải dữ liệu...</p></div>;
   if (error) return <div className="container"><div className="alert alert-danger">{error}</div></div>;
 
   return (
     <div className="container">
-      <div className="card shadow-sm">
+      <div className="text-end my-4">
+        <div className="btn-group" role="group" aria-label="Export Options">
+          <button
+            className="btn btn-outline-primary px-4 py-2 fw-semibold d-flex align-items-center gap-2 me-2"
+            onClick={handlePrint}
+          >
+            <i className="bi bi-printer-fill"></i>
+            In hóa đơn
+          </button>
+          <button
+            className="btn btn-outline-success px-4 py-2 fw-semibold d-flex align-items-center gap-2"
+            onClick={handleExportPDF}
+          >
+            <i className="bi bi-file-earmark-pdf-fill"></i>
+            Xuất PDF
+          </button>
+        </div>
+      </div>
+
+      <div className="card shadow-sm" ref={printRef}>
         <div className="card-header text-center text-dark">
           <h4>Chi Tiết Đơn Hàng</h4>
         </div>
@@ -89,7 +171,6 @@ const OrderDetail = () => {
         <div className="card-body">
           {order && (
             <>
-              {/* Thông tin chung */}
               <div className="row mb-4">
                 <div className="col-md-6">
                   <p><strong>Mã đơn hàng:</strong> {order.madonhang}</p>
@@ -108,9 +189,8 @@ const OrderDetail = () => {
                     </span>
                   </p>
 
-                  {/* Chỉ hiển thị nếu chưa hoàn tất hoặc chưa huỷ */}
                   {order.trangthai !== 3 && order.trangthai !== 4 && (
-                    <div className="mt-2">
+                    <div className="mt-2 d-print-none">
                       <label><strong>🛠 Cập nhật trạng thái</strong></label>
                       <div className="d-flex gap-2 align-items-center">
                         <select className="form-select" value={statusUpdate} onChange={handleStatusChange}>
@@ -126,12 +206,10 @@ const OrderDetail = () => {
                     </div>
                   )}
 
-
                   <p className="mt-2"><strong>Tổng tiền:</strong> {order.tongtien.toLocaleString("vi-VN")}₫</p>
                 </div>
               </div>
 
-              {/* Ghi chú */}
               {order.ghichu && (
                 <div className="mb-4">
                   <strong>Ghi chú:</strong> <em>{order.ghichu}</em>
@@ -141,14 +219,13 @@ const OrderDetail = () => {
               <hr />
               <h5 className="mt-4">Danh sách sản phẩm</h5>
 
-              {/* Bảng sản phẩm */}
               <table className="table table-bordered mt-3 text-center">
                 <thead className="table-light">
                   <tr>
                     <th>STT</th>
-                    <th>Mã sản phẩm</th>
+                    <th className="col-1">Mã sản phẩm</th>
                     <th>Tên sản phẩm</th>
-                    <th>Màu</th>
+                    <th className="col-2">Màu</th>
                     <th>Size</th>
                     <th>Số lượng</th>
                     <th>Giá</th>
@@ -170,7 +247,7 @@ const OrderDetail = () => {
                               borderRadius: "50%",
                               border: "1px solid #ccc"
                             }} title={getColorName(item.mausanpham)} />
-                            <span style={{ fontSize: 13 }}>{getColorName(item.mausanpham)}</span>
+                            <span>{getColorName(item.mausanpham)}</span>
                           </div>
                         </td>
                         <td>{item.size}</td>
@@ -180,7 +257,7 @@ const OrderDetail = () => {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="6" className="text-muted">Không có sản phẩm nào.</td>
+                      <td colSpan="7" className="text-muted">Không có sản phẩm nào.</td>
                     </tr>
                   )}
                 </tbody>

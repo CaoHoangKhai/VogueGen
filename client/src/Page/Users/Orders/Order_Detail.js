@@ -83,7 +83,15 @@ const OrderDetail = () => {
                                     <strong>Mã đơn hàng:</strong> {order.madonhang}
                                 </div>
                                 <div className="col-md-6 mb-2">
-                                    <strong>Ngày đặt:</strong> {new Date(order.ngaydat).toLocaleString()}
+                                    <strong>Ngày đặt:</strong>{' '}
+                                    {(() => {
+                                        const date = new Date(order.ngaydat);
+                                        const day = date.getDate();
+                                        const month = date.getMonth() + 1;
+                                        const year = date.getFullYear();
+                                        const time = date.toLocaleTimeString(); // giữ nguyên định dạng giờ: 11:58:52 PM
+                                        return `${day}/${month}/${year}, ${time}`;
+                                    })()}
                                 </div>
                                 <div className="col-md-6 mb-2">
                                     <strong>Họ tên:</strong> {order.hoten}

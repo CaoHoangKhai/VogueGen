@@ -90,7 +90,7 @@ const OrderList = () => {
               <input
                 type="text"
                 className="form-control"
-                placeholder="🔍 Tìm theo tên khách hàng..."
+                placeholder="🔍 Tìm theo tên khách hàng hoặc mã đơn hàng..."
                 value={searchName}
                 onChange={(e) => setSearchName(e.target.value)}
               />
