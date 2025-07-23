@@ -14,26 +14,31 @@ class ProductServer {
 
   async createProduct(productData) {
     try {
+      // Insert sản phẩm chính
       const result = await this.sanpham.insertOne({
         tensanpham: productData.tensanpham,
         giasanpham: productData.giasanpham,
         theloai: productData.theloai,
         mota: productData.mota,
         ngaythem: productData.ngaythem,
+        gioitinh: productData.gioitinh || "", // thêm giới tính vào DB
       });
 
       const productId = result.insertedId;
 
+      // Insert màu sắc
       const mauDocs = (productData.mausanpham || []).map(mau => ({
         masanpham: productId,
         mau: mau.trim(),
       }));
 
+      // Insert kích thước
       const kichthuocDocs = (productData.kichthuoc || []).map(size => ({
         masanpham: productId,
         size: typeof size === "string" ? size.trim() : size?.size?.trim(),
       }));
 
+      // Insert hình ảnh
       const hinhanhDocs = (productData.hinhanh || []).map(img => ({
         masanpham: productId,
         hash: img.hash,
@@ -54,7 +59,6 @@ class ProductServer {
       return { success: false, message: error.message };
     }
   }
-
 
   async getAllProducts() {
     try {

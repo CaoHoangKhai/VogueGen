@@ -5,3 +5,8 @@ export const getAllSizes = async () => {
     if (!res.ok) throw new Error("Lỗi khi lấy danh sách kích thước");
     return res.json();
 };
+export const getSizesByDesignId = async (designId) => {
+    const res = await fetch(`${BASE_URL_SIZE}/design/${designId}`);
+    if (!res.ok) throw new Error("Lỗi khi lấy size theo designId");
+    return res.json();
+};

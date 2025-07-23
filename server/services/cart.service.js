@@ -2,7 +2,7 @@ const { ObjectId } = require("mongodb");
 
 class CartService {
     constructor(client) {
-        this.cart = client.db().collection("giohang");
+        this.cart = client.db().collection("giohang"); // sử dụng "giohang"
         this.sanpham = client.db().collection("sanpham");
         this.hinhanhsanpham = client.db().collection("hinhanhsanpham");
     }
@@ -12,9 +12,55 @@ class CartService {
             manguoidung: new ObjectId(payload.manguoidung),
             masanpham: new ObjectId(payload.masanpham),
             soluong: payload.soluong || 1,
-            size: payload.size,
-            mausac: payload.mausac
+            size: payload.size || null,
+            mausac: payload.mausac || null,
+            madesign: payload.madesign ? new ObjectId(payload.madesign) : null,
+            mathietke: payload.mathietke ? new ObjectId(payload.mathietke) : null,
+            isThietKe: payload.isThietKe || false
         };
+    }
+
+    async addToCart(payload) {
+        const data = this.extractCartData(payload);
+
+        if (!data.manguoidung || !data.masanpham || !data.size || !data.mausac) {
+            throw new Error("Thiếu dữ liệu giỏ hàng.");
+        }
+
+        // Ưu tiên mathietke nếu chưa có madesign
+        if (data.mathietke && !data.madesign) {
+            data.madesign = data.mathietke;
+        }
+
+        const query = {
+            manguoidung: data.manguoidung,
+            masanpham: data.masanpham,
+            size: data.size,
+            mausac: data.mausac
+        };
+
+        if (data.madesign) {
+            query.madesign = data.madesign;
+        }
+
+        const existed = await this.cart.findOne(query);
+
+        if (existed) {
+            await this.cart.updateOne({ _id: existed._id }, { $inc: { soluong: data.soluong } });
+            return { success: true, message: "Đã tăng số lượng sản phẩm." };
+        } else {
+            await this.cart.insertOne({
+                manguoidung: data.manguoidung,
+                masanpham: data.masanpham,
+                size: data.size,
+                mausac: data.mausac,
+                soluong: data.soluong,
+                ...(data.madesign && { madesign: data.madesign }),
+                ...(data.isThietKe && { isThietKe: true }),
+                createdAt: new Date()
+            });
+            return { success: true, message: "Đã thêm sản phẩm vào giỏ hàng." };
+        }
     }
 
     async getCartByUserId(userId) {
@@ -30,7 +76,11 @@ class CartService {
 
             const color = typeof item.mausac === "string" ? item.mausac.trim().toUpperCase() : null;
 
-            let image = await this.hinhanhsanpham.findOne({ masanpham: productId, mau: color, vitri: "front" }) ||
+            let image = await this.hinhanhsanpham.findOne({
+                masanpham: productId,
+                mau: color,
+                vitri: "front"
+            }) ||
                 await this.hinhanhsanpham.findOne({ masanpham: productId, mau: color }) ||
                 await this.hinhanhsanpham.findOne({ masanpham: productId, vitri: "front" }) ||
                 await this.hinhanhsanpham.findOne({ masanpham: productId, vitri: "back" });
@@ -48,6 +98,7 @@ class CartService {
                 soluong: item.soluong,
                 size: item.size,
                 mausac: item.mausac,
+                madesign: item.madesign || null,
                 tensanpham: product?.tensanpham || null,
                 giasanpham: product?.giasanpham || null,
                 hinhanh: imageSrc
@@ -55,29 +106,6 @@ class CartService {
         }));
 
         return result;
-    }
-
-    async addToCart(payload) {
-        const data = this.extractCartData(payload);
-
-        if (!data.manguoidung || !data.masanpham || !data.size || !data.mausac) {
-            throw new Error("Thiếu dữ liệu giỏ hàng.");
-        }
-
-        const existed = await this.cart.findOne({
-            manguoidung: data.manguoidung,
-            masanpham: data.masanpham,
-            size: data.size,
-            mausac: data.mausac
-        });
-
-        if (existed) {
-            await this.cart.updateOne({ _id: existed._id }, { $inc: { soluong: 1 } });
-            return { success: true, message: "Đã tăng số lượng sản phẩm." };
-        } else {
-            await this.cart.insertOne({ ...data, soluong: 1 });
-            return { success: true, message: "Đã thêm sản phẩm vào giỏ hàng." };
-        }
     }
 
     async increaseQuantity(cartId) {

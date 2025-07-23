@@ -6,54 +6,41 @@ import {
     decreaseCartQuantity
 } from '../../api/Cart/cart.api';
 import Toast from "../../Components/Toast";
-// import { Link } from 'react-router-dom';
+
 const Cart = () => {
     const [cartItems, setCartItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [inputValues, setInputValues] = useState({});
     const [toast, setToast] = useState({ show: false, message: "", type: "" });
 
-    // Lưu userId để dùng lại
     const userData = localStorage.getItem('user');
     const userId = userData ? JSON.parse(userData)._id : null;
 
-    // Hàm load lại giỏ hàng
-    const fetchCart = () => {
+    useEffect(() => {
         if (!userId) {
             setCartItems([]);
             setLoading(false);
             return;
         }
-        setLoading(true);
         getCartByUserId(userId)
             .then(res => {
-                setCartItems(res.data || []);
-                console.log(res.data); // ✅ Log dữ liệu nhận từ API
+                const data = res.data || [];
+                setCartItems(data);
+                const values = {};
+                data.forEach(item => {
+                    values[item._id] = item.soluong?.toString() ?? "1";
+                });
+                setInputValues(values);
                 setLoading(false);
             })
             .catch(() => {
                 setCartItems([]);
                 setLoading(false);
             });
-    };
-
-    useEffect(() => {
-        fetchCart();
-        // eslint-disable-next-line
-    }, []);
-
-    // Đồng bộ inputValues với cartItems
-    useEffect(() => {
-        const values = {};
-        cartItems.forEach(item => {
-            values[item._id] = item.soluong?.toString() ?? "1";
-        });
-        setInputValues(values);
-    }, [cartItems]);
+    }, [userId]);
 
     const total = cartItems.reduce((sum, item) => sum + (item.giasanpham || 0) * (item.soluong || 1), 0);
 
-    // Xử lý nhập số lượng (chỉ lưu vào inputValues, không gọi API)
     const handleInputChange = (item, value) => {
         const onlyNumber = value.replace(/[^0-9]/g, '');
         setInputValues(prev => ({
@@ -62,84 +49,83 @@ const Cart = () => {
         }));
     };
 
-    // Khi blur hoặc Enter mới gọi API cập nhật số lượng
     const handleInputBlur = (item) => {
         let raw = inputValues[item._id];
         let val = parseInt(raw, 10);
-
         if (isNaN(val) || val < 1) val = 1;
-
-        // Nếu giá trị không đổi thì không gọi API
         if (val === item.soluong) return;
 
         updateCartQuantity(item._id, { soluong: val })
             .then(() => {
-                setToast({
-                    show: true,
-                    message: "Cập nhật số lượng thành công!",
-                    type: "success"
-                });
-                fetchCart();
+                const updatedItems = cartItems.map(ci =>
+                    ci._id === item._id ? { ...ci, soluong: val } : ci
+                );
+                setCartItems(updatedItems);
+                setToast({ show: true, message: "Cập nhật số lượng thành công!", type: "success" });
             })
             .catch(() => {
-                setToast({
-                    show: true,
-                    message: "Cập nhật số lượng thất bại!",
-                    type: "error"
-                });
-                fetchCart();
+                setToast({ show: true, message: "Cập nhật số lượng thất bại!", type: "error" });
             });
     };
 
-
-    // Tăng số lượng
     const handleIncrease = (item) => {
         increaseCartQuantity(item._id)
             .then(() => {
+                const updatedItems = cartItems.map(ci =>
+                    ci._id === item._id ? { ...ci, soluong: ci.soluong + 1 } : ci
+                );
+                setCartItems(updatedItems);
+                setInputValues(prev => ({
+                    ...prev,
+                    [item._id]: String(item.soluong + 1)
+                }));
                 setToast({ show: true, message: "Tăng số lượng thành công!", type: "success" });
-                fetchCart();
             })
             .catch(() => {
                 setToast({ show: true, message: "Tăng số lượng thất bại!", type: "error" });
-                fetchCart();
             });
     };
 
-    // Giảm số lượng
     const handleDecrease = (item) => {
+        if (item.soluong <= 1) return;
         decreaseCartQuantity(item._id)
             .then(() => {
+                const updatedItems = cartItems.map(ci =>
+                    ci._id === item._id ? { ...ci, soluong: ci.soluong - 1 } : ci
+                );
+                setCartItems(updatedItems);
+                setInputValues(prev => ({
+                    ...prev,
+                    [item._id]: String(item.soluong - 1)
+                }));
                 setToast({ show: true, message: "Giảm số lượng thành công!", type: "success" });
-                fetchCart();
             })
             .catch(() => {
                 setToast({ show: true, message: "Giảm số lượng thất bại!", type: "error" });
-                fetchCart();
             });
     };
 
     const handleRemoveItem = (item) => {
         updateCartQuantity(item._id, { soluong: 0 })
             .then(() => {
+                const updatedItems = cartItems.filter(ci => ci._id !== item._id);
+                setCartItems(updatedItems);
+                setInputValues(prev => {
+                    const newValues = { ...prev };
+                    delete newValues[item._id];
+                    return newValues;
+                });
                 setToast({ show: true, message: "Đã xóa sản phẩm khỏi giỏ hàng!", type: "success" });
-                fetchCart();
             })
             .catch(() => {
                 setToast({ show: true, message: "Xóa sản phẩm thất bại!", type: "error" });
-                fetchCart();
             });
     };
 
     return (
         <div className="container mt-4">
-            <Toast
-                show={toast.show}
-                message={toast.message}
-                type={toast.type}
-                onClose={() => setToast({ ...toast, show: false })}
-            />
+            <Toast show={toast.show} message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />
             <div className="row">
-                {/* Bên trái: 9 cột */}
                 <div className="col-md-9">
                     <div className="card mb-3">
                         <div className="card-header fw-bold">Giỏ hàng của bạn</div>
@@ -151,7 +137,7 @@ const Cart = () => {
                             ) : (
                                 <table className="table table-striped table-hover align-middle text-nowrap">
                                     <thead className="table-light">
-                                        <tr>
+                                        <tr className="text-center">
                                             <th>Hình ảnh</th>
                                             <th>Sản phẩm</th>
                                             <th>Size</th>
@@ -163,70 +149,36 @@ const Cart = () => {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {cartItems.map((item, idx) => (
-                                            <tr key={item._id || idx}>
-                                                <td>
-                                                    <img
-                                                        src={item.hinhanh} alt={item.tensanpham}
-                                                        className="img-thumbnail"
-                                                        style={{ width: 60, height: 60, objectFit: "cover" }}
-                                                    />
-                                                </td>
+                                        {cartItems.map((item) => (
+                                            <tr key={item._id}>
+                                                <td><img src={item.hinhanh} alt={item.tensanpham} className="img-thumbnail" style={{ width: 60, height: 60, objectFit: "cover" }} /></td>
                                                 <td>{item.tensanpham || item.masanpham}</td>
                                                 <td>{item.size}</td>
                                                 <td>
                                                     <span
                                                         className="d-inline-block"
-                                                        style={{
-                                                            width: 20,
-                                                            height: 20,
-                                                            backgroundColor: item.mausac,
-                                                            border: "1px solid #ccc",
-                                                            borderRadius: 4
-                                                        }}
+                                                        style={{ width: 20, height: 20, backgroundColor: item.mausac, border: "1px solid #ccc", borderRadius: 4 }}
                                                         title={item.mausac}
                                                     ></span>
                                                 </td>
                                                 <td>
                                                     <div className="input-group input-group-sm">
-                                                        <button
-                                                            className="btn btn-outline-secondary"
-                                                            type="button"
-                                                            onClick={() => handleDecrease(item)}
-                                                            aria-label="Giảm số lượng"
-                                                        >
-                                                            -
-                                                        </button>
+                                                        <button className="btn btn-outline-secondary" onClick={() => handleDecrease(item)}>-</button>
                                                         <input
                                                             type="text"
-                                                            min={1}
-                                                            value={inputValues[item._id] ?? ""}
+                                                            value={inputValues[item._id] || ''}
                                                             onChange={(e) => handleInputChange(item, e.target.value)}
                                                             onBlur={() => handleInputBlur(item)}
                                                             className="form-control text-center shadow-none bg-light"
-                                                            style={{ width: 30, padding: "0.25rem 0.4rem" }}
+                                                            style={{ width: "4rem", minWidth: 60 }}
                                                         />
-
-                                                        <button
-                                                            className="btn btn-outline-secondary"
-                                                            type="button"
-                                                            onClick={() => handleIncrease(item)}
-                                                            aria-label="Tăng số lượng"
-                                                        >
-                                                            +
-                                                        </button>
+                                                        <button className="btn btn-outline-secondary" onClick={() => handleIncrease(item)}>+</button>
                                                     </div>
                                                 </td>
                                                 <td>{(item.giasanpham || 0).toLocaleString("vi-VN")} đ</td>
+                                                <td>{((item.giasanpham || 0) * (item.soluong || 1)).toLocaleString("vi-VN")} đ</td>
                                                 <td>
-                                                    {((item.giasanpham || 0) * (item.soluong || 1)).toLocaleString("vi-VN")} đ
-                                                </td>
-                                                <td>
-                                                    <button
-                                                        className="btn btn-sm btn-outline-danger"
-                                                        onClick={() => handleRemoveItem(item)}
-                                                        title="Xóa sản phẩm"
-                                                    >
+                                                    <button className="btn btn-sm btn-outline-danger" onClick={() => handleRemoveItem(item)}>
                                                         <i className="bi bi-trash"></i>
                                                     </button>
                                                 </td>
@@ -238,7 +190,6 @@ const Cart = () => {
                         </div>
                     </div>
                 </div>
-                {/* Bên phải: 3 cột */}
                 <div className="col-md-3">
                     <div className="card" style={{ position: "sticky", top: "80px", zIndex: 10 }}>
                         <div className="card-header fw-bold">Thanh toán</div>
@@ -246,19 +197,12 @@ const Cart = () => {
                             {cartItems.length > 0 ? (
                                 <>
                                     <p>Tổng tiền: {total.toLocaleString("vi-VN")}đ</p>
-                                    <button
-                                        className="btn btn-primary w-100"
-                                        onClick={() => window.location.href = "/auth/order"}
-                                    >
-                                        Đặt hàng
-                                    </button>
+                                    <button className="btn btn-primary w-100" onClick={() => window.location.href = "/auth/order"}>Đặt hàng</button>
                                 </>
                             ) : (
                                 <div className="text-muted text-center small">
                                     <p>Không có sản phẩm.</p>
-                                    <button className="btn btn-secondary w-100" disabled>
-                                        Đặt hàng
-                                    </button>
+                                    <button className="btn btn-secondary w-100" disabled>Đặt hàng</button>
                                 </div>
                             )}
                         </div>

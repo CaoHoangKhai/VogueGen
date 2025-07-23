@@ -69,8 +69,10 @@ class DesignService {
             manguoidung: userId,
             masanpham: productId,
             mau,
-            ngaytao: new Date()
+            ngaytao: new Date(),
+            trangthai: 1 // 1 là hiển thị, 0 là ẩn
         });
+
 
         const insertedId = tempResult.insertedId;
         const ten = `Thiết kế ${insertedId.toString()}`;
@@ -114,7 +116,10 @@ class DesignService {
 
             const designs = await this.design
                 .find(
-                    { manguoidung: new ObjectId(manguoidung) },
+                    {
+                        manguoidung: new ObjectId(manguoidung),
+                        trangthai: 1 // chỉ lấy thiết kế đang hoạt động
+                    },
                     {
                         projection: {
                             _id: 1,
@@ -126,13 +131,13 @@ class DesignService {
                         }
                     }
                 )
-                .sort({ ngaytao: -1 }) // mới nhất lên trước
+                .sort({ ngaytao: -1 })
                 .toArray();
 
             return designs;
 
         } catch (err) {
-            console.error("❌ Lỗi khi lấy danh sách thiết kế đơn giản:", err.message);
+            console.error("❌ Lỗi khi lấy danh sách thiết kế:", err.message);
             throw new Error("Lỗi server khi lấy danh sách thiết kế.");
         }
     }
@@ -209,23 +214,28 @@ class DesignService {
         }
 
         const objectId = new ObjectId(designId);
-        console.log("🗑️ Đang xóa thiết kế có ID:", objectId);
+        console.log("👻 Đang ẩn thiết kế có ID:", objectId);
 
-        // Xóa thiết kế chính
-        const result = await this.design.deleteOne({ _id: objectId });
-        console.log("✅ Kết quả xóa thiết kế:", result);
+        // Cập nhật trạng thái thiết kế chính thành 0 (ẩn)
+        const result = await this.design.updateOne(
+            { _id: objectId },
+            { $set: { trangthai: 0 } }
+        );
 
-        // Xóa thiết kế người dùng liên quan (2 mặt)
-        const relatedDelete = await this.thietkecuanguoidung.deleteMany({ madesign: objectId });
-        console.log("🧹 Đã xóa thiết kế người dùng liên quan:", relatedDelete.deletedCount);
+        // Cập nhật trạng thái thiết kế người dùng liên quan
+        const relatedUpdate = await this.thietkecuanguoidung.updateMany(
+            { madesign: objectId },
+            { $set: { trangthai: 0 } }
+        );
 
         return {
-            success: result.deletedCount === 1,
-            message: result.deletedCount === 1
-                ? "Đã xóa thiết kế và dữ liệu liên quan."
-                : "Không tìm thấy thiết kế để xóa."
+            success: result.modifiedCount === 1,
+            message: result.modifiedCount === 1
+                ? `Đã ẩn thiết kế và ${relatedUpdate.modifiedCount} bản thiết kế người dùng.`
+                : "Không tìm thấy thiết kế để ẩn."
         };
     }
+
 
     async renameDesign(designId, newTen) {
         if (!ObjectId.isValid(designId)) return { success: false, message: "ID không hợp lệ." };

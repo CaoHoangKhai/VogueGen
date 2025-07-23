@@ -4,15 +4,15 @@ const MongoDB = require("../utils/mongodb.util");
 exports.getCartByUserId = async (req, res) => {
     try {
         const { userId } = req.params;
-        console.log("📥 [getCartByUserId] userId:", userId);
+        // console.log("📥 [getCartByUserId] userId:", userId);
 
         const service = new CartService(MongoDB.client);
         const items = await service.getCartByUserId(userId);
 
-        console.log("✅ [getCartByUserId] items:", items);
+        // console.log("✅ [getCartByUserId] items:", items);
         res.status(200).json(items);
     } catch (error) {
-        console.error("❌ [getCartByUserId] Error:", error);
+        // console.error("❌ [getCartByUserId] Error:", error);
         res.status(400).json({ message: error.message || "Không thể lấy giỏ hàng." });
     }
 };

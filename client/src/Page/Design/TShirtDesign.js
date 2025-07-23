@@ -1,6 +1,7 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import { getDesignDetail, getImagesByColor, saveDesign } from "../../api/Design/design.api";
+import { addToCart } from "../../api/Cart/cart.api";
 import LeftSidebarDesign from "../../Components/Sidebar/LeftSidebarDesign";
 import { Rnd } from "react-rnd";
 import html2canvas from "html2canvas";
@@ -25,6 +26,7 @@ const DesignPage = () => {
     const overlayZoneRef = useRef();
     const [exportFormat, setExportFormat] = useState("png"); // mặc định PNG
     const [savedInfo, setSavedInfo] = useState(null); // dùng để hiển thị kết quả đã lưu
+    const [selectedSize, setSelectedSize] = useState(null);
 
     useEffect(() => {
         if (!id) return;
@@ -114,6 +116,55 @@ const DesignPage = () => {
         }
     };
 
+    const handleAddToCart = async ({ id, size, quantity }) => {
+        try {
+            const user = JSON.parse(localStorage.getItem("user"));
+            const userId = user?._id;
+            console.log("[handleAddToCart] userId:", userId);
+
+            if (!userId) {
+                console.warn("⚠️ Vui lòng đăng nhập để thêm vào giỏ hàng!");
+                return;
+            }
+
+            if (!design || !design._id || !design.masanpham) {
+                console.error("[handleAddToCart] Thiết kế chưa sẵn sàng hoặc thiếu thông tin sản phẩm:", design);
+                return;
+            }
+
+            if (!size || !selectedColor) {
+                console.warn("[handleAddToCart] Chưa chọn size hoặc màu:", {
+                    selectedSize: size,
+                    selectedColor,
+                });
+                return;
+            }
+
+            const cartItem = {
+                manguoidung: userId,
+                masanpham: design.masanpham,
+                soluong: quantity || 1,
+                size: size,
+                mausac: selectedColor,
+                isThietKe: true,
+                mathietke: design._id,
+            };
+
+            console.log("[handleAddToCart] Dữ liệu gửi đi:", cartItem);
+
+            const res = await addToCart(cartItem);
+            console.log("[handleAddToCart] Phản hồi từ server:", res);
+
+            // Kiểm tra theo đúng format server trả về
+            if (res?.success) {
+                console.log("🛒 Đã thêm thiết kế vào giỏ hàng!");
+            } else {
+                console.error(`❌ Không thể thêm vào giỏ hàng: ${res?.message || "Lỗi không xác định"}`);
+            }
+        } catch (err) {
+            console.error("[handleAddToCart] Lỗi khi gọi API:", err.message || err);
+        }
+    };
 
     const addOverlay = (overlay) => {
         const vitri = selectedImage?.vitri;
@@ -334,6 +385,7 @@ const DesignPage = () => {
                         exportFormat={exportFormat}
                         onExportFormatChange={setExportFormat}
                         onSaveDesign={handleSaveDesign}
+                        onAddToCart={handleAddToCart}
                     />
 
                 </div>
@@ -537,7 +589,8 @@ const DesignPage = () => {
                     ))}
                 </div>
             </div>
-            <button onClick={handleSaveDesign}>💾 Lưu thiết kế</button>
+            {/* <button onClick={handleSaveDesign}>💾 Lưu thiết kế</button> */}
+
         </div>
     );
 };

@@ -8,6 +8,8 @@ const { ObjectId } = require("mongodb");
 exports.createProduct = async (req, res) => {
   try {
     console.log("🟡 [CREATE PRODUCT] Nhận dữ liệu:", req.body);
+
+    // Parse kích thước
     let kichthuoc = [];
     try {
       const raw = req.body.kichthuoc || req.body.sizes || "[]";
@@ -18,6 +20,7 @@ exports.createProduct = async (req, res) => {
       return res.status(400).json({ error: "Dữ liệu kích thước không hợp lệ" });
     }
 
+    // Parse màu sắc
     let mausanpham = [];
     try {
       const raw = req.body.mausac || req.body.colors?.[""] || "[]";
@@ -28,6 +31,13 @@ exports.createProduct = async (req, res) => {
       return res.status(400).json({ error: "Dữ liệu màu sắc không hợp lệ" });
     }
 
+    // Parse giới tính
+    const gioitinh = req.body.gioitinh?.toLowerCase() || "";
+    if (!["nam", "nu"].includes(gioitinh)) {
+      return res.status(400).json({ error: "Giới tính chỉ được phép là 'nam' hoặc 'nu'" });
+    }
+
+    // Xử lý hình ảnh upload
     let hinhanh = [];
     if (req.files && Array.isArray(req.files)) {
       console.log(`📦 Đang xử lý ${req.files.length} file ảnh...`);
@@ -53,14 +63,16 @@ exports.createProduct = async (req, res) => {
           hash,
         });
 
-        await fs.promises.unlink(file.path);
+        await fs.promises.unlink(file.path); // Xóa file tạm
       }
     } else {
       console.log("⚠️ Không có file ảnh nào được gửi lên.");
     }
 
+    // Parse giá sản phẩm
     const giaSanPham = Number(req.body.giasanpham) || 0;
 
+    // Tổng hợp dữ liệu tạo sản phẩm
     const newProductData = {
       tensanpham: req.body.tensanpham || "",
       giasanpham: giaSanPham,
@@ -70,13 +82,16 @@ exports.createProduct = async (req, res) => {
       kichthuoc,
       mausanpham,
       hinhanh,
+      gioitinh,
     };
 
     console.log("📤 Dữ liệu chuẩn bị insert:", newProductData);
 
+    // Gọi service tạo sản phẩm
     const productService = new ProductServer(MongoDB.client);
     const result = await productService.createProduct(newProductData);
 
+    // Trả kết quả
     if (result.success) {
       console.log("✅ Tạo sản phẩm thành công:", result.productId);
       res.status(201).json({

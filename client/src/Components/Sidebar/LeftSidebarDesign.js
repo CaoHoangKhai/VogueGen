@@ -4,7 +4,7 @@ import { FaPalette, FaImage, FaFont, FaHome, FaDownload } from "react-icons/fa";
 import Toast from "../Toast";
 import { colors } from "../../config/colors";
 import { getColorByDesignId } from "../../api/Design/design.api";
-
+import AddToCartButton from "../AddToCartButton";
 // Danh sách menu sidebar
 const menu = [
     { label: "Color", key: "color", icon: <FaPalette /> },
@@ -22,7 +22,8 @@ const LeftSidebarDesign = ({
     exportFormat,
     onExportFormatChange,
     LeftSidebarDesign,
-    onSaveDesign 
+    onSaveDesign,
+    onAddToCart
 }) => {
 
     const navigate = useNavigate();
@@ -139,7 +140,6 @@ const LeftSidebarDesign = ({
         };
         reader.readAsDataURL(file);
     };
-
 
     const renderImagePanel = () => (
         <>
@@ -313,17 +313,6 @@ const LeftSidebarDesign = ({
                     />
                 </div>
             </div>
-
-            {/* <div className="mb-3">
-                <label className="form-label">Màu chữ</label>
-                <input
-                    type="color"
-                    className="form-control form-control-color"
-                    value={textColor}
-                    onChange={(e) => setTextColor(e.target.value)}
-                />
-            </div> */}
-
             <button
                 onClick={handleAddText}
                 className="btn btn-success w-100"
@@ -368,9 +357,6 @@ const LeftSidebarDesign = ({
 
 
     );
-
-
-
     // ===================== MAIN =====================
     const renderMenuButton = (item) => {
         const isActive = activeTab === item.key;
@@ -405,38 +391,102 @@ const LeftSidebarDesign = ({
 
     return (
         <>
-            <Toast show={toast.show} message={toast.message} type={toast.type} onClose={() => setToast({ ...toast, show: false })} />
-            <div style={{ width: 64, background: "#23272f", height: "100vh", position: "fixed", top: 0, left: 0, display: "flex", flexDirection: "column", alignItems: "center", paddingTop: 20, zIndex: 1000 }}>
-                <button onClick={() => navigate("/")} style={{ width: 48, height: 48, marginBottom: 28, borderRadius: 12, background: "#383e4a", color: "#fff", border: "none", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, cursor: "pointer" }} title="Về trang chính">
-                    <FaHome />
-                </button>
-                {menu.map(renderMenuButton)}
+            <Toast
+                show={toast.show}
+                message={toast.message}
+                type={toast.type}
+                onClose={() => setToast({ ...toast, show: false })}
+            />
+
+            {/* Sidebar trái */}
+            <div
+                style={{
+                    width: 64,
+                    background: "#23272f",
+                    height: "100vh",
+                    position: "fixed",
+                    top: 0,
+                    left: 0,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    paddingTop: 20,
+                    zIndex: 1000,
+                }}
+            >
+                {/* Nút về trang chính */}
                 <button
-                    onClick={() => {
-                        onSaveDesign?.();
-                        showToast("💾 Thiết kế đã được lưu!", "success");
-                    }}
-                    title="Lưu thiết kế"
+                    onClick={() => navigate("/")}
+                    title="Về trang chính"
                     style={{
                         width: 48,
                         height: 48,
-                        marginTop: "auto", // đẩy nút xuống cuối
-                        marginBottom: 20,
+                        marginBottom: 28,
                         borderRadius: 12,
-                        background: "#198754",
+                        background: "#383e4a",
                         color: "#fff",
                         border: "none",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        fontSize: 20,
+                        fontSize: 24,
                         cursor: "pointer",
                     }}
                 >
-                    💾
+                    <FaHome />
                 </button>
+
+                {/* Các menu chức năng (màu, hình, text, export) */}
+                {menu.map(renderMenuButton)}
+
+                {/* Khu vực nút Lưu và Thêm giỏ hàng */}
+                <div style={{ marginTop: "auto", marginBottom: 16, display: "flex", flexDirection: "column", gap: 10 }}>
+                    {/* Lưu thiết kế */}
+                    <button
+                        onClick={() => {
+                            onSaveDesign?.();
+                            showToast("💾 Thiết kế đã được lưu!", "success");
+                        }}
+                        title="Lưu thiết kế"
+                        style={{
+                            width: 48,
+                            height: 48,
+                            borderRadius: 12,
+                            background: "#0d6efd", // màu xanh dương
+                            color: "#fff",
+                            border: "none",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: 20,
+                            cursor: "pointer",
+                        }}
+                    >
+                        💾
+                    </button>
+
+                    {/* Thêm vào giỏ hàng */}
+                    <AddToCartButton onAddToCart={onAddToCart} showToast={showToast} />
+
+                </div>
             </div>
-            <div style={{ width: 325, background: "#2b2f38", padding: 14, borderRadius: "0 8px 8px 0", boxShadow: "2px 2px 8px rgba(0,0,0,0.2)", position: "fixed", top: 0, left: 64, height: "100vh", zIndex: 999, color: "#fff" }}>
+
+            {/* Sidebar phải (panel thao tác) */}
+            <div
+                style={{
+                    width: 325,
+                    background: "#2b2f38",
+                    padding: 14,
+                    borderRadius: "0 8px 8px 0",
+                    boxShadow: "2px 2px 8px rgba(0,0,0,0.2)",
+                    position: "fixed",
+                    top: 0,
+                    left: 64,
+                    height: "100vh",
+                    zIndex: 999,
+                    color: "#fff",
+                }}
+            >
                 {activeTab === "color" && renderColorPanel()}
                 {activeTab === "img" && renderImagePanel()}
                 {activeTab === "text" && renderTextPanel()}

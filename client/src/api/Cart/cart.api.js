@@ -2,9 +2,16 @@ import axios from 'axios';
 
 const API_BASE_URL_CART = 'http://localhost:4000/cart';
 
-export const addToCart = (data) => {
-    // data: { manguoidung, masanpham, soluong, size, mausac }
-    return axios.post(`${API_BASE_URL_CART}/add`, data);
+export const addToCart = async (data) => {
+    try {
+        console.log("📤 Sending to /cart/add:", data);
+        const response = await axios.post(`${API_BASE_URL_CART}/add`, data);
+        console.log("✅ API response:", response.data);
+        return response.data;
+    } catch (error) {
+        console.error("❌ API error:", error.response?.data || error.message);
+        throw error;
+    }
 };
 
 export const getCartByUserId = (userId) => {

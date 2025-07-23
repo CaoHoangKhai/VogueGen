@@ -3,11 +3,7 @@ const router = express.Router();
 const sizeController = require("../controllers/sizes.controller");
 
 // ================== ROUTES KÍCH THƯỚC ==================
-
-/**
- * Lấy danh sách tất cả kích thước sản phẩm (size)
- * GET /sizes/
- */
 router.get("/", sizeController.getAllSizes);
 
+router.get("/design/:designId", sizeController.getSizesByDesignId);
 module.exports = router;

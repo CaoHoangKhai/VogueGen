@@ -25,6 +25,7 @@ const ProductAdd = () => {
     giasanphamRaw: "",
     theloai: "",
     mota: "",
+    gioitinh: "",
   });
 
   useEffect(() => {
@@ -104,6 +105,7 @@ const ProductAdd = () => {
     formData.append("mota", form.mota);
     formData.append("sizes", JSON.stringify(selectedSizes));
     formData.append("colors", JSON.stringify(selectedColors));
+    formData.append("gioitinh", form.gioitinh);
 
     let index = 0;
     for (const colorCode of selectedColors) {
@@ -129,6 +131,7 @@ const ProductAdd = () => {
         giasanphamRaw: "",
         theloai: "",
         mota: "",
+        gioitinh: "",
       });
       setSelectedSizes([]);
       setSelectedColors([]);
@@ -310,6 +313,23 @@ const ProductAdd = () => {
     );
   };
 
+  const inputGenderProduct = () => (
+    <div className="mb-3">
+      <label className="form-label">Giới tính *</label>
+      <select
+        name="gioitinh"
+        className="form-select"
+        value={form.gioitinh}
+        onChange={handleChange}
+        required
+      >
+        <option value="">-- Chọn giới tính --</option>
+        <option value="nam">Nam</option>
+        <option value="nu">Nữ</option>
+      </select>
+    </div>
+  );
+
   const inputCategoryProduct = () => (
     <div className="mb-3">
       <label className="form-label">Danh mục *</label>
@@ -474,6 +494,7 @@ const ProductAdd = () => {
         {inputNameProduct()}
         {inputPriceProduct()}
         {inputCategoryProduct()}
+        {inputGenderProduct()}
         {inputDescriptionProduct()}
         {inputSizeProduct()}
         {getColorProduct()}

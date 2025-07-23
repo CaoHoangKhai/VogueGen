@@ -5,23 +5,32 @@ import { BASE_URL_TRY_ON } from "../../api/TryOn/tryon.api";
 const demoHumans = [
   { src: "http://localhost:4000/images/try_on/human/demo_human_0.jpg" },
   { src: "http://localhost:4000/images/try_on/human/demo_human_1.jpg" },
+  { src: "http://localhost:4000/images/try_on/human/demo_human_2.jpg" }, // mới thêm
 ];
 
 const demoClothes = [
   { src: "http://localhost:4000/images/try_on/cloth/demo_cloth_0.jpg" },
   { src: "http://localhost:4000/images/try_on/cloth/demo_cloth_1.jpg" },
+  { src: "http://localhost:4000/images/try_on/cloth/demo_cloth_2.jpg" }, // mới thêm
 ];
 
 // Kết quả demo tương ứng với tổ hợp human + cloth
 const demoResults = {
   "demo_human_0.jpg|demo_cloth_0.jpg": "http://localhost:4000/images/try_on/result/0_0.jpg",
   "demo_human_0.jpg|demo_cloth_1.jpg": "http://localhost:4000/images/try_on/result/0_1.jpg",
+  "demo_human_0.jpg|demo_cloth_2.jpg": "http://localhost:4000/images/try_on/result/0_2.jpg",
+
   "demo_human_1.jpg|demo_cloth_0.jpg": "http://localhost:4000/images/try_on/result/1_0.jpg",
   "demo_human_1.jpg|demo_cloth_1.jpg": "http://localhost:4000/images/try_on/result/1_1.jpg",
-  // ... thêm nếu có
+  "demo_human_1.jpg|demo_cloth_2.jpg": "http://localhost:4000/images/try_on/result/1_2.jpg",
+
+  "demo_human_2.jpg|demo_cloth_0.jpg": "http://localhost:4000/images/try_on/result/2_0.jpg",
+  "demo_human_2.jpg|demo_cloth_1.jpg": "http://localhost:4000/images/try_on/result/2_1.jpg",
+  "demo_human_2.jpg|demo_cloth_2.jpg": "http://localhost:4000/images/try_on/result/2_2.jpg", // mới thêm
 };
 
-const MAX_SCAN_TIME = 20000;
+
+const MAX_SCAN_TIME = 500;
 const MAX_SCAN_SECONDS = MAX_SCAN_TIME / 1000;
 
 const IMAGE_SIZE = 360;
@@ -75,9 +84,14 @@ function TryOnForm() {
       return;
     }
 
-    const demoKey = `${humanDemoName}|${clothDemoName}`;
-    if (demoResults[demoKey]) {
-      // Nếu là ảnh demo đã có sẵn kết quả → vẫn loading 20s
+    // Tạo key để kiểm tra demo
+    const demoKey =
+      humanDemoName.startsWith("demo_human") && clothDemoName.startsWith("demo_cloth")
+        ? `${humanDemoName}|${clothDemoName}`
+        : null;
+
+    // Nếu là demo và có kết quả mẫu → hiển thị demo kết quả
+    if (demoKey && demoResults[demoKey]) {
       setLoading(true);
       setError("");
       setElapsedTime(null);
@@ -95,7 +109,7 @@ function TryOnForm() {
       return;
     }
 
-    // Không phải ảnh demo → gọi API
+    // ❗ Nếu không có demo hoặc không tìm thấy kết quả → gọi API như bình thường
     setLoading(true);
     setError("");
     setElapsedTime(null);
@@ -300,12 +314,6 @@ function TryOnForm() {
         <button className="btn btn-primary px-4 py-2" onClick={handleTryOn} disabled={loading}>
           {loading ? "Đang xử lý..." : "Tạo ảnh Try-On"}
         </button>
-        {/* {elapsedTime !== null && (
-          <p className="mt-2 text-muted">
-            ⏱️ Xử lý mất <strong>{(elapsedTime / 1000).toFixed(1)} giây</strong>
-          </p>
-        )}
-        {error && <div className="alert alert-danger mt-3">{error}</div>} */}
       </div>
     </div>
   );
