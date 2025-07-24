@@ -1,21 +1,46 @@
 const CartService = require("../services/cart.service");
+const DesignService = require("../services/design.service");
+
 const MongoDB = require("../utils/mongodb.util");
 
 exports.getCartByUserId = async (req, res) => {
     try {
         const { userId } = req.params;
-        // console.log("📥 [getCartByUserId] userId:", userId);
 
-        const service = new CartService(MongoDB.client);
-        const items = await service.getCartByUserId(userId);
+        const cartService = new CartService(MongoDB.client);
+        const designService = new DesignService(MongoDB.client);
 
-        // console.log("✅ [getCartByUserId] items:", items);
-        res.status(200).json(items);
+        let cartItems = await cartService.getCartByUserId(userId);
+
+        // Với mỗi item, nếu có madesign, thì lấy thêm chi tiết và link
+        cartItems = await Promise.all(cartItems.map(async (item) => {
+            if (item.madesign) {
+                try {
+                    const design = await designService.getDesignDetail(item.madesign);
+                    const link = await designService.getDesignLink(item.madesign);
+
+                    item.designInfo = design;       // Thông tin thiết kế đầy đủ
+                    item.designLink = link || null; // Link thiết kế, nếu có
+                } catch (err) {
+                    console.warn("⚠️ Không tìm thấy thiết kế hoặc link:", item.madesign);
+                    item.designInfo = null;
+                    item.designLink = null;
+                }
+            } else {
+                item.designInfo = null;
+                item.designLink = null;
+            }
+
+            return item;
+        }));
+
+        res.status(200).json(cartItems);
     } catch (error) {
-        // console.error("❌ [getCartByUserId] Error:", error);
+        console.error("❌ [getCartByUserId] Error:", error);
         res.status(400).json({ message: error.message || "Không thể lấy giỏ hàng." });
     }
 };
+
 
 exports.addToCart = async (req, res) => {
     try {

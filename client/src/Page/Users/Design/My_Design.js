@@ -40,15 +40,22 @@ const MyDesign = () => {
     if (loading) return <div className="text-center mt-5">Đang tải...</div>;
 
     const handleRename = async (designId, oldName) => {
-        const newName = prompt("Đổi tên thiết kế:", oldName);
+        const newName = prompt("Đổi tên thiết kế (tối đa 50 ký tự):", oldName);
         if (!newName || newName.trim() === "" || newName === oldName) return;
 
+        const trimmedName = newName.trim();
+
+        if (trimmedName.length > 50) {
+            setToast({ type: "error", message: "❌ Tên thiết kế không được vượt quá 50 ký tự." });
+            return;
+        }
+
         try {
-            const result = await renameDesign(designId, newName.trim());
+            const result = await renameDesign(designId, trimmedName);
             if (result.success) {
                 setDesigns((prev) =>
                     prev.map((d) =>
-                        d._id === designId ? { ...d, ten: newName.trim() } : d
+                        d._id === designId ? { ...d, ten: trimmedName } : d
                     )
                 );
                 setToast({ type: "success", message: "✅ Đổi tên thành công!" });
@@ -60,6 +67,7 @@ const MyDesign = () => {
             setToast({ type: "error", message: "❌ Đã xảy ra lỗi khi đổi tên." });
         }
     };
+
 
     const handleDelete = async (designId) => {
         const confirm = window.confirm("Bạn có chắc chắn muốn xóa thiết kế này?");

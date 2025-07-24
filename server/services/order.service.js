@@ -30,41 +30,70 @@ class OrderService {
             soluong: item.soluong,
             mausanpham: item.mausanpham || item.mausac || item.color || null,
             size: item.size,
-            giatien: item.giatien
+            giatien: item.giatien,
+            designId: item.designId || null  // nếu có design
         };
     }
 
     async createOrder(payload) {
         try {
+            console.log("📦 [createOrder] BẮT ĐẦU XỬ LÝ");
+            console.log("📥 [createOrder] DỮ LIỆU CLIENT GỬI LÊN:", payload);
+
+            // 1. Trích xuất dữ liệu đơn hàng
             const orderData = this.extractOrderData(payload);
 
-            // Tạo đơn hàng chính
+            // 2. Tạo đơn hàng trong DB
             const result = await this.donhang.insertOne(orderData);
             const madonhang = result.insertedId.toString();
 
-            // Gắn lại mã đơn hàng
-            await this.donhang.updateOne({ _id: result.insertedId }, { $set: { madonhang } });
+            // 3. Cập nhật lại mã đơn hàng (dễ truy vấn)
+            await this.donhang.updateOne(
+                { _id: result.insertedId },
+                { $set: { madonhang } }
+            );
 
-            const details = (payload.chitiet || []).map(item => ({
-                ...this.extractOrderDetailData(item),
-                madonhang
-            }));
+            let details = [];
 
-            if (details.length) {
-                for (const d of details) {
-                    if (!d.masanpham || !d.soluong || !d.mausanpham || !d.size || !d.giatien) {
-                        throw new Error("Thông tin chi tiết đơn hàng không hợp lệ.");
-                    }
-                }
+            // 4. Xử lý chi tiết đơn hàng
+            if (Array.isArray(payload.chitiet) && payload.chitiet.length > 0) {
+                // Nếu client gửi trực tiếp chi tiết đơn hàng (không phải từ giỏ hàng)
+                details = payload.chitiet.map(item => ({
+                    ...this.extractOrderDetailData(item),
+                    madonhang,
+                    madesign: item.madesign || null,
+                    isThietKe: item.isThietKe || false
+                }));
+            } else {
+                // Nếu không gửi `chitiet`, dùng dữ liệu từ giỏ hàng
+                const giohangData = await this.giohang
+                    .find({ manguoidung: new ObjectId(payload.manguoidung) })
+                    .toArray();
 
-                await this.chitietdonhang.insertMany(details);
+                details = giohangData.map(item => ({
+                    ...this.extractOrderDetailData(item),
+                    madonhang,
+                    madesign: item.madesign || null,
+                    isThietKe: item.isThietKe || false
+                }));
             }
 
-            // Xoá giỏ hàng sau khi tạo đơn
-            if (payload.manguoidung) {
-                await this.giohang.deleteMany({ manguoidung: new ObjectId(payload.manguoidung) });
+            // 5. Kiểm tra chi tiết đơn hàng hợp lệ
+            const isValidDetail = details.every(d =>
+                d.masanpham && d.soluong && d.mausanpham && d.size && d.giatien
+            );
+
+            if (!isValidDetail || !details.length) {
+                throw new Error("Thông tin chi tiết đơn hàng không hợp lệ.");
             }
 
+            // 6. Chèn chi tiết đơn hàng vào DB
+            await this.chitietdonhang.insertMany(details);
+
+            // 7. Xoá giỏ hàng của người dùng (nếu có)
+            await this.giohang.deleteMany({ manguoidung: new ObjectId(payload.manguoidung) });
+
+            console.log("✅ [createOrder] TẠO ĐƠN HÀNG THÀNH CÔNG:", madonhang);
             return {
                 success: true,
                 message: "Tạo đơn hàng thành công",

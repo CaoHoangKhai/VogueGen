@@ -5,6 +5,7 @@ import Toast from "../Toast";
 import { colors } from "../../config/colors";
 import { getColorByDesignId } from "../../api/Design/design.api";
 import AddToCartButton from "../AddToCartButton";
+
 // Danh sách menu sidebar
 const menu = [
     { label: "Color", key: "color", icon: <FaPalette /> },
@@ -391,6 +392,7 @@ const LeftSidebarDesign = ({
 
     return (
         <>
+            {/* Toast hiển thị thông báo */}
             <Toast
                 show={toast.show}
                 message={toast.message}
@@ -398,7 +400,7 @@ const LeftSidebarDesign = ({
                 onClose={() => setToast({ ...toast, show: false })}
             />
 
-            {/* Sidebar trái */}
+            {/* Sidebar bên trái */}
             <div
                 style={{
                     width: 64,
@@ -436,11 +438,24 @@ const LeftSidebarDesign = ({
                     <FaHome />
                 </button>
 
-                {/* Các menu chức năng (màu, hình, text, export) */}
+                {/* Các menu như màu, hình, text, export */}
                 {menu.map(renderMenuButton)}
 
-                {/* Khu vực nút Lưu và Thêm giỏ hàng */}
-                <div style={{ marginTop: "auto", marginBottom: 16, display: "flex", flexDirection: "column", gap: 10 }}>
+                
+
+
+                {/* Khu vực nút cuối cùng */}
+                
+                <div
+                    style={{
+
+                        marginBottom: 10,
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        gap: 5,
+                    }}
+                >
                     {/* Lưu thiết kế */}
                     <button
                         onClick={() => {
@@ -452,7 +467,7 @@ const LeftSidebarDesign = ({
                             width: 48,
                             height: 48,
                             borderRadius: 12,
-                            background: "#0d6efd", // màu xanh dương
+                            background: "#0d6efd",
                             color: "#fff",
                             border: "none",
                             display: "flex",
@@ -467,11 +482,10 @@ const LeftSidebarDesign = ({
 
                     {/* Thêm vào giỏ hàng */}
                     <AddToCartButton onAddToCart={onAddToCart} showToast={showToast} />
-
                 </div>
             </div>
 
-            {/* Sidebar phải (panel thao tác) */}
+            {/* Sidebar bên phải */}
             <div
                 style={{
                     width: 325,

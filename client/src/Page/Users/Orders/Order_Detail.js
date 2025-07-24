@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { getOrderDetailById, cancelOrder } from "../../../api/Order/order.api";
-import { colors } from "../../../config/colors"; // điều chỉnh đúng đường dẫn file của bạn
+import { colors } from "../../../config/colors";
+
 const OrderDetail = () => {
     const { orderId } = useParams();
     const [order, setOrder] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-
 
     const getColorName = (code) => {
         if (!code) return "Không rõ";
@@ -15,16 +15,20 @@ const OrderDetail = () => {
         return found ? found.color : code;
     };
 
-
     const isLightColor = (hex) => {
         if (!hex || hex.length !== 7 || !hex.startsWith("#")) return false;
-        const c = hex.substring(1); // remove #
+        const c = hex.substring(1);
         const rgb = parseInt(c, 16);
         const r = (rgb >> 16) & 0xff;
         const g = (rgb >> 8) & 0xff;
         const b = rgb & 0xff;
         const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
         return luminance > 200;
+    };
+
+    const formatDiaChi = (str) => {
+        if (!str) return "Không rõ";
+        return str.split(",").map(s => s.trim()).join(" > ");
     };
 
     useEffect(() => {
@@ -37,7 +41,7 @@ const OrderDetail = () => {
                 } else {
                     setError(result.message || "Không thể lấy chi tiết đơn hàng.");
                 }
-            } catch (err) {
+            } catch {
                 setError("Lỗi khi gọi API.");
             } finally {
                 setLoading(false);
@@ -54,7 +58,12 @@ const OrderDetail = () => {
             const res = await cancelOrder(orderId);
             if (res.success) {
                 alert("✅ Huỷ đơn hàng thành công.");
-                setOrder(prev => ({ ...prev, trangthai: 4, trangthaidonhang: "Đã huỷ", class: "bg-danger text-white" }));
+                setOrder(prev => ({
+                    ...prev,
+                    trangthai: 4,
+                    trangthaidonhang: "Đã huỷ",
+                    class: "bg-danger text-white"
+                }));
             } else {
                 alert(res.message || "❌ Không thể huỷ đơn hàng.");
             }
@@ -79,32 +88,17 @@ const OrderDetail = () => {
                         <div className="mb-4 border rounded p-3 bg-light">
                             <h5 className="mb-3 text-primary">Thông tin đơn hàng</h5>
                             <div className="row">
+                                <div className="col-md-6 mb-2"><strong>Mã đơn hàng:</strong> {order.madonhang}</div>
                                 <div className="col-md-6 mb-2">
-                                    <strong>Mã đơn hàng:</strong> {order.madonhang}
+                                    <strong>Ngày đặt:</strong>{" "}
+                                    {new Date(order.ngaydat).toLocaleString("vi-VN")}
                                 </div>
+                                <div className="col-md-6 mb-2"><strong>Họ tên:</strong> {order.hoten}</div>
+                                <div className="col-md-6 mb-2"><strong>Số điện thoại:</strong> {order.sodienthoai}</div>
                                 <div className="col-md-6 mb-2">
-                                    <strong>Ngày đặt:</strong>{' '}
-                                    {(() => {
-                                        const date = new Date(order.ngaydat);
-                                        const day = date.getDate();
-                                        const month = date.getMonth() + 1;
-                                        const year = date.getFullYear();
-                                        const time = date.toLocaleTimeString(); // giữ nguyên định dạng giờ: 11:58:52 PM
-                                        return `${day}/${month}/${year}, ${time}`;
-                                    })()}
+                                    <strong>Địa chỉ:</strong> {formatDiaChi(order.diachinguoidung)}
                                 </div>
-                                <div className="col-md-6 mb-2">
-                                    <strong>Họ tên:</strong> {order.hoten}
-                                </div>
-                                <div className="col-md-6 mb-2">
-                                    <strong>Số điện thoại:</strong> {order.sodienthoai}
-                                </div>
-                                <div className="col-md-6 mb-2">
-                                    <strong>Địa chỉ:</strong> {order.diachinguoidung}
-                                </div>
-                                <div className="col-md-6 mb-2">
-                                    <strong>Ghi chú:</strong> {order.ghichu || "Không có"}
-                                </div>
+                                <div className="col-md-6 mb-2"><strong>Ghi chú:</strong> {order.ghichu || "Không có"}</div>
                                 <div className="col-md-6 mb-2">
                                     <strong>Phương thức thanh toán:</strong> {order.phuongthucthanhtoan?.toUpperCase()}
                                 </div>
@@ -117,10 +111,7 @@ const OrderDetail = () => {
 
                                 {order.trangthai === 1 && (
                                     <div className="col-md-6 mb-2">
-                                        <button
-                                            className="btn btn-outline-danger btn-sm mt-1"
-                                            onClick={handleCancelOrder}
-                                        >
+                                        <button className="btn btn-outline-danger btn-sm mt-1" onClick={handleCancelOrder}>
                                             ❌ Hủy đơn hàng
                                         </button>
                                     </div>
@@ -130,7 +121,6 @@ const OrderDetail = () => {
                                     <strong>Tổng tiền:</strong> {order.tongtien.toLocaleString()}đ
                                 </div>
                             </div>
-
                         </div>
 
                         {/* PHẦN 2: Danh sách sản phẩm */}
@@ -140,8 +130,9 @@ const OrderDetail = () => {
                                 <thead className="table-light">
                                     <tr>
                                         <th>#</th>
-                                        <th>Mã sản phẩm</th>
+                                        <th>Mã SP</th>
                                         <th>Tên sản phẩm</th>
+                                        <th>Loại</th>
                                         <th>Màu sắc</th>
                                         <th>Size</th>
                                         <th>Số lượng</th>
@@ -151,12 +142,27 @@ const OrderDetail = () => {
                                 <tbody>
                                     {order.chitiet.map((item, index) => {
                                         const colorName = getColorName(item.mausanpham);
-                                        const light = isLightColor(item.mausanpham);
+                                        const isLight = isLightColor(item.mausanpham);
+                                        const productLink = item.designLink
+                                            ? `http://localhost:3000/design/${item.designLink}`
+                                            : `http://localhost:3000/products/detail/${item.masanpham}`;
+
                                         return (
                                             <tr key={index}>
                                                 <td>{index + 1}</td>
                                                 <td>{item.masanpham}</td>
-                                                <td>{item.tensanpham}</td>
+                                                <td>
+                                                    <Link to={productLink} target="_blank">
+                                                        {item.tensanpham}
+                                                    </Link>
+                                                </td>
+                                                <td>
+                                                    <span className={`badge ${item.isThietKe ? "bg-info text-dark" : "bg-secondary"}`}>
+                                                        {item.isThietKe
+                                                            ? "Thiết kế riêng"
+                                                            : "Sản phẩm tiêu chuẩn"}
+                                                    </span>
+                                                </td>
                                                 <td>
                                                     <div className="d-flex align-items-center justify-content-center gap-2">
                                                         <span
@@ -166,7 +172,7 @@ const OrderDetail = () => {
                                                                 width: 24,
                                                                 height: 24,
                                                                 borderRadius: "50%",
-                                                                border: light ? "1px solid #333" : "1px solid #ccc",
+                                                                border: isLight ? "1px solid #333" : "1px solid #ccc"
                                                             }}
                                                             title={colorName}
                                                         ></span>

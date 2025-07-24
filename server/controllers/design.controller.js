@@ -247,3 +247,20 @@ exports.saveUserDesign = async (req, res) => {
         });
     }
 };
+
+exports.getDesignLink = async (req, res) => {
+    try {
+        const designId = req.params.designId;
+        const designService = new DesignService(MongoDB.client);
+        const link = await designService.getDesignLink(designId);  // link là chuỗi hoặc null
+
+        if (!link) {
+            return res.status(404).json({ success: false, message: 'Design không tồn tại hoặc không có link' });
+        }
+
+        return res.json({ success: true, link });
+    } catch (error) {
+        console.error('Lỗi khi lấy link design:', error);
+        return res.status(500).json({ success: false, message: 'Lỗi server' });
+    }
+};

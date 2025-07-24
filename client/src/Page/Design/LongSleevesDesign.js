@@ -1,6 +1,7 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
-import { getDesignDetail,getImagesByColor } from "../../api/Design/design.api";
+import { getDesignDetail, getImagesByColor, saveDesign } from "../../api/Design/design.api";
+import { addToCart } from "../../api/Cart/cart.api";
 import LeftSidebarDesign from "../../Components/Sidebar/LeftSidebarDesign";
 import { Rnd } from "react-rnd";
 import html2canvas from "html2canvas";
@@ -13,7 +14,7 @@ const toolBtnStyle = {
     cursor: "pointer"
 };
 
-const LongSleevesDesignPage = () => {
+const HoodieDesignPage = () => {
     const { id } = useParams();
     const [design, setDesign] = useState(null);
     const [images, setImages] = useState([]);
@@ -24,14 +25,29 @@ const LongSleevesDesignPage = () => {
     const containerRef = useRef();
     const overlayZoneRef = useRef();
     const [exportFormat, setExportFormat] = useState("png"); // mặc định PNG
+    const [savedInfo, setSavedInfo] = useState(null); // dùng để hiển thị kết quả đã lưu
+    const [selectedSize, setSelectedSize] = useState(null);
 
     useEffect(() => {
         if (!id) return;
         const fetchDesign = async () => {
             const res = await getDesignDetail(id);
             if (res.success) {
+                console.log("✅ Thiết kế lấy được từ API:", res.design);
+                console.log("🎨 Màu:", res.design?.mau);
+                console.log("🧩 Overlays:", res.overlays);
+
                 setDesign(res.design);
                 setSelectedColor(res.design?.mau);
+
+                // Gán overlays trả về vào overlaysMap
+                if (res.overlays && Array.isArray(res.overlays)) {
+                    const map = {};
+                    res.overlays.forEach(item => {
+                        map[item.vitri] = item.overlays || [];
+                    });
+                    setOverlaysMap(map);
+                }
             } else {
                 console.error("❌ Không thể lấy dữ liệu thiết kế");
             }
@@ -63,6 +79,92 @@ const LongSleevesDesignPage = () => {
         fetchImages();
     }, [selectedColor, design]);
 
+    const handleSaveDesign = async () => {
+        if (!design?._id || !selectedColor) {
+            // alert("Thiếu thông tin thiết kế hoặc màu sắc");
+            return;
+        }
+
+        const overlays = Object.entries(overlaysMap).map(([vitri, ovs]) => ({
+            vitri,
+            overlays: ovs
+        }));
+
+        const savedData = {
+            madesign: design._id,
+            ten: design.ten,
+            mau: selectedColor,
+            overlays
+        };
+
+        console.log("📤 Gửi dữ liệu lên server:", savedData);
+
+        try {
+            const res = await saveDesign(savedData);
+            console.log("✅ Server trả về:", res);
+
+            if (res.success) {
+                setSavedInfo(savedData); // Nếu bạn muốn hiện lại thông tin đã lưu
+                // alert("💾 Thiết kế đã được lưu!", "success");
+            } else {
+                console.error("❌ Lỗi khi lưu:", res.message);
+                alert("❌ Lưu thiết kế thất bại: " + res.message, "error");
+            }
+        } catch (err) {
+            console.error("❌ Lỗi khi gọi API:", err);
+            // alert("⚠️ Có lỗi xảy ra khi lưu thiết kế", "error");
+        }
+    };
+
+    const handleAddToCart = async ({ id, size, quantity }) => {
+        try {
+            const user = JSON.parse(localStorage.getItem("user"));
+            const userId = user?._id;
+            console.log("[handleAddToCart] userId:", userId);
+
+            if (!userId) {
+                console.warn("⚠️ Vui lòng đăng nhập để thêm vào giỏ hàng!");
+                return;
+            }
+
+            if (!design || !design._id || !design.masanpham) {
+                console.error("[handleAddToCart] Thiết kế chưa sẵn sàng hoặc thiếu thông tin sản phẩm:", design);
+                return;
+            }
+
+            if (!size || !selectedColor) {
+                console.warn("[handleAddToCart] Chưa chọn size hoặc màu:", {
+                    selectedSize: size,
+                    selectedColor,
+                });
+                return;
+            }
+
+            const cartItem = {
+                manguoidung: userId,
+                masanpham: design.masanpham,
+                soluong: quantity || 1,
+                size: size,
+                mausac: selectedColor,
+                isThietKe: true,
+                mathietke: design._id,
+            };
+
+            console.log("[handleAddToCart] Dữ liệu gửi đi:", cartItem);
+
+            const res = await addToCart(cartItem);
+            console.log("[handleAddToCart] Phản hồi từ server:", res);
+
+            // Kiểm tra theo đúng format server trả về
+            if (res?.success) {
+                console.log("🛒 Đã thêm thiết kế vào giỏ hàng!");
+            } else {
+                console.error(`❌ Không thể thêm vào giỏ hàng: ${res?.message || "Lỗi không xác định"}`);
+            }
+        } catch (err) {
+            console.error("[handleAddToCart] Lỗi khi gọi API:", err.message || err);
+        }
+    };
 
     const addOverlay = (overlay) => {
         const vitri = selectedImage?.vitri;
@@ -91,15 +193,24 @@ const LongSleevesDesignPage = () => {
             const updated = [...(prev[vitri] || [])];
             const current = updated[i];
 
+            const newWidth = ref.offsetWidth;
+
             if (current.type === "text") {
-                const initialWidth = current.initialWidth || current.width || 150;
-                const newWidth = ref.offsetWidth;
-
                 const baseFontSize = current.initialFontSize || current.fontSize || 24;
-                const scale = Math.max(newWidth / initialWidth, 0.3); // giới hạn nhỏ nhất
+                const initialWidth = current.initialWidth || current.width || 150;
 
+                if (!current.initialWidth || !current.initialFontSize) {
+                    updated[i] = {
+                        ...current,
+                        initialWidth: newWidth,
+                        initialFontSize: baseFontSize,
+                    };
+                    return { ...prev, [vitri]: updated };
+                }
+
+                const scale = Math.max(newWidth / initialWidth, 0.3);
                 const newFontSize = baseFontSize * scale;
-                const newHeight = newFontSize * 1.2; // chiều cao dòng chữ
+                const newHeight = newFontSize * 1.2; // hoặc tune theo thiết kế bạn
 
                 updated[i] = {
                     ...current,
@@ -112,12 +223,11 @@ const LongSleevesDesignPage = () => {
                     initialFontSize: baseFontSize,
                 };
             } else {
-                // xử lý ảnh hoặc overlay khác
                 updated[i] = {
                     ...current,
                     x: position.x,
                     y: position.y,
-                    width: ref.offsetWidth,
+                    width: newWidth,
                     height: ref.offsetHeight
                 };
             }
@@ -172,8 +282,6 @@ const LongSleevesDesignPage = () => {
             document.removeEventListener("mousedown", handleClickOutside);
         };
     }, []);
-
-
 
     const handleImageUpload = (imgBase64) => {
         const img = new Image();
@@ -268,14 +376,16 @@ const LongSleevesDesignPage = () => {
                                 width: 150,
                                 height: 50,
                                 fontSize: 24,
-                                initialWidth: 150,        // ✅ set ngay từ đầu
-                                initialFontSize: 24       // ✅ set ngay từ đầu
+                                initialWidth: 150,
+                                initialFontSize: 24
                             })
                         }
                         onLoadDesignImages={loadDesignImages}
                         onExportImages={handleExportImage}
                         exportFormat={exportFormat}
                         onExportFormatChange={setExportFormat}
+                        onSaveDesign={handleSaveDesign}
+                        onAddToCart={handleAddToCart}
                     />
 
                 </div>
@@ -314,12 +424,21 @@ const LongSleevesDesignPage = () => {
                                 }}
                             >
                                 {(overlaysMap[selectedImage?.vitri] || []).map((ov, i) => {
-                                    const scale = Math.max((ov.width || 100) / 150, 0.1); // ✅ scale nhỏ dần, không dưới 0.5
+                                    const scale = Math.max((ov.width || 100) / 150, 0.1); // scale size nút tool
+                                    const isSelected = selectedOverlayIndex === i;
+
+                                    const isText = ov.type === "text";
+                                    const textContent = ov.content?.text || "";
+                                    const textColor = ov.content?.color || "#000";
+                                    const fontFamily = ov.content?.fontFamily || "Arial";
+                                    const fontWeight = ov.content?.fontWeight || "normal";
+                                    const fontStyle = ov.content?.fontStyle || "normal";
+                                    const fontSize = ov.fontSize || 20;
 
                                     return (
                                         <Rnd
                                             key={i}
-                                            size={ov.type === "text" ? undefined : { width: ov.width || 100, height: ov.height || 100 }}
+                                            size={{ width: ov.width || 100, height: ov.height || 100 }}
                                             position={{ x: ov.x || 0, y: ov.y || 0 }}
                                             onDragStop={(e, d) => handleDragStop(i, d)}
                                             onResizeStop={(e, direction, ref, delta, position) => handleResizeStop(i, ref, position)}
@@ -329,16 +448,16 @@ const LongSleevesDesignPage = () => {
                                                 setSelectedOverlayIndex(i);
                                             }}
                                             enableResizing={
-                                                ov.type === "text"
+                                                isText
                                                     ? {
-                                                        top: false,
+                                                        top: true,
                                                         right: true,
-                                                        bottom: false,
+                                                        bottom: true,
                                                         left: true,
                                                         topRight: false,
                                                         bottomRight: false,
                                                         bottomLeft: false,
-                                                        topLeft: false
+                                                        topLeft: false,
                                                     }
                                                     : true
                                             }
@@ -346,19 +465,28 @@ const LongSleevesDesignPage = () => {
                                             minHeight={30}
                                             style={{
                                                 zIndex: 20,
-                                                border: selectedOverlayIndex === i ? "2px dashed #00bcd4" : "none",
+                                                border: isSelected ? "2px dashed #00bcd4" : "none",
                                                 transition: "border 0.2s ease",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
                                             }}
                                         >
-
                                             <div
                                                 onClick={(e) => e.stopPropagation()}
-                                                style={{ width: "100%", height: "100%", position: "relative" }}
+                                                style={{
+                                                    width: "100%",
+                                                    height: "100%",
+                                                    position: "relative",
+                                                }}
                                             >
-                                                {selectedOverlayIndex === i && (
+                                                {isSelected && (
                                                     <>
                                                         <button
-                                                            onClick={(e) => { e.stopPropagation(); handleCopyOverlay(i); }}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleCopyOverlay(i);
+                                                            }}
                                                             style={{
                                                                 ...toolBtnStyle,
                                                                 position: "absolute",
@@ -366,14 +494,17 @@ const LongSleevesDesignPage = () => {
                                                                 left: -10,
                                                                 zIndex: 30,
                                                                 transform: `scale(${scale})`,
-                                                                transformOrigin: "top left"
+                                                                transformOrigin: "top left",
                                                             }}
                                                         >
                                                             📄
                                                         </button>
 
                                                         <button
-                                                            onClick={(e) => { e.stopPropagation(); handleDeleteOverlay(i); }}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleDeleteOverlay(i);
+                                                            }}
                                                             style={{
                                                                 ...toolBtnStyle,
                                                                 position: "absolute",
@@ -381,7 +512,7 @@ const LongSleevesDesignPage = () => {
                                                                 right: -10,
                                                                 zIndex: 30,
                                                                 transform: `scale(${scale})`,
-                                                                transformOrigin: "top right"
+                                                                transformOrigin: "top right",
                                                             }}
                                                         >
                                                             ❌
@@ -389,7 +520,7 @@ const LongSleevesDesignPage = () => {
                                                     </>
                                                 )}
 
-                                                {ov.type === "text" ? (
+                                                {isText ? (
                                                     <div
                                                         style={{
                                                             width: "100%",
@@ -397,26 +528,29 @@ const LongSleevesDesignPage = () => {
                                                             display: "flex",
                                                             alignItems: "center",
                                                             justifyContent: "center",
+                                                            textAlign: "center",
                                                             overflow: "hidden",
                                                             userSelect: "none",
-                                                            padding: 0,
+                                                            pointerEvents: "none",
                                                         }}
                                                     >
                                                         <div
                                                             style={{
-                                                                color: ov.content.color || "#000",
-                                                                fontFamily: ov.content.fontFamily || "Arial",
-                                                                fontWeight: ov.content.fontWeight || "normal",
-                                                                fontStyle: ov.content.fontStyle || "normal",
-                                                                fontSize: `${ov.fontSize}px`,
-                                                                lineHeight: `${ov.fontSize * 1.2}px`,
-                                                                whiteSpace: "nowrap",
                                                                 display: "inline-block",
-                                                                height: "100%",
+                                                                color: textColor,
+                                                                fontFamily,
+                                                                fontWeight,
+                                                                fontStyle,
+                                                                fontSize: `${fontSize}px`,
+                                                                lineHeight: `${fontSize * 1.2}px`,
+                                                                whiteSpace: "pre", // hoặc "normal"
+                                                                userSelect: "none",
+                                                                pointerEvents: "none",
                                                             }}
                                                         >
-                                                            {ov.content.text}
+                                                            {textContent}
                                                         </div>
+
                                                     </div>
                                                 ) : (
                                                     <img
@@ -429,15 +563,15 @@ const LongSleevesDesignPage = () => {
                                                             userSelect: "none",
                                                             pointerEvents: "none",
                                                             display: "block",
-                                                            margin: "auto"
+                                                            margin: "auto",
                                                         }}
                                                     />
                                                 )}
                                             </div>
                                         </Rnd>
+
                                     );
                                 })}
-
                             </div>
                         </div>
                     ) : (
@@ -458,5 +592,4 @@ const LongSleevesDesignPage = () => {
         </div>
     );
 };
-
-export default LongSleevesDesignPage;
+export default HoodieDesignPage;

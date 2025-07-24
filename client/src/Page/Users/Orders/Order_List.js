@@ -98,7 +98,23 @@ const OrderList = () => {
                                             <td>{order.madonhang}</td>
                                             <td>{order.hoten}</td>
                                             <td>{order.sodienthoai}</td>
-                                            <td>{order.diachinguoidung}</td>
+                                            <td className="text-start">
+                                                {(() => {
+                                                    const parts = order.diachinguoidung.split(",");
+                                                    const first = parts[0]?.trim() || "";
+                                                    const second = parts[1]?.trim() || "";
+                                                    const rest = parts.slice(2).join(",").trim();
+
+                                                    return (
+                                                        <>
+                                                            <div>{first}</div>
+                                                            <div>{second}</div>
+                                                            <div>{rest}</div>
+                                                        </>
+                                                    );
+                                                })()}
+                                            </td>
+
                                             <td>{formatCurrency(order.tongtien)}</td>
                                             <td>
                                                 <span className={`badge ${order.class}`}>

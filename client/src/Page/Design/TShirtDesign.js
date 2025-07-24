@@ -14,7 +14,7 @@ const toolBtnStyle = {
     cursor: "pointer"
 };
 
-const DesignPage = () => {
+const TShirtDesign = () => {
     const { id } = useParams();
     const [design, setDesign] = useState(null);
     const [images, setImages] = useState([]);
@@ -27,6 +27,10 @@ const DesignPage = () => {
     const [exportFormat, setExportFormat] = useState("png"); // mặc định PNG
     const [savedInfo, setSavedInfo] = useState(null); // dùng để hiển thị kết quả đã lưu
     const [selectedSize, setSelectedSize] = useState(null);
+    const frontImage = images.find(img => img.vitri === "front") || null;
+    const [tryOnImage, setTryOnImage] = useState(null);
+    const [showTryOn, setShowTryOn] = useState(false);
+    const [exportedBase64, setExportedBase64] = useState(null);
 
     useEffect(() => {
         if (!id) return;
@@ -47,6 +51,7 @@ const DesignPage = () => {
                         map[item.vitri] = item.overlays || [];
                     });
                     setOverlaysMap(map);
+                    console.log("🔎 overlaysMap:", map); // <-- Thêm dòng này để log overlaysMap
                 }
             } else {
                 console.error("❌ Không thể lấy dữ liệu thiết kế");
@@ -276,7 +281,6 @@ const DesignPage = () => {
                 setSelectedOverlayIndex(null);
             }
         };
-
         document.addEventListener("mousedown", handleClickOutside);
         return () => {
             document.removeEventListener("mousedown", handleClickOutside);
@@ -327,7 +331,8 @@ const DesignPage = () => {
         }
     };
 
-    const handleExportImage = async () => {
+
+    const handleExportImage = async (callback) => {
         if (!containerRef.current || !overlayZoneRef.current) return;
 
         const overlayEl = overlayZoneRef.current;
@@ -347,12 +352,49 @@ const DesignPage = () => {
 
             const dataURL = canvas.toDataURL(mimeType);
 
+            // Tải về
             const link = document.createElement("a");
             link.href = dataURL;
             link.download = `design-${design?._id || "export"}.${exportFormat}`;
             link.click();
+
+            // Callback trả ảnh về cho LeftSidebarDesign
+            if (typeof callback === "function") {
+                callback(dataURL);
+            }
+
+            // Lưu state để truyền cho prop previewImage
+            setExportedBase64(dataURL);
+
         } catch (error) {
             console.error("❌ Lỗi khi xuất ảnh:", error);
+        } finally {
+            overlayEl.style.border = prevBorder;
+        }
+    };
+
+    const exportDesignAsBase64 = async ({ format = "png" } = {}) => {
+        if (!containerRef.current || !overlayZoneRef.current) return null;
+
+        const overlayEl = overlayZoneRef.current;
+        const prevBorder = overlayEl.style.border;
+
+        try {
+            overlayEl.style.border = "none";
+
+            const canvas = await html2canvas(containerRef.current, {
+                useCORS: true,
+                backgroundColor: null,
+            });
+
+            let mimeType = "image/png";
+            if (format === "jpeg") mimeType = "image/jpeg";
+            else if (format === "webp") mimeType = "image/webp";
+
+            return canvas.toDataURL(mimeType);
+        } catch (err) {
+            console.error("❌ Lỗi xuất base64:", err);
+            return null;
         } finally {
             overlayEl.style.border = prevBorder;
         }
@@ -364,6 +406,8 @@ const DesignPage = () => {
                 <div className="col-md-2 border-end">
                     <LeftSidebarDesign
                         designId={id}
+                        frontImage={frontImage}
+                        overlays={Array.isArray(overlaysMap["front"]) ? overlaysMap["front"] : []}
                         productId={design?.masanpham}
                         onColorChange={(color) => setSelectedColor(color)}
                         onImageUpload={handleImageUpload}
@@ -386,6 +430,8 @@ const DesignPage = () => {
                         onExportFormatChange={setExportFormat}
                         onSaveDesign={handleSaveDesign}
                         onAddToCart={handleAddToCart}
+                        onExportDesign={exportDesignAsBase64}
+                        
                     />
 
                 </div>
@@ -589,9 +635,7 @@ const DesignPage = () => {
                     ))}
                 </div>
             </div>
-            {/* <button onClick={handleSaveDesign}>💾 Lưu thiết kế</button> */}
-
         </div>
     );
 };
-export default DesignPage;
+export default TShirtDesign;

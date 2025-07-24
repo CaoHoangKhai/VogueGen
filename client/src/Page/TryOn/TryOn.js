@@ -230,9 +230,18 @@ function TryOnForm() {
       <h3 className="text-center mb-4">🧥 Virtual Try-On Demo</h3>
 
       <div className="row text-center justify-content-center">
-        <div className="col-md-4">{renderUploadBox(humanFile, setHumanFile, "🧍 Ảnh người", demoHumans, "human")}</div>
-        <div className="col-md-4">{renderUploadBox(clothFile, setClothFile, "👕 Ảnh áo", demoClothes, "cloth")}</div>
-        <div className="col-md-4">
+        {/* Upload ảnh người */}
+        <div className="col-md-4 mb-3">
+          {renderUploadBox(humanFile, setHumanFile, "🧍 Ảnh người", demoHumans, "human")}
+        </div>
+
+        {/* Upload ảnh áo */}
+        <div className="col-md-4 mb-3">
+          {renderUploadBox(clothFile, setClothFile, "👕 Ảnh áo", demoClothes, "cloth")}
+        </div>
+
+        {/* Kết quả Try-On */}
+        <div className="col-md-4 mb-3">
           <p className="fw-bold mb-2">🖼️ Kết quả</p>
           <div
             style={{
@@ -246,6 +255,7 @@ function TryOnForm() {
               overflow: "hidden",
             }}
           >
+            {/* Progress loading */}
             {loading && (
               <>
                 <div
@@ -278,6 +288,8 @@ function TryOnForm() {
                 </div>
               </>
             )}
+
+            {/* Hiển thị nội dung kết quả */}
             <div
               className="d-flex align-items-center justify-content-center h-100 w-100"
               style={{ position: "relative", zIndex: 2 }}
@@ -292,16 +304,59 @@ function TryOnForm() {
                   )}
                 </div>
               ) : resultImageUrl ? (
-                <img
-                  src={resultImageUrl}
-                  alt="result"
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "contain",
-                    borderRadius: 12,
-                  }}
-                />
+                <div style={{ width: "100%", height: "100%", position: "relative" }}>
+                  <img
+                    src={resultImageUrl}
+                    alt="result"
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "contain",
+                      borderRadius: 12,
+                    }}
+                  />
+
+                  {/* Nút tải ảnh về */}
+                  <button
+                    onClick={async () => {
+                      try {
+                        const response = await fetch(resultImageUrl);
+                        const blob = await response.blob();
+                        const url = URL.createObjectURL(blob);
+
+                        const link = document.createElement("a");
+                        link.href = url;
+                        link.download = "tryon_result.jpg"; // Tên file tải về
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(url); // Giải phóng bộ nhớ
+                      } catch (err) {
+                        console.error("Lỗi khi tải ảnh:", err);
+                      }
+                    }}
+                    style={{
+                      position: "absolute",
+                      top: 10,
+                      right: 10,
+                      zIndex: 3,
+                      backgroundColor: "rgba(255,255,255,0.9)",
+                      padding: "6px 10px",
+                      borderRadius: 6,
+                      textDecoration: "none",
+                      color: "#007bff",
+                      fontSize: 14,
+                      fontWeight: "bold",
+                      boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                      cursor: "pointer",
+                    }}
+                    title="Tải ảnh về"
+                  >
+                    ⬇️
+                  </button>
+
+
+                </div>
               ) : (
                 <div className="text-muted">{error || "Chưa có ảnh"}</div>
               )}
@@ -310,13 +365,19 @@ function TryOnForm() {
         </div>
       </div>
 
+      {/* Nút tạo ảnh Try-On */}
       <div className="text-center mt-4">
-        <button className="btn btn-primary px-4 py-2" onClick={handleTryOn} disabled={loading}>
+        <button
+          className="btn btn-primary px-4 py-2"
+          onClick={handleTryOn}
+          disabled={loading}
+        >
           {loading ? "Đang xử lý..." : "Tạo ảnh Try-On"}
         </button>
       </div>
     </div>
   );
+
 }
 
 export default TryOnForm;

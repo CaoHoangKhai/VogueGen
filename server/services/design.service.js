@@ -61,7 +61,6 @@ class DesignService {
         if (!category || !category.slug) {
             return { success: false, message: "Không tìm thấy danh mục sản phẩm." };
         }
-
         const slug = category.slug;
 
         // ✅ Tạo bản thiết kế
@@ -268,9 +267,7 @@ class DesignService {
         if (!madesign || !mau || !Array.isArray(overlays)) {
             throw new Error("Thiếu madesign, màu hoặc overlays không hợp lệ");
         }
-
         const madesignId = new ObjectId(madesign);
-
         // 1. Cập nhật màu cho document gốc trong "designs"
         const designUpdateResult = await this.design.updateOne(
             { _id: madesignId },
@@ -294,7 +291,6 @@ class DesignService {
             });
 
             let result;
-
             if (existing) {
                 result = await this.thietkecuanguoidung.updateOne(
                     { _id: existing._id },
@@ -324,7 +320,6 @@ class DesignService {
                 insertedId: result.insertedId || null
             });
         }
-
         return {
             success: true,
             message: "Lưu overlays và màu thành công",
@@ -336,6 +331,15 @@ class DesignService {
             }
         };
     }
+
+    async getDesignLink(designId) {
+        if (!ObjectId.isValid(designId)) return null;
+
+        const design = await this.design.findOne({ _id: new ObjectId(designId) });
+        if (!design || !design.link) return null;
+        return design.link;
+    }
+
 
 }
 

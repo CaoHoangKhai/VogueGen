@@ -1,5 +1,6 @@
 const MongoDB = require("../utils/mongodb.util");
 const OrderService = require("../services/order.service");
+const DesignService = require("../services/design.service");
 
 exports.createOrder = async (req, res) => {
     try {
@@ -72,21 +73,39 @@ exports.getOrdersByUserId = async (req, res) => {
     }
 };
 
+
 exports.getOrderDetailById = async (req, res) => {
     try {
         const { orderId } = req.params;
         console.log("📥 [getOrderDetailById] Yêu cầu lấy chi tiết đơn hàng:", orderId);
 
-        const service = new OrderService(MongoDB.client);
-        const result = await service.getOrderByIdWithDetails(orderId);
+        const orderService = new OrderService(MongoDB.client);
+        const designService = new DesignService(MongoDB.client);
 
-        if (result.success) {
-            console.log("✅ [getOrderDetailById] Chi tiết đơn hàng:", JSON.stringify(result.data, null, 2));
-        } else {
+        const result = await orderService.getOrderByIdWithDetails(orderId);
+
+        if (!result.success) {
             console.warn("❌ [getOrderDetailById] Không tìm thấy đơn hàng.");
+            return res.status(404).json(result);
         }
 
-        res.status(result.success ? 200 : 404).json(result);
+        // ✅ Xử lý phần thêm designLink nếu có madesign
+        const updatedDetails = await Promise.all(
+            result.data.chitiet.map(async (item) => {
+                if (item.madesign) {
+                    const link = await designService.getDesignLink(item.madesign);
+                    return { ...item, designLink: link || null };
+                }
+                return item;
+            })
+        );
+
+        // Gán lại vào đơn hàng
+        result.data.chitiet = updatedDetails;
+
+        console.log("✅ [getOrderDetailById] Chi tiết đơn hàng:", JSON.stringify(result.data, null, 2));
+        res.status(200).json(result);
+
     } catch (error) {
         console.error("🔥 [getOrderDetailById] Lỗi:", error.message);
         res.status(500).json({
@@ -96,6 +115,7 @@ exports.getOrderDetailById = async (req, res) => {
         });
     }
 };
+
 
 exports.getLatestPendingOrders = async (req, res) => {
     try {

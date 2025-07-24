@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useLocation } from "react-router-dom";
-import { Modal, Button, Form } from "react-bootstrap";
+import { Modal, Button, Form, OverlayTrigger, Tooltip } from "react-bootstrap";
 import { getSizesByDesignId } from "../api/Size/size.api";
 
 const AddToCartButton = ({ onAddToCart, showToast }) => {
@@ -87,9 +87,18 @@ const AddToCartButton = ({ onAddToCart, showToast }) => {
 
     return (
         <>
-            <button className="btn btn-success mt-2" onClick={handleOpen}>
-                🛒
-            </button>
+            <OverlayTrigger
+                placement="top"
+                overlay={<Tooltip>Thêm vào giỏ hàng</Tooltip>}
+            >
+                <button
+                    className="btn btn-outline-success mt-2"
+                    onClick={handleOpen}
+                    style={{ outline: "2px solid #198754", outlineOffset: "2px" }}
+                >
+                    🛒
+                </button>
+            </OverlayTrigger>
 
             <Modal show={showModal} onHide={handleClose} centered>
                 <Modal.Header closeButton>
@@ -99,7 +108,11 @@ const AddToCartButton = ({ onAddToCart, showToast }) => {
                     <Form>
                         {availableSizes.length > 0 ? (
                             availableSizes.map((size) => (
-                                <div key={size} className="mb-3 border-bottom pb-2">
+                                <div
+                                    key={size}
+                                    className="mb-3 border-bottom pb-2"
+                                    style={{ outline: "1px dashed #ccc", padding: "10px" }}
+                                >
                                     <Form.Check
                                         type="checkbox"
                                         label={`Size ${size}`}
@@ -112,6 +125,7 @@ const AddToCartButton = ({ onAddToCart, showToast }) => {
                                             type="number"
                                             placeholder="Số lượng"
                                             min={1}
+                                            style={{ outline: "1px solid #ccc" }}
                                             value={quantities[size] || ""}
                                             onChange={(e) =>
                                                 handleQuantityChange(size, e.target.value)
@@ -126,10 +140,10 @@ const AddToCartButton = ({ onAddToCart, showToast }) => {
                     </Form>
                 </Modal.Body>
                 <Modal.Footer>
-                    <Button variant="secondary" onClick={handleClose}>
+                    <Button variant="outline-secondary" onClick={handleClose}>
                         Hủy
                     </Button>
-                    <Button variant="success" onClick={handleConfirm}>
+                    <Button variant="outline-success" onClick={handleConfirm}>
                         Xác nhận
                     </Button>
                 </Modal.Footer>

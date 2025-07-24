@@ -108,7 +108,9 @@ const Order = () => {
                 soluong: item.soluong,
                 giatien: item.giasanpham,
                 size: item.size,
-                mausac: item.mausac
+                mausac: item.mausac,
+                isThietKe: !!item.madesign,
+                madesign: item.madesign || null
             }))
         };
 

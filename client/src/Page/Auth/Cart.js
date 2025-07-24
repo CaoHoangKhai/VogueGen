@@ -13,9 +13,11 @@ const Cart = () => {
     const [inputValues, setInputValues] = useState({});
     const [toast, setToast] = useState({ show: false, message: "", type: "" });
 
+    // Lấy userId từ localStorage
     const userData = localStorage.getItem('user');
     const userId = userData ? JSON.parse(userData)._id : null;
 
+    // Lấy giỏ hàng khi userId thay đổi hoặc lần đầu
     useEffect(() => {
         if (!userId) {
             setCartItems([]);
@@ -26,6 +28,7 @@ const Cart = () => {
             .then(res => {
                 const data = res.data || [];
                 setCartItems(data);
+                // Set giá trị input số lượng
                 const values = {};
                 data.forEach(item => {
                     values[item._id] = item.soluong?.toString() ?? "1";
@@ -39,8 +42,13 @@ const Cart = () => {
             });
     }, [userId]);
 
-    const total = cartItems.reduce((sum, item) => sum + (item.giasanpham || 0) * (item.soluong || 1), 0);
+    // Tổng tiền
+    const total = cartItems.reduce(
+        (sum, item) => sum + (item.giasanpham || 0) * (item.soluong || 1),
+        0
+    );
 
+    // Thay đổi input số lượng
     const handleInputChange = (item, value) => {
         const onlyNumber = value.replace(/[^0-9]/g, '');
         setInputValues(prev => ({
@@ -49,6 +57,7 @@ const Cart = () => {
         }));
     };
 
+    // Khi input mất focus, update backend
     const handleInputBlur = (item) => {
         let raw = inputValues[item._id];
         let val = parseInt(raw, 10);
@@ -68,6 +77,7 @@ const Cart = () => {
             });
     };
 
+    // Tăng số lượng
     const handleIncrease = (item) => {
         increaseCartQuantity(item._id)
             .then(() => {
@@ -86,6 +96,7 @@ const Cart = () => {
             });
     };
 
+    // Giảm số lượng
     const handleDecrease = (item) => {
         if (item.soluong <= 1) return;
         decreaseCartQuantity(item._id)
@@ -105,6 +116,7 @@ const Cart = () => {
             });
     };
 
+    // Xóa sản phẩm khỏi giỏ
     const handleRemoveItem = (item) => {
         updateCartQuantity(item._id, { soluong: 0 })
             .then(() => {
@@ -120,6 +132,50 @@ const Cart = () => {
             .catch(() => {
                 setToast({ show: true, message: "Xóa sản phẩm thất bại!", type: "error" });
             });
+    };
+
+    // Render overlays text cho thiết kế mặt trước
+    const renderOverlays = (designInfo) => {
+        if (!designInfo || !designInfo.overlays) return null;
+        const front = designInfo.overlays.find(o => o.vitri === "front");
+        if (!front) return null;
+
+        return front.overlays.map((overlay, idx) => {
+            if (overlay.type === "text") {
+                const style = {
+                    position: 'absolute',
+                    top: overlay.y,
+                    left: overlay.x,
+                    width: overlay.width,
+                    height: overlay.height,
+                    fontSize: overlay.fontSize,
+                    fontFamily: overlay.content.fontFamily,
+                    fontWeight: overlay.content.fontWeight,
+                    fontStyle: overlay.content.fontStyle,
+                    color: overlay.content.color,
+                    pointerEvents: 'none',
+                    userSelect: 'none',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                };
+                return (
+                    <div key={idx} style={style} title={overlay.content.text}>
+                        {overlay.content.text}
+                    </div>
+                );
+            }
+            return null;
+        });
+    };
+
+    // Hàm xử lý click dòng sản phẩm
+    const handleRowClick = (item) => {
+        if (item.designLink) {
+            window.location.href = `http://localhost:3000/design/${item.designLink}`;
+        } else {
+            window.location.href = `http://localhost:3000/products/detail/${item.masanpham}`;
+        }
     };
 
     return (
@@ -149,9 +205,17 @@ const Cart = () => {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {cartItems.map((item) => (
-                                            <tr key={item._id}>
-                                                <td><img src={item.hinhanh} alt={item.tensanpham} className="img-thumbnail" style={{ width: 60, height: 60, objectFit: "cover" }} /></td>
+                                        {cartItems.map(item => (
+                                            <tr key={item._id} style={{ cursor: 'pointer' }} onClick={() => handleRowClick(item)}>
+                                                <td style={{ position: 'relative', width: 60, height: 60 }}>
+                                                    <img
+                                                        src={item.hinhanh}
+                                                        alt={item.tensanpham}
+                                                        className="img-thumbnail"
+                                                        style={{ width: 60, height: 60, objectFit: "cover" }}
+                                                    />
+                                                    {item.designInfo && renderOverlays(item.designInfo)}
+                                                </td>
                                                 <td>{item.tensanpham || item.masanpham}</td>
                                                 <td>{item.size}</td>
                                                 <td>
@@ -159,27 +223,27 @@ const Cart = () => {
                                                         className="d-inline-block"
                                                         style={{ width: 20, height: 20, backgroundColor: item.mausac, border: "1px solid #ccc", borderRadius: 4 }}
                                                         title={item.mausac}
-                                                    ></span>
+                                                    />
                                                 </td>
                                                 <td>
                                                     <div className="input-group input-group-sm">
-                                                        <button className="btn btn-outline-secondary" onClick={() => handleDecrease(item)}>-</button>
+                                                        <button className="btn btn-outline-secondary" onClick={(e) => { e.stopPropagation(); handleDecrease(item); }}>-</button>
                                                         <input
                                                             type="text"
                                                             value={inputValues[item._id] || ''}
-                                                            onChange={(e) => handleInputChange(item, e.target.value)}
+                                                            onChange={(e) => { e.stopPropagation(); handleInputChange(item, e.target.value); }}
                                                             onBlur={() => handleInputBlur(item)}
                                                             className="form-control text-center shadow-none bg-light"
                                                             style={{ width: "4rem", minWidth: 60 }}
                                                         />
-                                                        <button className="btn btn-outline-secondary" onClick={() => handleIncrease(item)}>+</button>
+                                                        <button className="btn btn-outline-secondary" onClick={(e) => { e.stopPropagation(); handleIncrease(item); }}>+</button>
                                                     </div>
                                                 </td>
                                                 <td>{(item.giasanpham || 0).toLocaleString("vi-VN")} đ</td>
                                                 <td>{((item.giasanpham || 0) * (item.soluong || 1)).toLocaleString("vi-VN")} đ</td>
                                                 <td>
-                                                    <button className="btn btn-sm btn-outline-danger" onClick={() => handleRemoveItem(item)}>
-                                                        <i className="bi bi-trash"></i>
+                                                    <button className="btn btn-sm btn-outline-danger" onClick={(e) => { e.stopPropagation(); handleRemoveItem(item); }}>
+                                                        <i className="bi bi-trash" />
                                                     </button>
                                                 </td>
                                             </tr>
