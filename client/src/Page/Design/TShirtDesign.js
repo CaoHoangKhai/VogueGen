@@ -4,7 +4,11 @@ import { getDesignDetail, getImagesByColor, saveDesign } from "../../api/Design/
 import { addToCart } from "../../api/Cart/cart.api";
 import LeftSidebarDesign from "../../Components/Sidebar/LeftSidebarDesign";
 import { Rnd } from "react-rnd";
+
+import axios from "axios";
+import { BASE_URL_TRY_ON } from "../../api/TryOn/tryon.api";
 import html2canvas from "html2canvas";
+
 const toolBtnStyle = {
     fontSize: 10,
     padding: "2px 4px",
@@ -31,7 +35,11 @@ const TShirtDesign = () => {
     const [tryOnImage, setTryOnImage] = useState(null);
     const [showTryOn, setShowTryOn] = useState(false);
     const [exportedBase64, setExportedBase64] = useState(null);
-
+    const [previewImage, setPreviewImage] = useState(null);
+    const [showPreviewModal, setShowPreviewModal] = useState(false);
+    const [frontPreviewUrl, setFrontPreviewUrl] = useState(null);
+    const [loadingGenerate, setLoadingGenerate] = useState(false);
+    const [tryOnPreviewUrls, setTryOnPreviewUrls] = useState([]); // ảnh thử áo nhiều góc
     useEffect(() => {
         if (!id) return;
         const fetchDesign = async () => {
@@ -400,6 +408,45 @@ const TShirtDesign = () => {
         }
     };
 
+    const handleRequestPreview = async () => {
+        if (!containerRef.current || !overlayZoneRef.current) return;
+
+        const overlayEl = overlayZoneRef.current;
+        const prevBorder = overlayEl.style.border;
+        overlayEl.style.border = "none";
+
+        const canvas = await html2canvas(containerRef.current, {
+            useCORS: true,
+            backgroundColor: null,
+        });
+
+        overlayEl.style.border = prevBorder;
+
+        const imageUrl = canvas.toDataURL("image/png");
+        setFrontPreviewUrl(imageUrl); // 👉 Gán ảnh preview tại đây
+    };
+
+    const handleGenerateTryOnImages = async () => {
+        if (!frontPreviewUrl) return;
+        try {
+            setLoadingGenerate(true);
+            const formData = new FormData();
+            const response = await fetch(frontPreviewUrl);
+            const blob = await response.blob();
+            formData.append("image", blob, "design.png");
+
+            const res = await axios.post(`${BASE_URL_TRY_ON}/generate`, formData, {
+                headers: { "Content-Type": "multipart/form-data" },
+            });
+
+            // Gán kết quả (array URLs)
+            setTryOnPreviewUrls(res.data?.image_urls || []);
+        } catch (err) {
+            console.error("Lỗi sinh ảnh thử áo:", err);
+        } finally {
+            setLoadingGenerate(false);
+        }
+    };
     return (
         <div className="container-fluid">
             <div className="row">
@@ -431,8 +478,92 @@ const TShirtDesign = () => {
                         onSaveDesign={handleSaveDesign}
                         onAddToCart={handleAddToCart}
                         onExportDesign={exportDesignAsBase64}
-                        
+                        onRequestPreview={handleRequestPreview}
+
                     />
+                    {showPreviewModal && (
+                        <div className="modal-backdrop">
+                            <div className="modal-content">
+                                <img src={previewImage} alt="Preview" />
+                                <button onClick={() => setShowPreviewModal(false)}>Đóng</button>
+                            </div>
+                        </div>
+                    )}
+                    {frontPreviewUrl && (
+                        <>
+                            {/* Modal backdrop */}
+                            <div className="modal-backdrop fade show"></div>
+
+                            {/* Modal */}
+                            <div className="modal fade show" style={{ display: "block" }} tabIndex="-1" role="dialog">
+                                <div className="modal-dialog modal-dialog-centered modal-xl" role="document">
+                                    <div className="modal-content">
+                                        <div className="modal-header">
+                                            <h5 className="modal-title">Xem trước thiết kế (Mặt trước)</h5>
+                                            <button
+                                                type="button"
+                                                className="btn-close"
+                                                onClick={() => setFrontPreviewUrl(null)}
+                                            ></button>
+                                        </div>
+
+                                        <div className="modal-body text-center">
+                                            {/* Ảnh mặt trước */}
+                                            <img
+                                                src={frontPreviewUrl}
+                                                alt="Front Preview"
+                                                style={{
+                                                    maxWidth: "50%",
+                                                    height: "auto",
+                                                    maxHeight: "50vh",
+                                                    objectFit: "contain",
+                                                }}
+                                            />
+
+                                            {/* Ảnh thử áo */}
+                                            {tryOnPreviewUrls.length > 0 && (
+                                                <div className="mt-4">
+                                                    <h6>Kết quả thử áo:</h6>
+                                                    <div className="d-flex flex-wrap justify-content-center gap-3 mt-2">
+                                                        {tryOnPreviewUrls.map((url, idx) => (
+                                                            <img
+                                                                key={idx}
+                                                                src={url}
+                                                                alt={`TryOn ${idx}`}
+                                                                style={{
+                                                                    maxWidth: "200px",
+                                                                    maxHeight: "250px",
+                                                                    objectFit: "contain",
+                                                                }}
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="modal-footer d-flex justify-content-between">
+                                            <button
+                                                type="button"
+                                                className="btn btn-secondary"
+                                                onClick={() => setFrontPreviewUrl(null)}
+                                            >
+                                                Đóng
+                                            </button>
+
+                                            <button
+                                                className="btn btn-primary"
+                                                onClick={handleGenerateTryOnImages}
+                                                disabled={loadingGenerate}
+                                            >
+                                                {loadingGenerate ? "Đang xử lý..." : "👕 SINH ẢNH THỬ ÁO"}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </>
+                    )}
 
                 </div>
 

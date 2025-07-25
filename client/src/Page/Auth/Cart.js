@@ -214,7 +214,7 @@ const Cart = () => {
                                                         className="img-thumbnail"
                                                         style={{ width: 60, height: 60, objectFit: "cover" }}
                                                     />
-                                                    {item.designInfo && renderOverlays(item.designInfo)}
+                                                    {/* {item.designInfo && renderOverlays(item.designInfo)} */}
                                                 </td>
                                                 <td>{item.tensanpham || item.masanpham}</td>
                                                 <td>{item.size}</td>

@@ -1,11 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaPalette, FaImage, FaFont, FaHome, FaDownload } from "react-icons/fa";
+import { FaTshirt, FaPalette, FaImage, FaFont, FaHome, FaDownload } from "react-icons/fa";
 import Toast from "../Toast";
 import { colors } from "../../config/colors";
 import { getColorByDesignId } from "../../api/Design/design.api";
 import AddToCartButton from "../AddToCartButton";
-
 // Danh sách menu sidebar
 const menu = [
     { label: "Color", key: "color", icon: <FaPalette /> },
@@ -24,7 +23,9 @@ const LeftSidebarDesign = ({
     onExportFormatChange,
     LeftSidebarDesign,
     onSaveDesign,
-    onAddToCart
+    onAddToCart,
+    onPanelChange,
+    onRequestPreview
 }) => {
 
     const navigate = useNavigate();
@@ -42,6 +43,8 @@ const LeftSidebarDesign = ({
     const [selectedColor, setSelectedColor] = useState(null);
     const [isColorLoaded, setIsColorLoaded] = useState(false);
 
+    const [frontPreviewUrl, setFrontPreviewUrl] = useState(null);
+    const [showFrontModal, setShowFrontModal] = useState(false);
 
     // Toast
     const [toast, setToast] = useState({ show: false, message: "", type: "info" });
@@ -440,12 +443,8 @@ const LeftSidebarDesign = ({
 
                 {/* Các menu như màu, hình, text, export */}
                 {menu.map(renderMenuButton)}
-
-                
-
-
                 {/* Khu vực nút cuối cùng */}
-                
+
                 <div
                     style={{
 
@@ -482,6 +481,14 @@ const LeftSidebarDesign = ({
 
                     {/* Thêm vào giỏ hàng */}
                     <AddToCartButton onAddToCart={onAddToCart} showToast={showToast} />
+                    <button
+                        onClick={onRequestPreview}
+                        className="btn btn-outline-primary d-flex align-items-center gap-2 px-3 py-2 rounded mt-2"
+                    >
+                        <FaTshirt size={18} />
+
+                    </button>
+
                 </div>
             </div>
 
