@@ -1,71 +1,167 @@
-# Getting Started with Create React App
-VogueGen 
+```markdown
+# 🛍️ Fashion E-Commerce Platform with Virtual Try-On & Design Personalization  
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## 📌 Giới thiệu  
 
-## Available Scripts
+Dự án **Website Thương Mại Điện Tử Thời Trang** mang đến trải nghiệm mua sắm trực tuyến hiện đại với nhiều tính năng nổi bật:  
 
-In the project directory, you can run:
+✅ **Virtual Try-On (VTON)** – Giúp khách hàng xem trước sản phẩm trên người mẫu hoặc ảnh cá nhân.  
+✅ **Cá nhân hóa thiết kế** – Cho phép người dùng chỉnh sửa sản phẩm (thêm chữ, hình ảnh, thay đổi màu sắc).  
+✅ **Quản trị sản phẩm & đơn hàng** – Dễ dàng quản lý kho, đơn mua và thông tin khách hàng.  
 
-### `npm start`
+---
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## 🚀 Công nghệ sử dụng  
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### 🔹 Frontend  
+- **ReactJS** – Xây dựng UI linh hoạt, tốc độ cao.  
+- **Bootstrap 5** – Giao diện responsive, thân thiện với mọi thiết bị.  
 
-### `npm test`
+### 🔹 Backend  
+- **Node.js (Express)** – Server RESTful API.  
+- **MVC Architecture** – Tổ chức code rõ ràng theo mô hình Model – View – Controller.  
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### 🔹 Database  
+- **MongoDB (Mongoose)** – Lưu trữ dữ liệu sản phẩm, người dùng, đơn hàng.  
 
-### `npm run build`
+### 🔹 AI & Tích hợp đặc biệt  
+- **Virtual Try-On API (IDM-VTON/Diffusers)** – Tích hợp AI sinh ảnh thử đồ.  
+- **Module thiết kế cá nhân hóa** – Cho phép overlay chữ & hình ảnh trên sản phẩm.  
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+---
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## 📂 Cấu trúc thư mục  
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+```
 
-### `npm run eject`
+📦 fashion-ecommerce
+┣ 📂 client           # Frontend ReactJS
+┃ ┣ 📂 src
+┃ ┃ ┣ 📂 components  # Component UI
+┃ ┃ ┣ 📂 pages       # Các trang chính (Home, Cart, Try-On, Design…)
+┃ ┃ ┣ 📂 services    # Gọi API backend
+┃ ┃ ┗ 📜 App.js
+┃ ┗ 📜 package.json
+┣ 📂 server           # Backend NodeJS
+┃ ┣ 📂 controllers   # Xử lý request/response
+┃ ┣ 📂 models        # Schema MongoDB
+┃ ┣ 📂 routes        # Định nghĩa API
+┃ ┣ 📂 services      # Logic & tích hợp AI Try-On
+┃ ┗ 📜 server.js
+┣ 📂 public          # File tĩnh (logo, ảnh…)
+┣ 📜 README.md
+┗ 📜 package.json
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+````
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+---
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## ⚙️ Cài đặt & Chạy dự án  
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### 1️⃣ Clone project  
+```bash
+git clone https://github.com/<username>/<repo-name>.git
+cd <repo-name>
+````
 
-## Learn More
+### 2️⃣ Cài đặt dependencies cho backend & frontend
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+```bash
+# Backend
+cd server
+npm install
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+# Frontend
+cd ../client
+npm install
+```
 
-### Code Splitting
+### 3️⃣ Cấu hình file `.env` trong thư mục `server`:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+```env
+PORT=5000
+MONGO_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/<db>
+VTON_API=http://localhost:7860/try-on
+JWT_SECRET=your_secret_key
+```
 
-### Analyzing the Bundle Size
+### 4️⃣ Chạy server & client
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+```bash
+# Backend
+cd server
+npm run dev
 
-### Making a Progressive Web App
+# Frontend
+cd ../client
+npm start
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+---
 
-### Advanced Configuration
+## 🌟 Chức năng chính
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+* 👕 **Danh mục sản phẩm**: duyệt & tìm kiếm sản phẩm thời trang
+* 🧍 **Virtual Try-On**: tải ảnh người mẫu và thử đồ
+* 🎨 **Cá nhân hóa thiết kế**: thêm chữ, hình ảnh, đổi màu sản phẩm
+* 🛒 **Giỏ hàng & thanh toán cơ bản**
+* 📦 **Admin Dashboard**: quản lý sản phẩm, đơn hàng, người dùng
 
-### Deployment
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+## 🛠️ API Backend
 
-### `npm run build` fails to minify
+### 🔑 Auth API
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+* `POST /api/auth/register` – Đăng ký
+* `POST /api/auth/login` – Đăng nhập
+
+### 🏷 Product API
+
+* `GET /api/products` – Lấy danh sách sản phẩm
+* `POST /api/products` – (Admin) Thêm sản phẩm
+
+### 🧍 Virtual Try-On API
+
+* `POST /api/tryon` – Gửi ảnh người & sản phẩm, trả về ảnh mặc thử
+
+### 🎨 Design API
+
+* `POST /api/design` – Lưu thiết kế cá nhân hóa
+
+---
+
+## 📸 Demo
+
+*(Thêm hình ảnh giao diện hoặc GIF minh hoạ)*
+
+---
+
+## 👨‍💻 Đóng góp
+
+1️⃣ Fork repo
+2️⃣ Tạo branch mới:
+
+```bash
+git checkout -b feature/ten-tinh-nang
+```
+
+3️⃣ Commit & push:
+
+```bash
+git commit -m "Add new feature"
+git push origin feature/ten-tinh-nang
+```
+
+4️⃣ Tạo Pull Request
+
+---
+
+## 📄 License
+
+📜 **MIT License** – Tự do sử dụng, chỉnh sửa và phát triển.
+
+---
+
+```
+```
