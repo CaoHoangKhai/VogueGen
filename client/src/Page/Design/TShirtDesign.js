@@ -4,9 +4,7 @@ import { getDesignDetail, getImagesByColor, saveDesign } from "../../api/Design/
 import { addToCart } from "../../api/Cart/cart.api";
 import LeftSidebarDesign from "../../Components/Sidebar/LeftSidebarDesign";
 import { Rnd } from "react-rnd";
-
-import axios from "axios";
-import { BASE_URL_TRY_ON } from "../../api/TryOn/tryon.api";
+import { BASE_URL_UPLOAD_DESIGN } from "../../api/TryOn/tryon.api";
 import html2canvas from "html2canvas";
 
 const toolBtnStyle = {
@@ -30,16 +28,41 @@ const TShirtDesign = () => {
     const overlayZoneRef = useRef();
     const [exportFormat, setExportFormat] = useState("png"); // mặc định PNG
     const [savedInfo, setSavedInfo] = useState(null); // dùng để hiển thị kết quả đã lưu
-    const [selectedSize, setSelectedSize] = useState(null);
     const frontImage = images.find(img => img.vitri === "front") || null;
-    const [tryOnImage, setTryOnImage] = useState(null);
-    const [showTryOn, setShowTryOn] = useState(false);
     const [exportedBase64, setExportedBase64] = useState(null);
     const [previewImage, setPreviewImage] = useState(null);
     const [showPreviewModal, setShowPreviewModal] = useState(false);
     const [frontPreviewUrl, setFrontPreviewUrl] = useState(null);
     const [loadingGenerate, setLoadingGenerate] = useState(false);
-    const [tryOnPreviewUrls, setTryOnPreviewUrls] = useState([]); // ảnh thử áo nhiều góc
+    const [tryOnPreviewUrls, setTryOnPreviewUrls] = useState([]);
+
+    const handleGenerateTryOnImages = async () => {
+        if (!frontPreviewUrl) return;
+
+        setLoadingGenerate(true);
+
+        try {
+            const res = await fetch("https://1ef57d7a7c99.ngrok-free.app/upload", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    image_base64: frontPreviewUrl, // Gửi chuỗi base64
+                }),
+            });
+
+            const data = await res.json();
+            if (data.file_url) {
+                setTryOnPreviewUrls((prev) => [...prev, data.file_url]);
+            }
+        } catch (err) {
+            console.error("❌ Lỗi gửi base64:", err);
+        } finally {
+            setLoadingGenerate(false);
+        }
+    };
+
     useEffect(() => {
         if (!id) return;
         const fetchDesign = async () => {
@@ -206,44 +229,13 @@ const TShirtDesign = () => {
             const updated = [...(prev[vitri] || [])];
             const current = updated[i];
 
-            const newWidth = ref.offsetWidth;
-
-            if (current.type === "text") {
-                const baseFontSize = current.initialFontSize || current.fontSize || 24;
-                const initialWidth = current.initialWidth || current.width || 150;
-
-                if (!current.initialWidth || !current.initialFontSize) {
-                    updated[i] = {
-                        ...current,
-                        initialWidth: newWidth,
-                        initialFontSize: baseFontSize,
-                    };
-                    return { ...prev, [vitri]: updated };
-                }
-
-                const scale = Math.max(newWidth / initialWidth, 0.3);
-                const newFontSize = baseFontSize * scale;
-                const newHeight = newFontSize * 1.2; // hoặc tune theo thiết kế bạn
-
-                updated[i] = {
-                    ...current,
-                    x: position.x,
-                    y: position.y,
-                    width: newWidth,
-                    height: newHeight,
-                    fontSize: newFontSize,
-                    initialWidth,
-                    initialFontSize: baseFontSize,
-                };
-            } else {
-                updated[i] = {
-                    ...current,
-                    x: position.x,
-                    y: position.y,
-                    width: newWidth,
-                    height: ref.offsetHeight
-                };
-            }
+            updated[i] = {
+                ...current,
+                x: position.x,
+                y: position.y,
+                width: ref.offsetWidth,
+                height: ref.offsetHeight,
+            };
 
             return { ...prev, [vitri]: updated };
         });
@@ -426,27 +418,6 @@ const TShirtDesign = () => {
         setFrontPreviewUrl(imageUrl); // 👉 Gán ảnh preview tại đây
     };
 
-    const handleGenerateTryOnImages = async () => {
-        if (!frontPreviewUrl) return;
-        try {
-            setLoadingGenerate(true);
-            const formData = new FormData();
-            const response = await fetch(frontPreviewUrl);
-            const blob = await response.blob();
-            formData.append("image", blob, "design.png");
-
-            const res = await axios.post(`${BASE_URL_TRY_ON}/generate`, formData, {
-                headers: { "Content-Type": "multipart/form-data" },
-            });
-
-            // Gán kết quả (array URLs)
-            setTryOnPreviewUrls(res.data?.image_urls || []);
-        } catch (err) {
-            console.error("Lỗi sinh ảnh thử áo:", err);
-        } finally {
-            setLoadingGenerate(false);
-        }
-    };
     return (
         <div className="container-fluid">
             <div className="row">
@@ -495,7 +466,12 @@ const TShirtDesign = () => {
                             <div className="modal-backdrop fade show"></div>
 
                             {/* Modal */}
-                            <div className="modal fade show" style={{ display: "block" }} tabIndex="-1" role="dialog">
+                            <div
+                                className="modal fade show"
+                                style={{ display: "block" }}
+                                tabIndex="-1"
+                                role="dialog"
+                            >
                                 <div className="modal-dialog modal-dialog-centered modal-xl" role="document">
                                     <div className="modal-content">
                                         <div className="modal-header">
@@ -564,7 +540,6 @@ const TShirtDesign = () => {
                             </div>
                         </>
                     )}
-
                 </div>
 
                 <div className="col-md-9 d-flex justify-content-center align-items-center" style={{ minHeight: "80vh" }}>
@@ -601,9 +576,6 @@ const TShirtDesign = () => {
                                 }}
                             >
                                 {(overlaysMap[selectedImage?.vitri] || []).map((ov, i) => {
-                                    const scale = Math.max((ov.width || 100) / 150, 0.1); // scale size nút tool
-                                    const isSelected = selectedOverlayIndex === i;
-
                                     const isText = ov.type === "text";
                                     const textContent = ov.content?.text || "";
                                     const textColor = ov.content?.color || "#000";
@@ -612,34 +584,33 @@ const TShirtDesign = () => {
                                     const fontStyle = ov.content?.fontStyle || "normal";
                                     const fontSize = ov.fontSize || 20;
 
+                                    // 🔹 Tính width/height khít với text (chỉ lần đầu hoặc khi chưa có width/height trong state)
+                                    let textWidth = 150, textHeight = 50;
+                                    if (isText && typeof window !== "undefined") {
+                                        const canvas = document.createElement("canvas");
+                                        const ctx = canvas.getContext("2d");
+                                        ctx.font = `${fontWeight} ${fontStyle} ${fontSize}px ${fontFamily}`;
+                                        textWidth = ctx.measureText(textContent).width + 10;
+                                        textHeight = fontSize * 1.2 + 10;
+                                    }
+
+                                    const isSelected = selectedOverlayIndex === i;
+                                    const scale = 1;
+
                                     return (
                                         <Rnd
                                             key={i}
-                                            size={{ width: ov.width || 100, height: ov.height || 100 }}
+                                            size={{
+                                                width: isText ? (ov.width || textWidth) : (ov.width || 100),
+                                                height: isText ? (ov.height || textHeight) : (ov.height || 100)
+                                            }}
                                             position={{ x: ov.x || 0, y: ov.y || 0 }}
                                             onDragStop={(e, d) => handleDragStop(i, d)}
-                                            onResizeStop={(e, direction, ref, delta, position) => handleResizeStop(i, ref, position)}
-                                            bounds="parent"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setSelectedOverlayIndex(i);
+                                            onResizeStop={(e, direction, ref, delta, position) => {
+                                                handleResizeStop(i, ref, position);
                                             }}
-                                            enableResizing={
-                                                isText
-                                                    ? {
-                                                        top: true,
-                                                        right: true,
-                                                        bottom: true,
-                                                        left: true,
-                                                        topRight: false,
-                                                        bottomRight: false,
-                                                        bottomLeft: false,
-                                                        topLeft: false,
-                                                    }
-                                                    : true
-                                            }
-                                            minWidth={40}
-                                            minHeight={30}
+                                            bounds="parent"
+                                            enableResizing={true}
                                             style={{
                                                 zIndex: 20,
                                                 border: isSelected ? "2px dashed #00bcd4" : "none",
@@ -657,6 +628,7 @@ const TShirtDesign = () => {
                                                     position: "relative",
                                                 }}
                                             >
+                                                {/* 🔹 Nút copy & delete */}
                                                 {isSelected && (
                                                     <>
                                                         <button
@@ -697,6 +669,7 @@ const TShirtDesign = () => {
                                                     </>
                                                 )}
 
+                                                {/* 🔹 Render text hoặc image */}
                                                 {isText ? (
                                                     <div
                                                         style={{
@@ -705,29 +678,26 @@ const TShirtDesign = () => {
                                                             display: "flex",
                                                             alignItems: "center",
                                                             justifyContent: "center",
-                                                            textAlign: "center",
-                                                            overflow: "hidden",
                                                             userSelect: "none",
                                                             pointerEvents: "none",
+                                                            overflow: "visible", // ✅ để chữ không bị cắt đầu/cuối
                                                         }}
                                                     >
-                                                        <div
+                                                        <span
                                                             style={{
                                                                 display: "inline-block",
-                                                                color: textColor,
+                                                                fontSize: `${ov.fontSize || 24}px`, // font-size gốc
                                                                 fontFamily,
                                                                 fontWeight,
                                                                 fontStyle,
-                                                                fontSize: `${fontSize}px`,
-                                                                lineHeight: `${fontSize * 1.2}px`,
-                                                                whiteSpace: "pre", // hoặc "normal"
-                                                                userSelect: "none",
-                                                                pointerEvents: "none",
+                                                                color: textColor,
+                                                                whiteSpace: "nowrap",
+                                                                transform: `scale(${(ov.width || 150) / (textContent.length * (ov.fontSize || 24) * 0.6)}, ${(ov.height || 50) / ((ov.fontSize || 24) * 1.2)})`,
+                                                                transformOrigin: "center center", // ✅ scale từ giữa
                                                             }}
                                                         >
                                                             {textContent}
-                                                        </div>
-
+                                                        </span>
                                                     </div>
                                                 ) : (
                                                     <img
@@ -746,7 +716,6 @@ const TShirtDesign = () => {
                                                 )}
                                             </div>
                                         </Rnd>
-
                                     );
                                 })}
                             </div>

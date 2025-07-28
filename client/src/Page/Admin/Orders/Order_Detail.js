@@ -113,6 +113,10 @@ const OrderDetail = () => {
                 border: 1px solid #ccc;
                 margin-right: 5px;
               }
+              /* Ẩn phần cập nhật trạng thái khi in */
+              .export-hidden {
+                display: none !important;
+              }
             </style>
           </head>
           <body>
@@ -189,8 +193,9 @@ const OrderDetail = () => {
                     </span>
                   </p>
 
+                  {/* 🛠 Cập nhật trạng thái - sẽ ẩn khi in hoặc xuất PDF */}
                   {order.trangthai !== 3 && order.trangthai !== 4 && (
-                    <div className="mt-2 d-print-none">
+                    <div className="mt-2 d-print-none export-hidden">
                       <label><strong>🛠 Cập nhật trạng thái</strong></label>
                       <div className="d-flex gap-2 align-items-center">
                         <select className="form-select" value={statusUpdate} onChange={handleStatusChange}>

@@ -4,7 +4,9 @@ import { getDesignDetail, getImagesByColor, saveDesign } from "../../api/Design/
 import { addToCart } from "../../api/Cart/cart.api";
 import LeftSidebarDesign from "../../Components/Sidebar/LeftSidebarDesign";
 import { Rnd } from "react-rnd";
+import { BASE_URL_UPLOAD_DESIGN } from "../../api/TryOn/tryon.api";
 import html2canvas from "html2canvas";
+
 const toolBtnStyle = {
     fontSize: 10,
     padding: "2px 4px",
@@ -14,7 +16,7 @@ const toolBtnStyle = {
     cursor: "pointer"
 };
 
-const HoodieDesignPage = () => {
+const LongSleevesDesign = () => {
     const { id } = useParams();
     const [design, setDesign] = useState(null);
     const [images, setImages] = useState([]);
@@ -26,7 +28,40 @@ const HoodieDesignPage = () => {
     const overlayZoneRef = useRef();
     const [exportFormat, setExportFormat] = useState("png"); // mặc định PNG
     const [savedInfo, setSavedInfo] = useState(null); // dùng để hiển thị kết quả đã lưu
-    const [selectedSize, setSelectedSize] = useState(null);
+    const frontImage = images.find(img => img.vitri === "front") || null;
+    const [exportedBase64, setExportedBase64] = useState(null);
+    const [previewImage, setPreviewImage] = useState(null);
+    const [showPreviewModal, setShowPreviewModal] = useState(false);
+    const [frontPreviewUrl, setFrontPreviewUrl] = useState(null);
+    const [loadingGenerate, setLoadingGenerate] = useState(false);
+    const [tryOnPreviewUrls, setTryOnPreviewUrls] = useState([]);
+
+    const handleGenerateTryOnImages = async () => {
+        if (!frontPreviewUrl) return;
+
+        setLoadingGenerate(true);
+
+        try {
+            const res = await fetch("https://1ef57d7a7c99.ngrok-free.app/upload", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    image_base64: frontPreviewUrl, // Gửi chuỗi base64
+                }),
+            });
+
+            const data = await res.json();
+            if (data.file_url) {
+                setTryOnPreviewUrls((prev) => [...prev, data.file_url]);
+            }
+        } catch (err) {
+            console.error("❌ Lỗi gửi base64:", err);
+        } finally {
+            setLoadingGenerate(false);
+        }
+    };
 
     useEffect(() => {
         if (!id) return;
@@ -47,6 +82,7 @@ const HoodieDesignPage = () => {
                         map[item.vitri] = item.overlays || [];
                     });
                     setOverlaysMap(map);
+                    console.log("🔎 overlaysMap:", map); // <-- Thêm dòng này để log overlaysMap
                 }
             } else {
                 console.error("❌ Không thể lấy dữ liệu thiết kế");
@@ -194,33 +230,22 @@ const HoodieDesignPage = () => {
             const current = updated[i];
 
             const newWidth = ref.offsetWidth;
+            const newHeight = ref.offsetHeight;
 
             if (current.type === "text") {
-                const baseFontSize = current.initialFontSize || current.fontSize || 24;
-                const initialWidth = current.initialWidth || current.width || 150;
+                const textLength = current.content?.text?.length || 1;
+                const paddingX = 0; // không để padding hoặc set số cố định
 
-                if (!current.initialWidth || !current.initialFontSize) {
-                    updated[i] = {
-                        ...current,
-                        initialWidth: newWidth,
-                        initialFontSize: baseFontSize,
-                    };
-                    return { ...prev, [vitri]: updated };
-                }
-
-                const scale = Math.max(newWidth / initialWidth, 0.3);
-                const newFontSize = baseFontSize * scale;
-                const newHeight = newFontSize * 1.2; // hoặc tune theo thiết kế bạn
+                // 🔥 fontSize auto theo width của box
+                const newFontSize = Math.max((newWidth - paddingX) / textLength, 8);
 
                 updated[i] = {
                     ...current,
                     x: position.x,
                     y: position.y,
                     width: newWidth,
-                    height: newHeight,
+                    height: newFontSize * 1.2,
                     fontSize: newFontSize,
-                    initialWidth,
-                    initialFontSize: baseFontSize,
                 };
             } else {
                 updated[i] = {
@@ -228,7 +253,7 @@ const HoodieDesignPage = () => {
                     x: position.x,
                     y: position.y,
                     width: newWidth,
-                    height: ref.offsetHeight
+                    height: newHeight,
                 };
             }
 
@@ -276,7 +301,6 @@ const HoodieDesignPage = () => {
                 setSelectedOverlayIndex(null);
             }
         };
-
         document.addEventListener("mousedown", handleClickOutside);
         return () => {
             document.removeEventListener("mousedown", handleClickOutside);
@@ -327,7 +351,8 @@ const HoodieDesignPage = () => {
         }
     };
 
-    const handleExportImage = async () => {
+
+    const handleExportImage = async (callback) => {
         if (!containerRef.current || !overlayZoneRef.current) return;
 
         const overlayEl = overlayZoneRef.current;
@@ -347,15 +372,70 @@ const HoodieDesignPage = () => {
 
             const dataURL = canvas.toDataURL(mimeType);
 
+            // Tải về
             const link = document.createElement("a");
             link.href = dataURL;
             link.download = `design-${design?._id || "export"}.${exportFormat}`;
             link.click();
+
+            // Callback trả ảnh về cho LeftSidebarDesign
+            if (typeof callback === "function") {
+                callback(dataURL);
+            }
+
+            // Lưu state để truyền cho prop previewImage
+            setExportedBase64(dataURL);
+
         } catch (error) {
             console.error("❌ Lỗi khi xuất ảnh:", error);
         } finally {
             overlayEl.style.border = prevBorder;
         }
+    };
+
+    const exportDesignAsBase64 = async ({ format = "png" } = {}) => {
+        if (!containerRef.current || !overlayZoneRef.current) return null;
+
+        const overlayEl = overlayZoneRef.current;
+        const prevBorder = overlayEl.style.border;
+
+        try {
+            overlayEl.style.border = "none";
+
+            const canvas = await html2canvas(containerRef.current, {
+                useCORS: true,
+                backgroundColor: null,
+            });
+
+            let mimeType = "image/png";
+            if (format === "jpeg") mimeType = "image/jpeg";
+            else if (format === "webp") mimeType = "image/webp";
+
+            return canvas.toDataURL(mimeType);
+        } catch (err) {
+            console.error("❌ Lỗi xuất base64:", err);
+            return null;
+        } finally {
+            overlayEl.style.border = prevBorder;
+        }
+    };
+
+    const handleRequestPreview = async () => {
+        if (!containerRef.current || !overlayZoneRef.current) return;
+
+        const overlayEl = overlayZoneRef.current;
+        const prevBorder = overlayEl.style.border;
+        overlayEl.style.border = "none";
+
+        const canvas = await html2canvas(containerRef.current, {
+            useCORS: true,
+            backgroundColor: null,
+        });
+
+        overlayEl.style.border = prevBorder;
+
+        const imageUrl = canvas.toDataURL("image/png");
+        setFrontPreviewUrl(imageUrl); // 👉 Gán ảnh preview tại đây
     };
 
     return (
@@ -364,6 +444,8 @@ const HoodieDesignPage = () => {
                 <div className="col-md-2 border-end">
                     <LeftSidebarDesign
                         designId={id}
+                        frontImage={frontImage}
+                        overlays={Array.isArray(overlaysMap["front"]) ? overlaysMap["front"] : []}
                         productId={design?.masanpham}
                         onColorChange={(color) => setSelectedColor(color)}
                         onImageUpload={handleImageUpload}
@@ -386,8 +468,98 @@ const HoodieDesignPage = () => {
                         onExportFormatChange={setExportFormat}
                         onSaveDesign={handleSaveDesign}
                         onAddToCart={handleAddToCart}
-                    />
+                        onExportDesign={exportDesignAsBase64}
+                        onRequestPreview={handleRequestPreview}
 
+                    />
+                    {showPreviewModal && (
+                        <div className="modal-backdrop">
+                            <div className="modal-content">
+                                <img src={previewImage} alt="Preview" />
+                                <button onClick={() => setShowPreviewModal(false)}>Đóng</button>
+                            </div>
+                        </div>
+                    )}
+                    {frontPreviewUrl && (
+                        <>
+                            {/* Modal backdrop */}
+                            <div className="modal-backdrop fade show"></div>
+
+                            {/* Modal */}
+                            <div
+                                className="modal fade show"
+                                style={{ display: "block" }}
+                                tabIndex="-1"
+                                role="dialog"
+                            >
+                                <div className="modal-dialog modal-dialog-centered modal-xl" role="document">
+                                    <div className="modal-content">
+                                        <div className="modal-header">
+                                            <h5 className="modal-title">Xem trước thiết kế (Mặt trước)</h5>
+                                            <button
+                                                type="button"
+                                                className="btn-close"
+                                                onClick={() => setFrontPreviewUrl(null)}
+                                            ></button>
+                                        </div>
+
+                                        <div className="modal-body text-center">
+                                            {/* Ảnh mặt trước */}
+                                            <img
+                                                src={frontPreviewUrl}
+                                                alt="Front Preview"
+                                                style={{
+                                                    maxWidth: "50%",
+                                                    height: "auto",
+                                                    maxHeight: "50vh",
+                                                    objectFit: "contain",
+                                                }}
+                                            />
+
+                                            {/* Ảnh thử áo */}
+                                            {tryOnPreviewUrls.length > 0 && (
+                                                <div className="mt-4">
+                                                    <h6>Kết quả thử áo:</h6>
+                                                    <div className="d-flex flex-wrap justify-content-center gap-3 mt-2">
+                                                        {tryOnPreviewUrls.map((url, idx) => (
+                                                            <img
+                                                                key={idx}
+                                                                src={url}
+                                                                alt={`TryOn ${idx}`}
+                                                                style={{
+                                                                    maxWidth: "200px",
+                                                                    maxHeight: "250px",
+                                                                    objectFit: "contain",
+                                                                }}
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="modal-footer d-flex justify-content-between">
+                                            <button
+                                                type="button"
+                                                className="btn btn-secondary"
+                                                onClick={() => setFrontPreviewUrl(null)}
+                                            >
+                                                Đóng
+                                            </button>
+
+                                            <button
+                                                className="btn btn-primary"
+                                                onClick={handleGenerateTryOnImages}
+                                                disabled={loadingGenerate}
+                                            >
+                                                {loadingGenerate ? "Đang xử lý..." : "👕 SINH ẢNH THỬ ÁO"}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </>
+                    )}
                 </div>
 
                 <div className="col-md-9 d-flex justify-content-center align-items-center" style={{ minHeight: "80vh" }}>
@@ -424,9 +596,6 @@ const HoodieDesignPage = () => {
                                 }}
                             >
                                 {(overlaysMap[selectedImage?.vitri] || []).map((ov, i) => {
-                                    const scale = Math.max((ov.width || 100) / 150, 0.1); // scale size nút tool
-                                    const isSelected = selectedOverlayIndex === i;
-
                                     const isText = ov.type === "text";
                                     const textContent = ov.content?.text || "";
                                     const textColor = ov.content?.color || "#000";
@@ -435,34 +604,33 @@ const HoodieDesignPage = () => {
                                     const fontStyle = ov.content?.fontStyle || "normal";
                                     const fontSize = ov.fontSize || 20;
 
+                                    // 🔹 Tính width/height khít với text (chỉ lần đầu hoặc khi chưa có width/height trong state)
+                                    let textWidth = 150, textHeight = 50;
+                                    if (isText && typeof window !== "undefined") {
+                                        const canvas = document.createElement("canvas");
+                                        const ctx = canvas.getContext("2d");
+                                        ctx.font = `${fontWeight} ${fontStyle} ${fontSize}px ${fontFamily}`;
+                                        textWidth = ctx.measureText(textContent).width + 10;
+                                        textHeight = fontSize * 1.2 + 10;
+                                    }
+
+                                    const isSelected = selectedOverlayIndex === i;
+                                    const scale = 1;
+
                                     return (
                                         <Rnd
                                             key={i}
-                                            size={{ width: ov.width || 100, height: ov.height || 100 }}
+                                            size={{
+                                                width: isText ? (ov.width || textWidth) : (ov.width || 100),
+                                                height: isText ? (ov.height || textHeight) : (ov.height || 100)
+                                            }}
                                             position={{ x: ov.x || 0, y: ov.y || 0 }}
                                             onDragStop={(e, d) => handleDragStop(i, d)}
-                                            onResizeStop={(e, direction, ref, delta, position) => handleResizeStop(i, ref, position)}
-                                            bounds="parent"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setSelectedOverlayIndex(i);
+                                            onResizeStop={(e, direction, ref, delta, position) => {
+                                                handleResizeStop(i, ref, position);
                                             }}
-                                            enableResizing={
-                                                isText
-                                                    ? {
-                                                        top: true,
-                                                        right: true,
-                                                        bottom: true,
-                                                        left: true,
-                                                        topRight: false,
-                                                        bottomRight: false,
-                                                        bottomLeft: false,
-                                                        topLeft: false,
-                                                    }
-                                                    : true
-                                            }
-                                            minWidth={40}
-                                            minHeight={30}
+                                            bounds="parent"
+                                            enableResizing={true}
                                             style={{
                                                 zIndex: 20,
                                                 border: isSelected ? "2px dashed #00bcd4" : "none",
@@ -480,6 +648,7 @@ const HoodieDesignPage = () => {
                                                     position: "relative",
                                                 }}
                                             >
+                                                {/* 🔹 Nút copy & delete */}
                                                 {isSelected && (
                                                     <>
                                                         <button
@@ -520,6 +689,7 @@ const HoodieDesignPage = () => {
                                                     </>
                                                 )}
 
+                                                {/* 🔹 Render text hoặc image */}
                                                 {isText ? (
                                                     <div
                                                         style={{
@@ -528,29 +698,27 @@ const HoodieDesignPage = () => {
                                                             display: "flex",
                                                             alignItems: "center",
                                                             justifyContent: "center",
-                                                            textAlign: "center",
                                                             overflow: "hidden",
                                                             userSelect: "none",
                                                             pointerEvents: "none",
                                                         }}
                                                     >
-                                                        <div
+                                                        <span
                                                             style={{
-                                                                display: "inline-block",
+                                                                width: "100%",
+                                                                display: "block",
+                                                                textAlign: "center",
+                                                                fontSize: `${fontSize}px`,
+                                                                lineHeight: "1",
+                                                                whiteSpace: "nowrap",
                                                                 color: textColor,
                                                                 fontFamily,
                                                                 fontWeight,
                                                                 fontStyle,
-                                                                fontSize: `${fontSize}px`,
-                                                                lineHeight: `${fontSize * 1.2}px`,
-                                                                whiteSpace: "pre", // hoặc "normal"
-                                                                userSelect: "none",
-                                                                pointerEvents: "none",
                                                             }}
                                                         >
                                                             {textContent}
-                                                        </div>
-
+                                                        </span>
                                                     </div>
                                                 ) : (
                                                     <img
@@ -569,7 +737,6 @@ const HoodieDesignPage = () => {
                                                 )}
                                             </div>
                                         </Rnd>
-
                                     );
                                 })}
                             </div>
@@ -592,4 +759,4 @@ const HoodieDesignPage = () => {
         </div>
     );
 };
-export default HoodieDesignPage;
+export default LongSleevesDesign;

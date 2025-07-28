@@ -30,7 +30,7 @@ const demoResults = {
 };
 
 
-const MAX_SCAN_TIME = 500;
+const MAX_SCAN_TIME = 20000;
 const MAX_SCAN_SECONDS = MAX_SCAN_TIME / 1000;
 
 const IMAGE_SIZE = 360;
