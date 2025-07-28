@@ -3,6 +3,7 @@ import PoloShirtDesign from "../Page/Design/PoloShirtDesign";
 import TShirtDesigner from '../Page/Design/TShirtDesign';
 import TankTopsDesign from "../Page/Design/TankTopsDesign";
 import HoodieDesign from "../Page/Design/HoodieDesign";
+import HatsDesign from "../Page/Design/HatsDesign";
 const designRoutes = [
     {
         path: '/design/longsleeves/:id',
@@ -23,6 +24,10 @@ const designRoutes = [
     {
         path: '/design/hoodie/:id',
         element: <HoodieDesign />
+    },
+    {
+        path: '/design/hats/:id',
+        element: <HatsDesign />
     }
 ];
 

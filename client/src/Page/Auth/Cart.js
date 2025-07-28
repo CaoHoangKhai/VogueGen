@@ -231,6 +231,7 @@ const Cart = () => {
                                                         <input
                                                             type="text"
                                                             value={inputValues[item._id] || ''}
+                                                            onClick={(e) => e.stopPropagation()}   // ✅ Thêm dòng này
                                                             onChange={(e) => { e.stopPropagation(); handleInputChange(item, e.target.value); }}
                                                             onBlur={() => handleInputBlur(item)}
                                                             className="form-control text-center shadow-none bg-light"

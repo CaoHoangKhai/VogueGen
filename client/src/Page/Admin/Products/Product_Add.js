@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-  createProduct
-} from "../../../api/Admin/products.api";
+import { createProduct } from "../../../api/Admin/products.api";
 import { getAllSizes } from "../../../api/Size/size.api";
 import { getAllCategories } from "../../../api/Category/category.api";
 
@@ -15,9 +13,8 @@ const ProductAdd = () => {
   const [selectedSizes, setSelectedSizes] = useState([]);
   const [selectedColors, setSelectedColors] = useState([]);
   const [toast, setToast] = useState({ show: false, message: "", type: "" });
-  const [selectedColor, setSelectedColor] = useState(""); // chỉ 1 màu active tại 1 thời điểm
-  const [imagesByColor, setImagesByColor] = useState({}); // lưu ảnh theo từng màu và vị trí
-
+  const [selectedColor, setSelectedColor] = useState("");
+  const [imagesByColor, setImagesByColor] = useState({});
 
   const [form, setForm] = useState({
     tensanpham: "",
@@ -27,6 +24,17 @@ const ProductAdd = () => {
     mota: "",
     gioitinh: "",
   });
+
+  // ✅ Map danh mục → danh sách vị trí ảnh
+  const imagePositionsByCategory = {
+    "t-shirts": ["front", "back", "extra"],
+    "longsleeves": ["front", "back", "extra"],
+    "tank-tops": ["front", "back", "extra"],
+    "polo-shirts": ["front", "back", "extra"],
+    "hoodie": ["front", "back", "extra"],
+    // sau này nếu có mũ hoặc phụ kiện
+    "hats": ["front", "right", "left", "back", "bottom"]
+  };
 
   useEffect(() => {
     getAllCategories()
@@ -51,13 +59,17 @@ const ProductAdd = () => {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  // ✅ Helper: lấy positions dựa theo danh mục đã chọn
+  const getPositions = () => {
+    const slug = categories.find((c) => c._id === form.theloai)?.slug;
+    return imagePositionsByCategory[slug] || [];
+  };
+
   const isFormValid = () => {
+    const positions = getPositions();
     const hasValidImagesForAllColors = selectedColors.every((code) => {
       const colorSet = imagesByColor[code] || {};
-      return (
-        (colorSet.front || []).length === 1 &&
-        (colorSet.back || []).length === 1
-      );
+      return positions.every((pos) => (colorSet[pos] || []).length === 1);
     });
 
     return (
@@ -71,19 +83,18 @@ const ProductAdd = () => {
   };
 
   const getMissingImagesByColor = () => {
+    const positions = getPositions();
     const result = [];
 
     selectedColors.forEach((code) => {
       const imgs = imagesByColor[code] || {};
-      const front = imgs.front?.length || 0;
-      const back = imgs.back?.length || 0;
+      const missing = positions.filter((pos) => !(imgs[pos] && imgs[pos].length === 1));
 
-      if (front !== 1 || back !== 1) {
+      if (missing.length > 0) {
         result.push({
           colorCode: code,
           colorName: colors.find((c) => c.code === code)?.color || code,
-          missingFront: front !== 1,
-          missingBack: back !== 1,
+          missingPositions: missing
         });
       }
     });
@@ -94,7 +105,11 @@ const ProductAdd = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isFormValid()) {
-      setToast({ show: true, message: "Vui lòng điền đầy đủ thông tin và chọn size, màu, ảnh.", type: "error" });
+      setToast({
+        show: true,
+        message: "Vui lòng điền đầy đủ thông tin và chọn size, màu, ảnh.",
+        type: "error"
+      });
       return;
     }
 
@@ -108,19 +123,20 @@ const ProductAdd = () => {
     formData.append("gioitinh", form.gioitinh);
 
     let index = 0;
+    const positions = getPositions();
+
     for (const colorCode of selectedColors) {
       const colorImages = imagesByColor[colorCode] || {};
-      for (const position of ["front", "back", "extra"]) {
+      for (const position of positions) {
         const imgs = colorImages[position] || [];
         for (const img of imgs) {
           formData.append(`images[${index}]`, img.file);
           formData.append(`positions[${index}]`, position);
-          formData.append(`colors[${index}]`, colorCode); // gửi thêm thông tin màu
+          formData.append(`colors[${index}]`, colorCode);
           index++;
         }
       }
     }
-
 
     try {
       await createProduct(formData);
@@ -136,39 +152,11 @@ const ProductAdd = () => {
       setSelectedSizes([]);
       setSelectedColors([]);
       setImagesByColor({});
-
     } catch (error) {
       console.error("Lỗi tạo sản phẩm:", error);
       alert("Có lỗi xảy ra khi tạo sản phẩm.");
     }
   };
-  // const getPreviewData = () => {
-  //   const data = {
-  //     tensanpham: form.tensanpham,
-  //     giasanpham: form.giasanpham,
-  //     theloai: form.theloai,
-  //     mota: form.mota,
-  //     sizes: selectedSizes,
-  //     colors: selectedColors,
-  //     images: [],
-  //   };
-
-  //   // 
-  //   for (const colorCode of selectedColors) {
-  //     const colorImages = imagesByColor[colorCode] || {};
-  //     for (const position of ["front", "back", "extra"]) {
-  //       const imgs = colorImages[position] || [];
-  //       for (const img of imgs) {
-  //         data.images.push({
-  //           position,
-  //           color: colorCode,
-  //           filename: img.file?.name,
-  //         });
-  //       }
-  //     }
-  //   }
-  //   return data;
-  // };
 
   const handleImageChangeByPosition = (e, position) => {
     const files = Array.from(e.target.files);
@@ -210,7 +198,6 @@ const ProductAdd = () => {
     });
   };
 
-
   const renderImageUploadSection = (position, label) => {
     const images = (selectedColor && imagesByColor[selectedColor]?.[position]) || [];
     return (
@@ -227,7 +214,7 @@ const ProductAdd = () => {
               multiple={position === "extra"}
               onChange={(e) => {
                 handleImageChangeByPosition(e, position);
-                e.target.value = ""; // vẫn nên thêm dòng này
+                e.target.value = "";
               }}
               className="form-control"
               disabled={!selectedColor}
@@ -265,7 +252,7 @@ const ProductAdd = () => {
     );
   };
 
-
+  // ====== các input field giữ nguyên ======
   const inputNameProduct = () => (
     <div className="mb-3">
       <label className="form-label">Tên sản phẩm *</label>
@@ -313,22 +300,42 @@ const ProductAdd = () => {
     );
   };
 
-  const inputGenderProduct = () => (
-    <div className="mb-3">
-      <label className="form-label">Giới tính *</label>
-      <select
-        name="gioitinh"
-        className="form-select"
-        value={form.gioitinh}
-        onChange={handleChange}
-        required
-      >
-        <option value="">-- Chọn giới tính --</option>
-        <option value="nam">Nam</option>
-        <option value="nu">Nữ</option>
-      </select>
-    </div>
-  );
+  const inputGenderProduct = () => {
+    const selectedCategory = categories.find((c) => c._id === form.theloai);
+    const isHat = selectedCategory?.slug === "hats"; // 👈 check slug danh mục
+
+    if (isHat) {
+      // Nếu là mũ, set mặc định unisex và ẩn UI chọn giới tính
+      if (form.gioitinh !== "unisex") {
+        setForm((prev) => ({ ...prev, gioitinh: "unisex" }));
+      }
+      return (
+        <div className="mb-3">
+          <label className="form-label">Giới tính</label>
+          <input type="text" className="form-control" value="Unisex" disabled />
+        </div>
+      );
+    }
+
+    // Nếu không phải mũ → hiển thị chọn giới tính như bình thường
+    return (
+      <div className="mb-3">
+        <label className="form-label">Giới tính *</label>
+        <select
+          name="gioitinh"
+          className="form-select"
+          value={form.gioitinh}
+          onChange={handleChange}
+          required
+        >
+          <option value="">-- Chọn giới tính --</option>
+          <option value="nam">Nam</option>
+          <option value="nu">Nữ</option>
+        </select>
+      </div>
+    );
+  };
+
 
   const inputCategoryProduct = () => (
     <div className="mb-3">
@@ -368,6 +375,7 @@ const ProductAdd = () => {
         return exists ? prev.filter((s) => s !== size) : [...prev, size];
       });
     };
+    
 
     return (
       <div className="mb-3">
@@ -410,7 +418,7 @@ const ProductAdd = () => {
       <div className="mb-4">
         <label className="form-label fw-bold">Chọn Màu Sản Phẩm & Ảnh:</label>
 
-        {/* Dòng 1: Hiển thị tên màu */}
+        {/* Dòng 1: tên màu */}
         <div className="d-flex flex-wrap gap-2 mb-3">
           {colors.map(({ color, code }) => {
             const isSelected = selectedColors.includes(code);
@@ -430,8 +438,7 @@ const ProductAdd = () => {
                 style={{
                   borderWidth: isActive ? 2 : 1,
                   fontWeight: isSelected ? "bold" : "normal",
-
-                  borderColor: code, // viền theo mã màu
+                  borderColor: code,
                   minWidth: 100,
                 }}
                 title="Click để bật/tắt màu"
@@ -442,8 +449,7 @@ const ProductAdd = () => {
           })}
         </div>
 
-
-        {/* Dòng 2: Hiển thị mã màu */}
+        {/* Dòng 2: ô màu */}
         <div className="d-flex flex-wrap gap-2">
           {colors.map(({ code }) => {
             const isSelected = selectedColors.includes(code);
@@ -480,7 +486,6 @@ const ProductAdd = () => {
     );
   };
 
-
   return (
     <div className="container">
       <Toast
@@ -501,25 +506,29 @@ const ProductAdd = () => {
 
         {selectedColor ? (
           <>
-            {renderImageUploadSection("front", "Mặt Trước")}
-            {renderImageUploadSection("back", "Mặt Sau")}
-            {renderImageUploadSection("extra", "Phụ")}
+            {getPositions().map((pos) => {
+              const labelMap = {
+                front: "Mặt Trước",
+                back: "Mặt Sau",
+                extra: "Phụ",
+                right: "Bên Phải",
+                left: "Bên Trái",
+                bottom: "Mặt Dưới"
+              };
+              return renderImageUploadSection(pos, labelMap[pos] || pos);
+            })}
           </>
         ) : (
           <div className="alert alert-info">Hãy chọn màu trước để thêm ảnh tương ứng.</div>
         )}
 
-        {/* Cảnh báo màu thiếu ảnh */}
         {getMissingImagesByColor().length > 0 && (
           <div className="alert alert-danger mt-3">
             <strong>Các màu chưa đủ ảnh:</strong>
             <ul className="mb-0">
               {getMissingImagesByColor().map((item, idx) => (
                 <li key={idx}>
-                  <strong>{item.colorName}</strong>:
-                  {item.missingFront && " thiếu ảnh mặt trước"}
-                  {item.missingFront && item.missingBack && " và"}
-                  {item.missingBack && " thiếu ảnh mặt sau"}
+                  <strong>{item.colorName}</strong>: thiếu {item.missingPositions.join(", ")}
                 </li>
               ))}
             </ul>
@@ -527,10 +536,6 @@ const ProductAdd = () => {
         )}
 
         <hr />
-        {/* <h5>Xem trước dữ liệu sẽ gửi:</h5>
-        <pre className="bg-light p-3 rounded" style={{ maxHeight: 300, overflowY: "auto", fontSize: 13 }}>
-          {JSON.stringify(getPreviewData(), null, 2)}
-        </pre> */}
 
         <button
           type="submit"
@@ -543,7 +548,6 @@ const ProductAdd = () => {
       </form>
     </div>
   );
-
 };
 
 export default ProductAdd;

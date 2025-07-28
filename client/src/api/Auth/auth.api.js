@@ -48,3 +48,23 @@ export const createOrder = async (orderData) => {
     throw error;
   }
 };
+
+/**
+ * Gửi yêu cầu đổi mật khẩu người dùng
+ * @param {string} userId - ID của người dùng
+ * @param {string} oldPassword - Mật khẩu cũ
+ * @param {string} newPassword - Mật khẩu mới
+ * @returns {Promise} Promise trả về response từ server
+ */
+export const changePassword = async (userId, oldPassword, newPassword) => {
+  try {
+    const payload = { oldPassword, newPassword };
+    const response = await axios.post(
+      `${BASE_URL_AUTH}/userId/${userId}/change-password`,
+      payload
+    );
+    return response;
+  } catch (error) {
+    throw error;
+  }
+};

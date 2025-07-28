@@ -26,4 +26,6 @@ router.get("/signin", (req, res) => {
     res.json({ message: message.info.SIGNUP_PAGE }); // Trang đăng ký
 });
 
+
+router.post("/userId/:id/change-password", authController.changePassword);
 module.exports = router;

@@ -101,6 +101,32 @@ class AuthService {
     async checkSoDienThoai(sodienthoai) {
         return await this.Auth.findOne({ sodienthoai });
     }
+
+    async changePassword(userId, oldPassword, newPassword) {
+        // 🔍 1. Tìm user theo ID
+        const user = await this.Auth.findOne({ _id: new ObjectId(userId) });
+        if (!user) {
+            throw new Error("Không tìm thấy người dùng.");
+        }
+
+        // 🔒 2. Kiểm tra mật khẩu cũ
+        const isMatch = await bcrypt.compare(oldPassword, user.matkhau);
+        if (!isMatch) {
+            throw new Error("Mật khẩu cũ không đúng.");
+        }
+
+        // ✅ 3. Băm mật khẩu mới
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        // 📝 4. Cập nhật mật khẩu trong DB
+        await this.Auth.updateOne(
+            { _id: new ObjectId(userId) },
+            { $set: { matkhau: hashedPassword } }
+        );
+
+        return { message: "Đổi mật khẩu thành công." };
+    }
+
 }
 
 module.exports = AuthService;

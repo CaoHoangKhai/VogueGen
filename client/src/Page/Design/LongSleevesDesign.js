@@ -229,33 +229,13 @@ const LongSleevesDesign = () => {
             const updated = [...(prev[vitri] || [])];
             const current = updated[i];
 
-            const newWidth = ref.offsetWidth;
-            const newHeight = ref.offsetHeight;
-
-            if (current.type === "text") {
-                const textLength = current.content?.text?.length || 1;
-                const paddingX = 0; // không để padding hoặc set số cố định
-
-                // 🔥 fontSize auto theo width của box
-                const newFontSize = Math.max((newWidth - paddingX) / textLength, 8);
-
-                updated[i] = {
-                    ...current,
-                    x: position.x,
-                    y: position.y,
-                    width: newWidth,
-                    height: newFontSize * 1.2,
-                    fontSize: newFontSize,
-                };
-            } else {
-                updated[i] = {
-                    ...current,
-                    x: position.x,
-                    y: position.y,
-                    width: newWidth,
-                    height: newHeight,
-                };
-            }
+            updated[i] = {
+                ...current,
+                x: position.x,
+                y: position.y,
+                width: ref.offsetWidth,
+                height: ref.offsetHeight,
+            };
 
             return { ...prev, [vitri]: updated };
         });
@@ -698,23 +678,22 @@ const LongSleevesDesign = () => {
                                                             display: "flex",
                                                             alignItems: "center",
                                                             justifyContent: "center",
-                                                            overflow: "hidden",
                                                             userSelect: "none",
                                                             pointerEvents: "none",
+                                                            overflow: "visible",
                                                         }}
                                                     >
                                                         <span
                                                             style={{
-                                                                width: "100%",
-                                                                display: "block",
-                                                                textAlign: "center",
-                                                                fontSize: `${fontSize}px`,
-                                                                lineHeight: "1",
-                                                                whiteSpace: "nowrap",
-                                                                color: textColor,
+                                                                display: "inline-block",
+                                                                fontSize: `${ov.fontSize || 24}px`,
                                                                 fontFamily,
                                                                 fontWeight,
                                                                 fontStyle,
+                                                                color: textColor,
+                                                                whiteSpace: "nowrap",
+                                                                transform: `scale(${(ov.width || 150) / (textContent.length * (ov.fontSize || 24) * 0.6)}, ${(ov.height || 50) / ((ov.fontSize || 24) * 1.2)})`,
+                                                                transformOrigin: "center center", // ✅ scale từ giữa
                                                             }}
                                                         >
                                                             {textContent}

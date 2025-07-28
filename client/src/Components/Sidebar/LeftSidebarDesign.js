@@ -253,7 +253,9 @@ const LeftSidebarDesign = ({
                         fontFamily,
                         fontWeight: isBold ? "bold" : "normal",
                         fontStyle: isItalic ? "italic" : "normal",
-                        color: textColor
+                        color: textColor,
+                        backgroundColor: textColor.toLowerCase() === "#ffffff" ? "#333" : "#fff",  // 🆕 nền đổi khi chữ trắng
+                        border: "1px solid #ccc"
                     }}
                 />
             </div>

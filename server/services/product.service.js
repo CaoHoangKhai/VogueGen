@@ -110,12 +110,13 @@ class ProductServer {
             giasanpham: 1,
             theloai: 1,
             trangthai: 1,
+            gioitinh: 1,   // 👈 Thêm field này
           },
         }
       );
       if (!product) return null;
 
-      // Lấy tên danh mục
+      // 🔹 Lấy tên danh mục
       if (product.theloai) {
         const danhMucDoc = await this.theloaisanpham.findOne(
           { _id: new ObjectId(product.theloai) },
@@ -124,13 +125,13 @@ class ProductServer {
         product.tendanhmuc = danhMucDoc?.tendanhmuc || null;
       }
 
-      // Lấy màu sắc
+      // 🔹 Lấy màu sắc
       const mausanpham = await this.mausanpham.find(
         { masanpham: _id },
         { projection: { _id: 1, masanpham: 1, mau: 1 } }
       ).toArray();
 
-      // Lấy kích thước
+      // 🔹 Lấy kích thước
       const kichthuocRaw = await this.kichthuoc.find(
         { masanpham: _id },
         { projection: { _id: 1, masanpham: 1, size: 1 } }
@@ -153,7 +154,6 @@ class ProductServer {
       return null;
     }
   }
-
 
   async getImagesByColor(productId, colorHex) {
     try {

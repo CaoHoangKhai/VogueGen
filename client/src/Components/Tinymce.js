@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 
-const Tinymce = ({ value, onChange, id = "tinymce-editor", height = 300 }) => {
+const Tinymce = ({ value, onChange, id = "tinymce-editor", height = 450 }) => {
     const editorRef = useRef(null);
 
     useEffect(() => {

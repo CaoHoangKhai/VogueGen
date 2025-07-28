@@ -250,15 +250,18 @@ class DesignService {
 
     async getImagesByColorDesign(productId, colorHex) {
         try {
+            // Xác định danh sách vị trí dựa vào danh mục
+            let positions = ["front", "right", "left", "back", "bottom"]
+
             const images = await this.hinhanhsanpham.find({
                 masanpham: new ObjectId(productId),
                 mau: colorHex,
-                vitri: { $in: ["front", "back"] }
+                vitri: { $in: positions }
             }).toArray();
 
             return { success: true, images };
         } catch (error) {
-            console.error("❌ getImagesByColor error:", error);
+            console.error("❌ getImagesByColorDesign error:", error);
             return { success: false, message: error.message };
         }
     }

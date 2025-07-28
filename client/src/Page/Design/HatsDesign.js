@@ -16,7 +16,7 @@ const toolBtnStyle = {
     cursor: "pointer"
 };
 
-const TShirtDesign = () => {
+const HatsDesign = () => {
     const { id } = useParams();
     const [design, setDesign] = useState(null);
     const [images, setImages] = useState([]);
@@ -418,9 +418,26 @@ const TShirtDesign = () => {
         setFrontPreviewUrl(imageUrl); // 👉 Gán ảnh preview tại đây
     };
 
+    // 🆕 Helper style cho từng vị trí
+    const getOverlayStyleByPosition = (vitri) => {
+        switch (vitri) {
+            case "front":
+                return { top: "42%", left: "30%", width: "38%", height: "20%" };
+            case "right":
+                return { top: "40%", left: "42%", width: "28%", height: "20%" };
+            case "left":
+                return { top: "40%", left: "28%", width: "28%", height: "20%" };
+            default:
+                // back, bottom, ... không có vùng thiết kế
+                return null;
+        }
+    };
+
+
     return (
         <div className="container-fluid">
             <div className="row">
+                {/* ================= SIDEBAR ================= */}
                 <div className="col-md-2 border-end">
                     <LeftSidebarDesign
                         designId={id}
@@ -448,10 +465,9 @@ const TShirtDesign = () => {
                         onExportFormatChange={setExportFormat}
                         onSaveDesign={handleSaveDesign}
                         onAddToCart={handleAddToCart}
-                        onExportDesign={exportDesignAsBase64}
-                        onRequestPreview={handleRequestPreview}
-
                     />
+
+                    {/* Modal Preview nhỏ */}
                     {showPreviewModal && (
                         <div className="modal-backdrop">
                             <div className="modal-content">
@@ -460,12 +476,11 @@ const TShirtDesign = () => {
                             </div>
                         </div>
                     )}
+
+                    {/* Modal Preview lớn */}
                     {frontPreviewUrl && (
                         <>
-                            {/* Modal backdrop */}
                             <div className="modal-backdrop fade show"></div>
-
-                            {/* Modal */}
                             <div
                                 className="modal fade show"
                                 style={{ display: "block" }}
@@ -542,6 +557,7 @@ const TShirtDesign = () => {
                     )}
                 </div>
 
+                {/* ================= VÙNG THIẾT KẾ ================= */}
                 <div className="col-md-9 d-flex justify-content-center align-items-center" style={{ minHeight: "80vh" }}>
                     {selectedImage ? (
                         <div
@@ -549,6 +565,7 @@ const TShirtDesign = () => {
                             className="position-relative"
                             style={{ maxHeight: "90vh", width: "fit-content" }}
                         >
+                            {/* Ảnh sản phẩm */}
                             <img
                                 src={`data:${selectedImage.contentType};base64,${selectedImage.data}`}
                                 alt={selectedImage.vitri}
@@ -556,180 +573,195 @@ const TShirtDesign = () => {
                                     maxWidth: "100%",
                                     maxHeight: "90vh",
                                     display: "block",
-                                    pointerEvents: "none",   // ✅ Vô hiệu hoá chuột
-                                    userSelect: "none",      // ✅ Không cho bôi đen ảnh
+                                    pointerEvents: "none",
+                                    userSelect: "none",
                                 }}
                             />
 
-                            <div
-                                ref={overlayZoneRef}
-                                className="position-absolute"
-                                onClick={() => setSelectedOverlayIndex(null)}
-                                style={{
-                                    top: "20%",
-                                    left: "30%",
-                                    width: "40%",
-                                    height: "50%",
-                                    border: "2px dashed #00bcd4",
-                                    zIndex: 10,
-                                    overflow: "hidden"
-                                }}
-                            >
-                                {(overlaysMap[selectedImage?.vitri] || []).map((ov, i) => {
-                                    const isText = ov.type === "text";
-                                    const textContent = ov.content?.text || "";
-                                    const textColor = ov.content?.color || "#000";
-                                    const fontFamily = ov.content?.fontFamily || "Arial";
-                                    const fontWeight = ov.content?.fontWeight || "normal";
-                                    const fontStyle = ov.content?.fontStyle || "normal";
-                                    const fontSize = ov.fontSize || 20;
+                            {/* ✅ Overlay Zone (chỉ render nếu có style) */}
+                            {getOverlayStyleByPosition(selectedImage.vitri) && (
+                                <div
+                                    ref={overlayZoneRef}
+                                    className="position-absolute"
+                                    onClick={() => setSelectedOverlayIndex(null)}
+                                    style={{
+                                        ...getOverlayStyleByPosition(selectedImage.vitri),
+                                        border: "2px dashed #00bcd4",
+                                        zIndex: 10,
+                                        overflow: "hidden",
+                                    }}
+                                >
+                                    {(overlaysMap[selectedImage?.vitri] || []).map((ov, i) => {
+                                        const isText = ov.type === "text";
+                                        const textContent = ov.content?.text || "";
+                                        const textColor = ov.content?.color || "#000";
+                                        const fontFamily = ov.content?.fontFamily || "Arial";
+                                        const fontWeight = ov.content?.fontWeight || "normal";
+                                        const fontStyle = ov.content?.fontStyle || "normal";
+                                        const fontSize = ov.fontSize || 20;
 
-                                    // 🔹 Tính width/height khít với text (chỉ lần đầu hoặc khi chưa có width/height trong state)
-                                    let textWidth = 150, textHeight = 50;
-                                    if (isText && typeof window !== "undefined") {
-                                        const canvas = document.createElement("canvas");
-                                        const ctx = canvas.getContext("2d");
-                                        ctx.font = `${fontWeight} ${fontStyle} ${fontSize}px ${fontFamily}`;
-                                        textWidth = ctx.measureText(textContent).width + 10;
-                                        textHeight = fontSize * 1.2 + 10;
-                                    }
+                                        // Tính size text khít chữ
+                                        let textWidth = 150, textHeight = 50;
+                                        if (isText && typeof window !== "undefined") {
+                                            const canvas = document.createElement("canvas");
+                                            const ctx = canvas.getContext("2d");
+                                            ctx.font = `${fontWeight} ${fontStyle} ${fontSize}px ${fontFamily}`;
+                                            textWidth = ctx.measureText(textContent).width + 10;
+                                            textHeight = fontSize * 1.2 + 10;
+                                        }
 
-                                    const isSelected = selectedOverlayIndex === i;
-                                    const scale = 1;
+                                        const isSelected = selectedOverlayIndex === i;
+                                        const scale = 1;
 
-                                    return (
-                                        <Rnd
-                                            key={i}
-                                            size={{
-                                                width: isText ? (ov.width || textWidth) : (ov.width || 100),
-                                                height: isText ? (ov.height || textHeight) : (ov.height || 100)
-                                            }}
-                                            position={{ x: ov.x || 0, y: ov.y || 0 }}
-                                            onDragStop={(e, d) => handleDragStop(i, d)}
-                                            onResizeStop={(e, direction, ref, delta, position) => {
-                                                handleResizeStop(i, ref, position);
-                                            }}
-                                            bounds="parent"
-                                            enableResizing={true}
-                                            style={{
-                                                zIndex: 20,
-                                                border: isSelected ? "2px dashed #00bcd4" : "none",
-                                                transition: "border 0.2s ease",
-                                                display: "flex",
-                                                alignItems: "center",
-                                                justifyContent: "center",
-                                            }}
-                                        >
-                                            <div
-                                                onClick={(e) => e.stopPropagation()}
+                                        return (
+                                            <Rnd
+                                                key={i}
+                                                size={{
+                                                    width: isText ? (ov.width || textWidth) : (ov.width || 100),
+                                                    height: isText ? (ov.height || textHeight) : (ov.height || 100)
+                                                }}
+                                                position={{ x: ov.x || 0, y: ov.y || 0 }}
+                                                onDragStop={(e, d) => handleDragStop(i, d)}
+                                                onResizeStop={(e, direction, ref, delta, position) => {
+                                                    handleResizeStop(i, ref, position);
+                                                }}
+                                                bounds="parent"
+                                                enableResizing={true}
                                                 style={{
-                                                    width: "100%",
-                                                    height: "100%",
-                                                    position: "relative",
+                                                    zIndex: 20,
+                                                    border: isSelected ? "2px dashed #00bcd4" : "none",
+                                                    transition: "border 0.2s ease",
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    justifyContent: "center",
                                                 }}
                                             >
-                                                {/* 🔹 Nút copy & delete */}
-                                                {isSelected && (
-                                                    <>
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                handleCopyOverlay(i);
-                                                            }}
-                                                            style={{
-                                                                ...toolBtnStyle,
-                                                                position: "absolute",
-                                                                top: -10,
-                                                                left: -10,
-                                                                zIndex: 30,
-                                                                transform: `scale(${scale})`,
-                                                                transformOrigin: "top left",
-                                                            }}
-                                                        >
-                                                            📄
-                                                        </button>
+                                                <div
+                                                    onClick={(e) => e.stopPropagation()}
+                                                    style={{
+                                                        width: "100%",
+                                                        height: "100%",
+                                                        position: "relative",
+                                                    }}
+                                                >
+                                                    {/* Nút copy & delete */}
+                                                    {isSelected && (
+                                                        <>
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleCopyOverlay(i);
+                                                                }}
+                                                                style={{
+                                                                    ...toolBtnStyle,
+                                                                    position: "absolute",
+                                                                    top: -10,
+                                                                    left: -10,
+                                                                    zIndex: 30,
+                                                                    transform: `scale(${scale})`,
+                                                                    transformOrigin: "top left",
+                                                                }}
+                                                            >
+                                                                📄
+                                                            </button>
 
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                handleDeleteOverlay(i);
-                                                            }}
-                                                            style={{
-                                                                ...toolBtnStyle,
-                                                                position: "absolute",
-                                                                top: -10,
-                                                                right: -10,
-                                                                zIndex: 30,
-                                                                transform: `scale(${scale})`,
-                                                                transformOrigin: "top right",
-                                                            }}
-                                                        >
-                                                            ❌
-                                                        </button>
-                                                    </>
-                                                )}
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleDeleteOverlay(i);
+                                                                }}
+                                                                style={{
+                                                                    ...toolBtnStyle,
+                                                                    position: "absolute",
+                                                                    top: -10,
+                                                                    right: -10,
+                                                                    zIndex: 30,
+                                                                    transform: `scale(${scale})`,
+                                                                    transformOrigin: "top right",
+                                                                }}
+                                                            >
+                                                                ❌
+                                                            </button>
+                                                        </>
+                                                    )}
 
-                                                {/* 🔹 Render text hoặc image */}
-                                                {isText ? (
-                                                    <div
-                                                        style={{
-                                                            width: "100%",
-                                                            height: "100%",
-                                                            display: "flex",
-                                                            alignItems: "center",
-                                                            justifyContent: "center",
-                                                            userSelect: "none",
-                                                            pointerEvents: "none",
-                                                            overflow: "visible",
-                                                        }}
-                                                    >
-                                                        <span
+                                                    {/* Render text hoặc image */}
+                                                    {isText ? (
+                                                        <div
                                                             style={{
-                                                                display: "inline-block",
-                                                                fontSize: `${ov.fontSize || 24}px`,
-                                                                fontFamily,
-                                                                fontWeight,
-                                                                fontStyle,
-                                                                color: textColor,
-                                                                whiteSpace: "nowrap",
-                                                                transform: `scale(${(ov.width || 150) / (textContent.length * (ov.fontSize || 24) * 0.6)}, ${(ov.height || 50) / ((ov.fontSize || 24) * 1.2)})`,
-                                                                transformOrigin: "center center", // ✅ scale từ giữa
+                                                                width: "100%",
+                                                                height: "100%",
+                                                                display: "flex",
+                                                                alignItems: "center",
+                                                                justifyContent: "center",
+                                                                userSelect: "none",
+                                                                pointerEvents: "none",
+                                                                overflow: "visible",
                                                             }}
                                                         >
-                                                            {textContent}
-                                                        </span>
-                                                    </div>
-                                                ) : (
-                                                    <img
-                                                        src={ov.content}
-                                                        alt={`overlay-${i}`}
-                                                        style={{
-                                                            maxWidth: "100%",
-                                                            maxHeight: "100%",
-                                                            objectFit: "contain",
-                                                            userSelect: "none",
-                                                            pointerEvents: "none",
-                                                            display: "block",
-                                                            margin: "auto",
-                                                        }}
-                                                    />
-                                                )}
-                                            </div>
-                                        </Rnd>
-                                    );
-                                })}
-                            </div>
+                                                            <span
+                                                                style={{
+                                                                    display: "inline-block",
+                                                                    fontSize: `${ov.fontSize || 24}px`,
+                                                                    fontFamily,
+                                                                    fontWeight,
+                                                                    fontStyle,
+                                                                    color: textColor,
+                                                                    whiteSpace: "nowrap",
+                                                                    transform: `scale(${(ov.width || 150) / (textContent.length * (ov.fontSize || 24) * 0.6)}, ${(ov.height || 50) / ((ov.fontSize || 24) * 1.2)})`,
+                                                                    transformOrigin: "center center",
+                                                                }}
+                                                            >
+                                                                {textContent}
+                                                            </span>
+                                                        </div>
+                                                    ) : (
+                                                        <img
+                                                            src={ov.content}
+                                                            alt={`overlay-${i}`}
+                                                            style={{
+                                                                maxWidth: "100%",
+                                                                maxHeight: "100%",
+                                                                objectFit: "contain",
+                                                                userSelect: "none",
+                                                                pointerEvents: "none",
+                                                                display: "block",
+                                                                margin: "auto",
+                                                            }}
+                                                        />
+                                                    )}
+                                                </div>
+                                            </Rnd>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
                     ) : (
                         <div>⚠️ Không có ảnh phù hợp với màu được chọn</div>
                     )}
                 </div>
 
+                {/* ================= CỘT MẪU ẢNH ================= */}
                 <div className="col-md-1 border-start d-flex flex-column align-items-center">
                     <h6 className="mt-3 mb-2">Mẫu</h6>
                     {images.map((img) => (
-                        <div key={img._id || img.vitri + img.mau} onClick={() => setSelectedImage(img)} style={{ cursor: "pointer", marginBottom: 8, border: selectedImage?.vitri === img.vitri ? "2px solid #00bcd4" : "1px solid #ccc", padding: 2, borderRadius: 4 }}>
-                            <img src={`data:${img.contentType};base64,${img.data}`} alt={img.vitri} style={{ width: 60, height: 80, objectFit: "cover" }} />
+                        <div
+                            key={img._id || img.vitri + img.mau}
+                            onClick={() => setSelectedImage(img)}
+                            style={{
+                                cursor: "pointer",
+                                marginBottom: 8,
+                                border: selectedImage?.vitri === img.vitri ? "2px solid #00bcd4" : "1px solid #ccc",
+                                padding: 2,
+                                borderRadius: 4
+                            }}
+                        >
+                            <img
+                                src={`data:${img.contentType};base64,${img.data}`}
+                                alt={img.vitri}
+                                style={{ width: 60, height: 80, objectFit: "cover" }}
+                            />
                             <div className="small text-muted text-center">{img.vitri}</div>
                         </div>
                     ))}
@@ -738,4 +770,4 @@ const TShirtDesign = () => {
         </div>
     );
 };
-export default TShirtDesign;
+export default HatsDesign;
