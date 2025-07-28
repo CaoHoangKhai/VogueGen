@@ -31,23 +31,7 @@ Dự án **Website Thương Mại Điện Tử Thời Trang** mang đến trải
 
 ## 📂 Cấu trúc thư mục
 
-📦 fashion-ecommerce
- ┣ 📂 client              # Frontend ReactJS
- ┃ ┣ 📂 src
- ┃ ┃ ┣ 📂 components     # Các component UI tái sử dụng
- ┃ ┃ ┣ 📂 pages          # Trang chính: Home, Cart, Try-On, Design…
- ┃ ┃ ┣ 📂 services       # Kết nối API backend
- ┃ ┃ ┗ 📜 App.js
- ┃ ┗ 📜 package.json
- ┣ 📂 server              # Backend NodeJS
- ┃ ┣ 📂 controllers      # Xử lý request & response
- ┃ ┣ 📂 models           # Mongoose schema (User, Product, Order…)
- ┃ ┣ 📂 routes           # Định nghĩa REST API
- ┃ ┣ 📂 services         # Logic nghiệp vụ & tích hợp AI Try-On
- ┃ ┗ 📜 server.js
- ┣ 📂 public              # File tĩnh (ảnh logo, font, icon…)
- ┣ 📜 README.md
- ┗ 📜 package.json
+<pre> ``` fashion-ecommerce/ ├── client # Frontend ReactJS │ ├── src │ │ ├── components # Các component UI tái sử dụng │ │ ├── pages # Trang chính: Home, Cart, Try-On, Design… │ │ ├── services # Kết nối API backend │ │ └── App.js │ └── package.json ├── server # Backend NodeJS │ ├── controllers # Xử lý request & response │ ├── models # Mongoose schema (User, Product, Order…) │ ├── routes # Định nghĩa REST API │ ├── services # Logic nghiệp vụ & tích hợp AI Try-On │ └── server.js ├── public # File tĩnh (ảnh logo, font, icon…) ├── README.md └── package.json ``` </pre>
 
 ---
 
