@@ -63,15 +63,15 @@ class DesignService {
         }
         const slug = category.slug;
 
-        // ✅ Tạo bản thiết kế
+        // ✅ Tạo bản thiết kế (THÊM gioitinh từ sản phẩm)
         const tempResult = await this.design.insertOne({
             manguoidung: userId,
             masanpham: productId,
+            gioitinh: product.gioitinh || null,   // 👈 lấy từ sản phẩm
             mau,
             ngaytao: new Date(),
             trangthai: 1 // 1 là hiển thị, 0 là ẩn
         });
-
 
         const insertedId = tempResult.insertedId;
         const ten = `Thiết kế ${insertedId.toString()}`;

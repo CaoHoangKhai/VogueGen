@@ -112,7 +112,7 @@ CÁC FOOTER CHƯA XONG
 
 customink
 printdoors
-printful
+ 
 printify
 https://www.spreadshirt.com/
 

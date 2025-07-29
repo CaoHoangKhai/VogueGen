@@ -1,0 +1,142 @@
+17/07/2025
++ Tích hợp vào website ( CHỖ ADD_PRODUCT chưa đưa vô) 
++ Chỉnh sửa lại chỗ thử đồ trên thanh navbar (XONG) 
++ Fix chỗ chi tiết sản phẩm  
++ Viết báo cáo ( PHẦN GIỚI THIỆU)
++ Viết các Use Case
++ Lưu lại thiết kế
+	- lưu lại màu là lưu được áo, lưu vào bảng design (XONG)
+	- còn lưu các thông số khác nữa là lưu vào thietkecuanguoidung (XONG)
+
+19/07/2025
++ Viết cáo báo (tới phần II NỘI DUNG)
++ Fix website hoàn chỉnh 
+	- Chỗ admin add_product (xong)
+	- Chỗ admin product_detail
++ User Profile
+	- Chỉnh sửa thông tin
+	- Đổi mật khẩu (XONG)
+	- Xem lịch sử đơn hàng gần đây ( KHÔNG CẦN)
+	- Biểu đồ chi tiêu theo tháng
++ Error
+	- Forbidden403 (XONG)
+	- NotFound404 (XONG)
++ Hóa đơn
+	- In hóa đơn (XONG)
+	- In dạng pdf (XONG)
+
+20/07/2025
++ Viết báo cáo
++ Test thêm tính năng chỗ áo mà lấy ảnh người có được ko? ( đúng khoảng 40%)( XONG)
+
+21/07/2025
++ Chỗ Try-On thiết kế một số ảnh và áo mẫu để người dùng có thể test (XONG)
++ Viết báo cáo tiếp tục 
++ Viết Use Case
++ Chỗ add_product thêm sinh ảnh người mẫu từ ảnh áo ( front, back, nhiều người)
++ Thêm tính năng nếu ảnh sinh trễ hoặc sinh sớm (XONG)
+
+22/07/2025
++ Viết cáo báo
++ Demo website thêm 1 lần nữa (XONG)
+
+23/07/2025
+- Viết báo cáo
+	+ Chỗ mục lục thiếu cá nhân hóa (xong)
+	+ Thiếu chỗ cá nhân hóa thiết kế (XONG)
+
++ Báo cáo với thầy Đạo ( 14h00 ở Khoa) (XONG) Còn nhiều lỗi
+
+
++ Chỗ thiết kế thêm nút Sinh ảnh theo giới tính ( tự chọn các hình ảnh người mẫu) còn front thì lấy từ áo thiết kế để gửi)
+
+
++ Xóa thiết kế là ẩn trạng thái chứ không phải xóa đi (XONG)
++ Fix lỗi bị giật khi cập nhật số lượng (XONG)
++ Thêm sản phẩm thiết kế vào giỏ hàng (XONG)
++ Không xóa mà ẩn trạng thái thiết kế đó đi (XONG)
++ Nếu giỏ hàng mà có design thì lấy ảnh về hoặc link về (XONG)
++ Chỗ ảnh kq thêm nút tải về (XONG)
+
+24/07/2025
+- Luận văn 
+	+ Bổ sung các thư mục còn thiếu: cá nhân hóa thiết kế
+- Code
+	+ Fix các lỗi tồn động
+	+ Chỉnh sửa vùng thiết kế (XONG)
+	+ Còn lỗi chỗ truyền ảnh sang để try_on (XONG)
+
+26/07/2025
+- Báo cáo
+	+ Chỗ lịch sử và phương pháp nghiên cứu
+
+27/07/2025
+- Code
+	+ Tích hợp Api và Design để sinh ảnh mặc thử
+
+28/07/2025
+- Code
+	+ Thiết kế cá nhân mũ
+	+ Đã fix tính năng text và img của T-Shirt (XONG)
+	+ Nếu màu RGB ko được thì đổi 
+- Luận văn
+	+ 
+
+29/08/2025
+- Code 
+	+ Ràng buộc giới tính (nam, nữ, trẻ em ( nam, nữ)) (XONG)
+	=> Thêm chỗ Product_Add kèm giới tính, khi sinh ảnh dựa vào giới tính và màu sắc được gửi lên
+
+	+ Ràng buộc về số lượng tối thiểu bao nhiêu mới được print( add vào giỏ hàng)( phải nhập ít nhất 50 mới thêm được) AddToCartButton 41 (XONG)
+	=> Tất cả sản phẩm thiết kế được thêm vào giỏ hàng số lượng tối thiểu 50.
+		- Nếu người dùng chỉnh sửa ở trong giỏ hàng thì sao?
+		=> Cho phép chỉnh bắt sự kiện nếu là thiết kế giới hạn tối thiểu 50. Các sản phẩm còn lại thig bth
+		- Ràng buộc max và min của số lượng ( tối đa cho 10.000)
+
+	+ Ràng buộc về size( người chọn size gì lấy model size đó)
+		Ví dụ: Người mập chọn XXL mà sinh người mẫu XS,S,L ( Là sai)
+
+
+	+ Chỗ upload_design tại sao màu ảnh lại khác
+
+	+ Chỗ upload_design đã đưa màu sản phẩm lên rồi dựa vào đó chỉnh lại câu prompt để sinh ảnh lại cho ko bị khác màu
+
+	+ Model truyền màu
+	+ Cần câu prompt mới
+
+- Báo cáo
+	+ Thêm hình các luồng dữ liệu
+	+ Thêm chỗ lịch sử giải quyết vấn đề 1.5. -> 1.5.3
+	+ Viết cho hết Phần GIỚI THIỆU, Phần NỘI DUNG, CHƯƠNG 1
+
+
+
+
+
+
+Lưu ý:
+Vào hội đồng ko demo đăng nhập, đăng ký
+Xem hội đồng là ai thì thêm hình người đó và tên vào sản phẩm thiết kế
+Dọn dẹp lại desktop
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

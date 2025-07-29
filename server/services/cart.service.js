@@ -122,12 +122,27 @@ class CartService {
 
     async decreaseQuantity(cartId) {
         if (!ObjectId.isValid(cartId)) throw new Error("ID giỏ hàng không hợp lệ.");
-        const item = await this.cart.findOne({ _id: new ObjectId(cartId) });
 
+        const item = await this.cart.findOne({ _id: new ObjectId(cartId) });
         if (!item) return { success: false, message: "Không tìm thấy sản phẩm." };
 
+        // ✅ Trường hợp sản phẩm thiết kế (có madesign)
+        if (item.isThietKe || item.madesign) {
+            if (item.soluong <= 50) {
+                return { success: false, message: "Sản phẩm thiết kế tối thiểu số lượng là 50." };
+            } else {
+                await this.cart.updateOne(
+                    { _id: item._id },
+                    { $inc: { soluong: -1 } }
+                );
+                return { success: true, message: "Đã giảm số lượng (thiết kế)." };
+            }
+        }
         if (item.soluong > 1) {
-            await this.cart.updateOne({ _id: item._id }, { $inc: { soluong: -1 } });
+            await this.cart.updateOne(
+                { _id: item._id },
+                { $inc: { soluong: -1 } }
+            );
             return { success: true, message: "Đã giảm số lượng." };
         } else {
             await this.cart.deleteOne({ _id: item._id });
@@ -135,22 +150,36 @@ class CartService {
         }
     }
 
+
     async updateQuantity(cartId, quantity) {
         if (!ObjectId.isValid(cartId)) throw new Error("ID giỏ hàng không hợp lệ.");
+
+        // ✅ Lấy thông tin sản phẩm trong giỏ hàng
+        const item = await this.cart.findOne({ _id: new ObjectId(cartId) });
+        if (!item) return { success: false, message: "Không tìm thấy sản phẩm." };
+
+        // ✅ Nếu số lượng nhập là 0 → xóa khỏi giỏ
         if (quantity === 0) {
             await this.cart.deleteOne({ _id: new ObjectId(cartId) });
             return { success: true, message: "Đã xóa sản phẩm khỏi giỏ hàng." };
         }
 
+        // ✅ Trường hợp sản phẩm thiết kế: không cho phép số lượng < 50
+        if ((item.isThietKe || item.madesign) && quantity < 50) {
+            return { success: false, message: "⚠️ Sản phẩm thiết kế tối thiểu số lượng là 50." };
+        }
+
+        // ✅ Tiến hành cập nhật số lượng
         const result = await this.cart.updateOne(
             { _id: new ObjectId(cartId) },
             { $set: { soluong: quantity } }
         );
 
         return result.modifiedCount === 1
-            ? { success: true, message: "Cập nhật số lượng thành công." }
+            ? { success: true, message: "✅ Cập nhật số lượng thành công." }
             : { success: false, message: "Không tìm thấy sản phẩm." };
     }
+
 }
 
 module.exports = CartService;

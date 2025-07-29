@@ -82,7 +82,7 @@ function BannerSection({ showToast }) {
                     >
                         Show Toast
                     </Button>
-                    <Link to="/products" style={{ textDecoration: "none" }}>
+                    <Link to="/category" style={{ textDecoration: "none" }}>
                         <Button
                             variant="contained"
                             style={{

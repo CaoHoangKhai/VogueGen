@@ -43,9 +43,6 @@ const LeftSidebarDesign = ({
     const [selectedColor, setSelectedColor] = useState(null);
     const [isColorLoaded, setIsColorLoaded] = useState(false);
 
-    const [frontPreviewUrl, setFrontPreviewUrl] = useState(null);
-    const [showFrontModal, setShowFrontModal] = useState(false);
-
     // Toast
     const [toast, setToast] = useState({ show: false, message: "", type: "info" });
     const showToast = (message, type = "info") => {
@@ -481,7 +478,7 @@ const LeftSidebarDesign = ({
                         💾
                     </button>
 
-                    {/* Thêm vào giỏ hàng */}
+                    {/* Thêm vào giỏ hàng xét thểm điều kiện số lượng phải 50 */}
                     <AddToCartButton onAddToCart={onAddToCart} showToast={showToast} />
                     <button
                         onClick={onRequestPreview}

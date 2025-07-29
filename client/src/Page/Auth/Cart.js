@@ -98,23 +98,51 @@ const Cart = () => {
 
     // Giảm số lượng
     const handleDecrease = (item) => {
-        if (item.soluong <= 1) return;
-        decreaseCartQuantity(item._id)
-            .then(() => {
-                const updatedItems = cartItems.map(ci =>
-                    ci._id === item._id ? { ...ci, soluong: ci.soluong - 1 } : ci
-                );
-                setCartItems(updatedItems);
-                setInputValues(prev => ({
-                    ...prev,
-                    [item._id]: String(item.soluong - 1)
-                }));
-                setToast({ show: true, message: "Giảm số lượng thành công!", type: "success" });
-            })
-            .catch(() => {
-                setToast({ show: true, message: "Giảm số lượng thất bại!", type: "error" });
+    // 🔹 Nếu là sản phẩm thiết kế (isThietKe = true hoặc có madesign) 
+    // và số lượng <= 50 => Không cho giảm nữa
+    if ((item.isThietKe || item.madesign) && item.soluong <= 50) {
+        setToast({
+            show: true,
+            message: "⚠️ Sản phẩm thiết kế tối thiểu số lượng là 50!",
+            type: "warning",
+        });
+        return;
+    }
+
+    // 🔹 Với sản phẩm thường, nếu số lượng <= 1 => Không giảm nữa (tránh âm)
+    if (item.soluong <= 1) return;
+
+    // 🔹 Gọi API giảm số lượng trong giỏ hàng
+    decreaseCartQuantity(item._id)
+        .then(() => {
+            // Cập nhật state giỏ hàng sau khi giảm
+            const updatedItems = cartItems.map(ci =>
+                ci._id === item._id ? { ...ci, soluong: ci.soluong - 1 } : ci
+            );
+
+            setCartItems(updatedItems);
+
+            // Cập nhật giá trị input (nếu có field nhập số lượng)
+            setInputValues(prev => ({
+                ...prev,
+                [item._id]: String(item.soluong - 1)
+            }));
+
+            setToast({
+                show: true,
+                message: "✅ Giảm số lượng thành công!",
+                type: "success",
             });
-    };
+        })
+        .catch(() => {
+            setToast({
+                show: true,
+                message: "❌ Giảm số lượng thất bại!",
+                type: "error",
+            });
+        });
+};
+
 
     // Xóa sản phẩm khỏi giỏ
     const handleRemoveItem = (item) => {

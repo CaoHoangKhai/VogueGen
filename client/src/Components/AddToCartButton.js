@@ -39,6 +39,7 @@ const AddToCartButton = ({ onAddToCart, showToast }) => {
         );
     };
 
+    {/*Chỉnh lại số lượng phải lớn hơn 50*/ }
     const handleQuantityChange = (size, value) => {
         setQuantities((prev) => ({
             ...prev,
@@ -52,11 +53,12 @@ const AddToCartButton = ({ onAddToCart, showToast }) => {
             return;
         }
 
+        // ✅ Kiểm tra số lượng phải >= 50
         const invalidQuantity = selectedSizes.some(
-            (size) => !quantities[size] || quantities[size] < 1
+            (size) => !quantities[size] || quantities[size] < 50
         );
         if (invalidQuantity) {
-            showToast?.("Vui lòng nhập số lượng hợp lệ cho từng size!", "warning");
+            showToast?.("🚨 Mỗi size phải nhập tối thiểu 50 sản phẩm!", "warning");
             return;
         }
 
@@ -84,7 +86,6 @@ const AddToCartButton = ({ onAddToCart, showToast }) => {
         showToast?.("🎉 Đã thêm vào giỏ hàng!", "success");
         handleClose();
     };
-
     return (
         <>
             <OverlayTrigger
@@ -123,8 +124,8 @@ const AddToCartButton = ({ onAddToCart, showToast }) => {
                                         <Form.Control
                                             className="mt-2"
                                             type="number"
-                                            placeholder="Số lượng"
-                                            min={1}
+                                            placeholder="Số lượng tối thiểu 50"
+                                            min={50}
                                             style={{ outline: "1px solid #ccc" }}
                                             value={quantities[size] || ""}
                                             onChange={(e) =>

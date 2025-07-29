@@ -33,7 +33,7 @@ exports.createProduct = async (req, res) => {
 
     // Parse giới tính
     const gioitinh = req.body.gioitinh?.toLowerCase() || "";
-    if (!["nam", "nu","unisex"].includes(gioitinh)) {
+    if (!["nam", "nu","unisex","be-trai","be-gai"].includes(gioitinh)) {
       return res.status(400).json({ error: "Giới tính chỉ được phép là 'nam' hoặc 'nu'" });
     }
 

@@ -38,26 +38,33 @@ const TShirtDesign = () => {
 
     const handleGenerateTryOnImages = async () => {
         if (!frontPreviewUrl) return;
-
         setLoadingGenerate(true);
 
         try {
-            const res = await fetch("https://1ef57d7a7c99.ngrok-free.app/upload", {
+            const res = await fetch(`${BASE_URL_UPLOAD_DESIGN}`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    image_base64: frontPreviewUrl, // Gửi chuỗi base64
+                    image_base64: frontPreviewUrl,
+                    gioitinh: design?.gioitinh || "unisex",
+                    design_id: design?._id,
+                    colorcloth: design?.mau,
                 }),
             });
 
             const data = await res.json();
-            if (data.file_url) {
-                setTryOnPreviewUrls((prev) => [...prev, data.file_url]);
+            console.log("✅ [HANDLE GENERATE] Kết quả trả về:", data);
+
+            if (data.success && Array.isArray(data.results)) {
+                // ✅ Lưu luôn mảng object (model + image_base64)
+                setTryOnPreviewUrls(data.results);
+            } else {
+                alert("❌ Không có ảnh try-on trả về");
             }
         } catch (err) {
-            console.error("❌ Lỗi gửi base64:", err);
+            console.error("❌ [HANDLE GENERATE] Lỗi gửi base64:", err);
         } finally {
             setLoadingGenerate(false);
         }
@@ -175,11 +182,17 @@ const TShirtDesign = () => {
                 });
                 return;
             }
+            if (!quantity > 50) {
+                console.warn("[handleAddToCart] Chọn số lượng tối thiểu 50:", {
+                    soluong: quantity || 50,
+                });
+                return;
+            }
 
             const cartItem = {
                 manguoidung: userId,
                 masanpham: design.masanpham,
-                soluong: quantity || 1,
+                soluong: quantity || 50,
                 size: size,
                 mausac: selectedColor,
                 isThietKe: true,
@@ -270,12 +283,10 @@ const TShirtDesign = () => {
         const handleClickOutside = (e) => {
             const isInContainer = containerRef.current?.contains(e.target);
             const isInOverlayZone = overlayZoneRef.current?.contains(e.target);
-
             // ✅ Nếu click trong ảnh (container) nhưng không phải vùng thiết kế → tắt chọn
             if (isInContainer && !isInOverlayZone) {
                 setSelectedOverlayIndex(null);
             }
-
             // ✅ Nếu click ngoài cả vùng ảnh → cũng tắt
             if (!isInContainer) {
                 setSelectedOverlayIndex(null);
@@ -460,6 +471,7 @@ const TShirtDesign = () => {
                             </div>
                         </div>
                     )}
+
                     {frontPreviewUrl && (
                         <>
                             {/* Modal backdrop */}
@@ -475,7 +487,7 @@ const TShirtDesign = () => {
                                 <div className="modal-dialog modal-dialog-centered modal-xl" role="document">
                                     <div className="modal-content">
                                         <div className="modal-header">
-                                            <h5 className="modal-title">Xem trước thiết kế (Mặt trước)</h5>
+                                            <h5 className="modal-title">Xem trước thiết kế & Thử áo</h5>
                                             <button
                                                 type="button"
                                                 className="btn-close"
@@ -483,39 +495,69 @@ const TShirtDesign = () => {
                                             ></button>
                                         </div>
 
-                                        <div className="modal-body text-center">
-                                            {/* Ảnh mặt trước */}
-                                            <img
-                                                src={frontPreviewUrl}
-                                                alt="Front Preview"
-                                                style={{
-                                                    maxWidth: "50%",
-                                                    height: "auto",
-                                                    maxHeight: "50vh",
-                                                    objectFit: "contain",
-                                                }}
-                                            />
+                                        <div className="modal-body">
+                                            <div className="row">
+                                                {/* 📌 CỘT 3: Ảnh áo */}
+                                                <div className="col-3 text-center border-end">
+                                                    <h6 className="mb-3">👕 Ảnh thiết kế</h6>
+                                                    <img
+                                                        src={frontPreviewUrl}
+                                                        alt="Front Preview"
+                                                        style={{
+                                                            width: "100%",
+                                                            height: "auto",
+                                                            maxHeight: "50vh",
+                                                            objectFit: "contain",
+                                                            borderRadius: "8px",
+                                                            boxShadow: "0 2px 6px rgba(0,0,0,0.15)"
+                                                        }}
+                                                    />
+                                                </div>
 
-                                            {/* Ảnh thử áo */}
-                                            {tryOnPreviewUrls.length > 0 && (
-                                                <div className="mt-4">
-                                                    <h6>Kết quả thử áo:</h6>
-                                                    <div className="d-flex flex-wrap justify-content-center gap-3 mt-2">
-                                                        {tryOnPreviewUrls.map((url, idx) => (
-                                                            <img
-                                                                key={idx}
-                                                                src={url}
-                                                                alt={`TryOn ${idx}`}
-                                                                style={{
-                                                                    maxWidth: "200px",
-                                                                    maxHeight: "250px",
-                                                                    objectFit: "contain",
-                                                                }}
-                                                            />
-                                                        ))}
+                                                {/* 📌 CỘT 7: Kết quả thử áo */}
+                                                <div className="col-9">
+                                                    <h6 className="text-center mb-3">✨ Kết quả thử áo</h6>
+
+                                                    <div className="d-flex flex-wrap justify-content-start gap-3">
+                                                        {loadingGenerate ? (
+                                                            // 🌀 Spinner khi đang xử lý
+                                                            <div className="w-100 text-center my-4">
+                                                                <div className="spinner-border text-primary" role="status">
+                                                                    <span className="visually-hidden">Loading...</span>
+                                                                </div>
+                                                                <p className="mt-2 text-primary fw-bold">
+                                                                    ⏳ Đang sinh ảnh try-on...
+                                                                </p>
+                                                            </div>
+                                                        ) : tryOnPreviewUrls.length > 0 ? (
+                                                            // ✅ Hiển thị kết quả try-on
+                                                            tryOnPreviewUrls.map((item, idx) => (
+                                                                <div key={idx} className="text-center">
+                                                                    <img
+                                                                        src={item.image_base64}
+                                                                        alt={`TryOn ${idx}`}
+                                                                        style={{
+                                                                            maxWidth: "150px",
+                                                                            maxHeight: "220px",
+                                                                            objectFit: "contain",
+                                                                            borderRadius: "6px",
+                                                                            boxShadow: "0 2px 6px rgba(0,0,0,0.1)"
+                                                                        }}
+                                                                    />
+                                                                    <p
+                                                                        className="mt-2 text-muted"
+                                                                        style={{ fontSize: "14px" }}
+                                                                    >
+                                                                        👕 {item.model.replace(".jpg", "")}
+                                                                    </p>
+                                                                </div>
+                                                            ))
+                                                        ) : (
+                                                            <p className="text-muted">Chưa có kết quả thử áo.</p>
+                                                        )}
                                                     </div>
                                                 </div>
-                                            )}
+                                            </div>
                                         </div>
 
                                         <div className="modal-footer d-flex justify-content-between">
@@ -540,6 +582,7 @@ const TShirtDesign = () => {
                             </div>
                         </>
                     )}
+
                 </div>
 
                 <div className="col-md-9 d-flex justify-content-center align-items-center" style={{ minHeight: "80vh" }}>

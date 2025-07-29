@@ -331,6 +331,9 @@ const ProductAdd = () => {
           <option value="">-- Chọn giới tính --</option>
           <option value="nam">Nam</option>
           <option value="nu">Nữ</option>
+          <option value="be-trai">Bé trai</option>
+          <option value="be-gai">Bé gái</option>
+          <option value="unisex">Unisex</option>
         </select>
       </div>
     );
@@ -375,7 +378,7 @@ const ProductAdd = () => {
         return exists ? prev.filter((s) => s !== size) : [...prev, size];
       });
     };
-    
+
 
     return (
       <div className="mb-3">
