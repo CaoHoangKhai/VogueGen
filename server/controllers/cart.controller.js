@@ -19,7 +19,7 @@ exports.getCartByUserId = async (req, res) => {
                     const design = await designService.getDesignDetail(item.madesign);
                     const link = await designService.getDesignLink(item.madesign);
 
-                    item.designInfo = design;       // Thông tin thiết kế đầy đủ
+                    item.designInfo = design?.design || null;;       // Thông tin thiết kế đầy đủ
                     item.designLink = link || null; // Link thiết kế, nếu có
                 } catch (err) {
                     console.warn("⚠️ Không tìm thấy thiết kế hoặc link:", item.madesign);

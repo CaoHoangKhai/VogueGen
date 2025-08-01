@@ -153,6 +153,9 @@ const TankTopsDesign = () => {
     };
 
     const handleAddToCart = async ({ id, size, quantity }) => {
+        console.log("✅ Thiết kế lấy được từ API:", design);
+        console.log("✅ masanpham trong design:", design?.masanpham);
+
         try {
             const user = JSON.parse(localStorage.getItem("user"));
             const userId = user?._id;

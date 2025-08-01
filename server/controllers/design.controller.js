@@ -223,7 +223,6 @@ exports.getImagesByColorDesign = async (req, res) => {
     }
 };
 
-
 exports.saveUserDesign = async (req, res) => {
     try {
         const designService = new DesignService(MongoDB.client);
@@ -262,5 +261,22 @@ exports.getDesignLink = async (req, res) => {
     } catch (error) {
         console.error('Lỗi khi lấy link design:', error);
         return res.status(500).json({ success: false, message: 'Lỗi server' });
+    }
+};
+
+exports.getProductSizesFromDesignId = async (req, res) => {
+    try {
+        const designId = req.params.designId;
+        const designService = new DesignService(MongoDB.client);
+        const design = await designService.getProductSizesFromDesignId(designId);
+
+        if (!design) {
+            return res.status(404).json({ success: false, message: "❌ Design không tồn tại." });
+        }
+
+        return res.json({ success: true, data: design });
+    } catch (error) {
+        console.error("🔥 Lỗi khi lấy design theo ID:", error);
+        return res.status(500).json({ success: false, message: "🚨 Lỗi server." });
     }
 };

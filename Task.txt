@@ -91,7 +91,8 @@
 	=> Tất cả sản phẩm thiết kế được thêm vào giỏ hàng số lượng tối thiểu 50.
 		- Nếu người dùng chỉnh sửa ở trong giỏ hàng thì sao?
 		=> Cho phép chỉnh bắt sự kiện nếu là thiết kế giới hạn tối thiểu 50. Các sản phẩm còn lại thig bth
-		- Ràng buộc max và min của số lượng ( tối đa cho 10.000)
+		- Ràng buộc max và min của số lượng ( tối đa cho 10.000)(XONG)
+		
 
 	+ Ràng buộc về size( người chọn size gì lấy model size đó)
 		Ví dụ: Người mập chọn XXL mà sinh người mẫu XS,S,L ( Là sai)
@@ -99,7 +100,7 @@
 
 	+ Chỗ upload_design tại sao màu ảnh lại khác
 
-	+ Chỗ upload_design đã đưa màu sản phẩm lên rồi dựa vào đó chỉnh lại câu prompt để sinh ảnh lại cho ko bị khác màu
+	+ Chỗ upload_design đã đưa màu sản phẩm lên rồi dựa vào đó chỉnh lại câu prompt để sinh ảnh lại cho ko bị khác màu 
 
 	+ Model truyền màu
 	+ Cần câu prompt mới
@@ -112,7 +113,25 @@
 
 
 
+30/07/2025
+-Code 
+	+ Fix lỗi khi thiết kế chụp mặt trước và sau của sản phẩm thiết kế để lưu vào csdl tránh bị ghi đè lên nếu có thiết kế mới
+	+ Bị lỗi inset hình ảnh được thì ko cho xóa và copy được
 
+
+01/08/2025
+- Code
+	+ Thêm ảnh thiết kế vào giỏ hàng(XONG)
+	+ Tải ảnh ko được và xóa, copy ko được (XONG) 
+		*Chỗ di chuyển hình ảnh không được mượt lắm
+	+ Chỗ bấm sinh ảnh ko được (XONG)
+	+ Có thể đơn giản hóa
+	+ Đã thiết kế được chỗ mũ nhưng chỉ lấy có front và back ( Hats: const views = ["front", "right", "left", "back", "bottom"];)
+- Tối nay phải xong và bắt đầu viết báo cáo
+- Thu thập các hình ảnh về size, giới tính
+
+
+	
 
 Lưu ý:
 Vào hội đồng ko demo đăng nhập, đăng ký

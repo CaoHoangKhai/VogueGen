@@ -139,6 +139,28 @@ const Order = () => {
             setToast({ show: true, message: "Đặt hàng thất bại!", type: "error" });
         }
     };
+    const openBase64Image = (base64Data) => {
+        // Tách header (data:image/png;base64,) và phần base64 thuần
+        const arr = base64Data.split(",");
+        const mime = arr[0].match(/:(.*?);/)[1];
+        const bstr = atob(arr[1]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+
+        while (n--) {
+            u8arr[n] = bstr.charCodeAt(n);
+        }
+
+        // Tạo Blob và URL tạm
+        const blob = new Blob([u8arr], { type: mime });
+        const url = URL.createObjectURL(blob);
+
+        // Mở ảnh trong tab mới
+        window.open(url, "_blank");
+
+        // (Tuỳ chọn) Giải phóng URL sau 1 phút cho an toàn
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+    };
 
     return (
         <div className="container mt-4">
@@ -173,18 +195,69 @@ const Order = () => {
                                     <tbody className="text-center">
                                         {cartItems.map((item, idx) => (
                                             <tr key={item._id || idx}>
-                                                <td className="text-center">
-                                                    <img
-                                                        src={item.hinhanh || "https://via.placeholder.com/60"}
-                                                        alt={item.tensanpham}
-                                                        style={{
-                                                            width: 60,
-                                                            height: 60,
-                                                            objectFit: "cover",
-                                                            borderRadius: 6,
-                                                            border: "1px solid #eee"
-                                                        }}
-                                                    />
+                                                <td style={{ width: 120, height: 60 }}>
+                                                    <div style={{ display: "flex", width: "100%", height: "100%", gap: 4 }}>
+                                                        {/* Nếu có front/back → sản phẩm custom */}
+                                                        {item.hinhanhFront || item.hinhanhBack ? (
+                                                            <>
+                                                                {/* Front */}
+                                                                <img
+                                                                    src={item.hinhanhFront}
+                                                                    alt="Front"
+                                                                    style={{
+                                                                        width: "50%",
+                                                                        height: "100%",
+                                                                        objectFit: "cover",
+                                                                        border: "1px solid #ddd",
+                                                                        borderRadius: 4,
+                                                                        cursor: "zoom-in",
+                                                                    }}
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        openBase64Image(item.hinhanhFront);
+                                                                    }}
+                                                                />
+
+                                                                {/* Back (nếu có) */}
+                                                                {item.hinhanhBack && (
+                                                                    <img
+                                                                        src={item.hinhanhBack}
+                                                                        alt="Back"
+                                                                        style={{
+                                                                            width: "50%",
+                                                                            height: "100%",
+                                                                            objectFit: "cover",
+                                                                            border: "1px solid #ddd",
+                                                                            borderRadius: 4,
+                                                                            cursor: "zoom-in",
+                                                                        }}
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            openBase64Image(item.hinhanhBack);
+                                                                        }}
+                                                                    />
+                                                                )}
+                                                            </>
+                                                        ) : (
+                                                            /* Nếu chỉ có ảnh sản phẩm tiêu chuẩn */
+                                                            <img
+                                                                src={item.hinhanh}
+                                                                alt={item.tensanpham}
+                                                                style={{
+                                                                    width: "100%",
+                                                                    height: "100%",
+                                                                    objectFit: "cover",
+                                                                    border: "1px solid #ddd",
+                                                                    borderRadius: 4,
+                                                                    cursor: "zoom-in",
+                                                                }}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    openBase64Image(item.hinhanh);
+                                                                }}
+                                                            />
+                                                        )}
+                                                    </div>
                                                 </td>
                                                 <td>{item.tensanpham}</td>
                                                 <td>{item.size}</td>

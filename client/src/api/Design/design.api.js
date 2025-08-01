@@ -77,3 +77,22 @@ export const getImagesByColor = async (productId, color) => {
   }
 };
 
+/**
+ * 🟢 Lấy danh sách size của sản phẩm từ một thiết kế (designId)
+ * @param {string} designId - ID của thiết kế
+ * @returns {Promise<{ success: boolean, data?: { _id: string, masanpham: string, sizes: string[] }, message?: string }>}
+ */
+export const getProductSizesFromDesignId = async (designId) => {
+  try {
+    // Gọi API backend: GET /design/:designId/with-size
+    const response = await axios.get(`${API_URL_DESIGN}/${designId}/with-size`);
+    return response.data;
+  } catch (error) {
+    console.error("❌ [getProductSizesFromDesignId] Lỗi khi gọi API:", error);
+    return {
+      success: false,
+      message: error.response?.data?.message || "Không thể lấy size cho thiết kế."
+    };
+  }
+};
+

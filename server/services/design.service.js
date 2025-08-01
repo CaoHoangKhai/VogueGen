@@ -19,6 +19,7 @@ class DesignService {
         this.thietkecuanguoidung = client.db().collection("thietkecuanguoidung");
         this.mausanpham = client.db().collection("mausanpham");
         this.sanpham = client.db().collection("sanpham");
+        this.kichthuoc = client.db().collection("kichthuoc")
     }
 
     async createDesign({ manguoidung, masanpham, mausac }) {
@@ -156,7 +157,7 @@ class DesignService {
 
         return {
             success: true,
-            message: "Lấy chi tiết thiết kế thành cônghehehe.",
+            message: "Lấy chi tiết thiết kế thành.",
             design,
             overlays // ✅ cấu trúc phù hợp với frontend
         };
@@ -343,6 +344,20 @@ class DesignService {
         return design.link;
     }
 
+    async getProductSizesFromDesignId(designId) {
+        const design = await this.design.findOne({ _id: new ObjectId(designId) });
+        if (!design) return null;
+
+        const sizes = await this.kichthuoc
+            .find({ masanpham: design.masanpham })
+            .toArray();
+
+        return {
+            _id: design._id,
+            masanpham: design.masanpham,
+            sizes: sizes.map(s => s.size)
+        };
+    }
 
 }
 

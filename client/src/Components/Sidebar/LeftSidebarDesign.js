@@ -25,7 +25,10 @@ const LeftSidebarDesign = ({
     onSaveDesign,
     onAddToCart,
     onPanelChange,
-    onRequestPreview
+    onRequestPreview,
+    frontContainerRef,
+    backContainerRef,
+    productId
 }) => {
 
     const navigate = useNavigate();
@@ -391,7 +394,6 @@ const LeftSidebarDesign = ({
             </button>
         );
     };
-
     return (
         <>
             {/* Toast hiển thị thông báo */}
@@ -479,7 +481,14 @@ const LeftSidebarDesign = ({
                     </button>
 
                     {/* Thêm vào giỏ hàng xét thểm điều kiện số lượng phải 50 */}
-                    <AddToCartButton onAddToCart={onAddToCart} showToast={showToast} />
+                    <AddToCartButton
+                        frontContainerRef={frontContainerRef}   // 👈 TRUYỀN TIẾP REF
+                        backContainerRef={backContainerRef}     // 👈 TRUYỀN TIẾP REF
+                        selectedColor={selectedColor}
+                        productId={productId}
+                    />
+
+
                     <button
                         onClick={onRequestPreview}
                         className="btn btn-outline-primary d-flex align-items-center gap-2 px-3 py-2 rounded mt-2"
