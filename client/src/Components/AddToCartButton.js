@@ -6,11 +6,13 @@ import { addToCart } from "../api/Cart/cart.api";
 import html2canvas from "html2canvas";
 
 const AddToCartButton = ({
-  frontContainerRef,    // 👉 ref mặt trước từ TShirtDesign
-  backContainerRef,     // 👉 ref mặt sau từ TShirtDesign
-  design,               // 👉 object thiết kế
+  frontContainerRef,     // 👉 ref mặt trước
+  backContainerRef,      // 👉 ref mặt sau
+  design,                // 👉 object thiết kế
   selectedColor,         // 👉 màu áo đang chọn
-  productId
+  productId,
+  setSelectedImage,      // 🔥 hàm setSelectedImage từ TShirtDesign
+  images                 // 🔥 mảng ảnh front/back
 }) => {
   const { id } = useParams();
   const location = useLocation();
@@ -21,7 +23,10 @@ const AddToCartButton = ({
   const [selectedSizes, setSelectedSizes] = useState([]);
   const [quantities, setQuantities] = useState({});
   const [loading, setLoading] = useState(false);
-  // 🟢 Lấy size theo thiết kế (designId)
+
+  const MAX_QUANTITY = 10000;
+
+  // 🟢 Lấy size theo thiết kế
   useEffect(() => {
     const fetchSizes = async () => {
       try {
@@ -83,8 +88,6 @@ const AddToCartButton = ({
   };
 
   // ✅ Khi nhấn xác nhận
-  const MAX_QUANTITY = 10000;
-
   const handleConfirm = async () => {
     try {
       if (selectedSizes.length === 0) {
@@ -106,6 +109,7 @@ const AddToCartButton = ({
         return;
       }
 
+      // 🚨 Kiểm tra user đăng nhập
       const user = JSON.parse(localStorage.getItem("user"));
       const userId = user?._id;
       if (!userId) {
@@ -115,6 +119,16 @@ const AddToCartButton = ({
 
       setLoading(true);
 
+      // ✅ 👉 QUAN TRỌNG: CHUYỂN SANG FRONT TRƯỚC KHI CHỤP
+      if (setSelectedImage && images) {
+        const frontImg = images.find(img => img.vitri === "front" && img.mau === selectedColor);
+        if (frontImg) {
+          setSelectedImage(frontImg);
+          await new Promise(r => setTimeout(r, 300));  // ⏳ chờ front render xong
+        }
+      }
+
+      // 📸 Chụp ảnh
       let frontImageBase64 = null;
       let backImageBase64 = null;
       if (isDesignPage) {
@@ -122,7 +136,7 @@ const AddToCartButton = ({
         if (backContainerRef) backImageBase64 = await captureDesignAsBase64(backContainerRef);
       }
 
-      // 📝 Gộp tất cả item vào 1 request (nếu backend hỗ trợ)
+      // 📝 Chuẩn bị payload
       const payload = selectedSizes.map(size => ({
         manguoidung: userId,
         masanpham: productId,
@@ -137,13 +151,13 @@ const AddToCartButton = ({
 
       console.log("🛒 Payload gửi:", payload);
 
+      // 🚀 Gửi từng item
       for (const item of payload) {
         await addToCart(item);
       }
 
       alert("🎉 Đã thêm vào giỏ hàng!");
       handleClose();
-
     } catch (err) {
       console.error("❌ [handleConfirm] Lỗi:", err.message || err);
       alert("❌ Lỗi khi thêm vào giỏ hàng!");
@@ -152,7 +166,6 @@ const AddToCartButton = ({
     }
   };
 
-
   // ✅ Mở/đóng modal
   const handleOpen = () => setShowModal(true);
   const handleClose = () => {
@@ -160,6 +173,7 @@ const AddToCartButton = ({
     setQuantities({});
     setShowModal(false);
   };
+
   return (
     <>
       {/* 🛒 Nút giỏ hàng */}
@@ -217,8 +231,8 @@ const AddToCartButton = ({
           <Button variant="outline-secondary" onClick={handleClose}>
             Hủy
           </Button>
-          <Button variant="outline-success" onClick={handleConfirm}>
-            Xác nhận
+          <Button variant="outline-success" onClick={handleConfirm} disabled={loading}>
+            {loading ? "⏳ Đang xử lý..." : "Xác nhận"}
           </Button>
         </Modal.Footer>
       </Modal>

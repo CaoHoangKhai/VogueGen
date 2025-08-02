@@ -85,6 +85,7 @@ const Order = () => {
 
     const handleOrder = async (e) => {
         e.preventDefault();
+
         if (cartItems.length === 0) {
             setToast({ show: true, message: "Giỏ hàng của bạn đang trống!", type: "error" });
             return;
@@ -94,6 +95,7 @@ const Order = () => {
             return;
         }
 
+        // 🟢 Tạo payload cho API
         const orderData = {
             manguoidung: userId,
             hoten: form.hoten,
@@ -102,16 +104,37 @@ const Order = () => {
             ghichu: form.ghichu,
             tongtien: total,
             phuongthucthanhtoan: form.phuongthucthanhtoan,
-            chitiet: cartItems.map(item => ({
-                masanpham: item.masanpham,
-                tensanpham: item.tensanpham,
-                soluong: item.soluong,
-                giatien: item.giasanpham,
-                size: item.size,
-                mausac: item.mausac,
-                isThietKe: !!item.madesign,
-                madesign: item.madesign || null
-            }))
+            chitiet: cartItems.map(item => {
+                // 🟠 Base fields (dùng cho mọi sản phẩm)
+                const base = {
+                    masanpham: item.masanpham,
+                    tensanpham: item.tensanpham,
+                    soluong: item.soluong,
+                    giatien: item.giasanpham,
+                    size: item.size,
+                    mausac: item.mausac,
+                    isThietKe: !!item.madesign,
+                    madesign: item.madesign || null,
+                };
+
+                // 🟢 Nếu là sản phẩm có thiết kế
+                if (item.hinhanhFront || item.hinhanhBack) {
+                    return {
+                        ...base,
+                        hinhanhFront: item.hinhanhFront || null,
+                        hinhanhBack: item.hinhanhBack || null,
+                        hinhanh: null // ❌ không cần ảnh chuẩn
+                    };
+                }
+
+                // 🟢 Nếu là sản phẩm thường (không có thiết kế)
+                return {
+                    ...base,
+                    hinhanh: item.hinhanh || null,
+                    hinhanhFront: null,
+                    hinhanhBack: null
+                };
+            })
         };
 
         try {
@@ -120,25 +143,19 @@ const Order = () => {
 
             setToast({ show: true, message: "Đặt hàng thành công!", type: "success" });
 
-            // 🧹 Xóa giỏ hàng trên client
+            // 🧹 Dọn giỏ hàng trên client
             setCartItems([]);
 
-            // 🧹 Xóa form nếu cần
-            setForm(prev => ({
-                ...prev,
-                ghichu: "",
-            }));
-
-            // ⏱ Option: điều hướng sau 2 giây
-            // setTimeout(() => {
-            //     navigate("/");
-            // }, 2000);
+            // 🧹 Reset form
+            setForm(prev => ({ ...prev, ghichu: "" }));
 
         } catch (error) {
             console.error("❌ Đặt hàng thất bại:", error);
             setToast({ show: true, message: "Đặt hàng thất bại!", type: "error" });
         }
     };
+
+
     const openBase64Image = (base64Data) => {
         // Tách header (data:image/png;base64,) và phần base64 thuần
         const arr = base64Data.split(",");

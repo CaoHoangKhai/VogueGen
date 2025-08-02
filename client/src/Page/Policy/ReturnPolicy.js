@@ -38,7 +38,7 @@ const ReturnPolicy = () => (
         </p>
 
         <p>
-            Mọi hỗ trợ xin liên hệ bộ phận CSKH qua <strong>hotline: 0900 123 456</strong> hoặc Zalo chat trực tuyến.
+            Mọi hỗ trợ xin liên hệ bộ phận CSKH qua <strong>hotline: 0834 477 131</strong> hoặc Zalo chat trực tuyến.
         </p>
     </div>
 );

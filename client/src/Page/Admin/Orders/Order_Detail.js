@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import vi from "date-fns/locale/vi";
 import { colors } from "../../../config/colors";
 import html2pdf from "html2pdf.js";
+import Toast from "../../../Components/Toast"; // ✅ import Toast
 
 const OrderDetail = () => {
   const { orderId } = useParams();
@@ -13,7 +14,8 @@ const OrderDetail = () => {
   const [loading, setLoading] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState("");
-  const printRef = useRef(); // ref cho vùng in
+  const [toast, setToast] = useState({ show: false, message: "", type: "" }); // ✅ state Toast
+  const printRef = useRef();
 
   useEffect(() => {
     if (orderId) fetchOrder();
@@ -55,23 +57,24 @@ const OrderDetail = () => {
   };
 
   const handleUpdateStatus = async () => {
-    if (!window.confirm("Bạn có chắc muốn cập nhật trạng thái đơn hàng?")) return;
     if (statusUpdate === null || statusUpdate === undefined) {
-      alert("⚠️ Bạn chưa chọn trạng thái mới.");
+      setToast({ show: true, message: "⚠️ Bạn chưa chọn trạng thái mới.", type: "error" });
       return;
     }
+
+    if (!window.confirm("Bạn có chắc muốn cập nhật trạng thái đơn hàng?")) return;
 
     setUpdating(true);
     try {
       const res = await updateOrderStatus(orderId, statusUpdate);
       if (res.success) {
-        alert("✅ Cập nhật trạng thái thành công");
-        fetchOrder();
+        setToast({ show: true, message: "✅ Cập nhật trạng thái thành công", type: "success" });
+        fetchOrder(); // refresh lại dữ liệu
       } else {
-        alert(res.message || "❌ Không thể cập nhật trạng thái");
+        setToast({ show: true, message: res.message || "❌ Không thể cập nhật trạng thái", type: "error" });
       }
     } catch (err) {
-      alert("❌ Lỗi khi cập nhật trạng thái");
+      setToast({ show: true, message: "❌ Lỗi khi cập nhật trạng thái", type: "error" });
       console.error(err);
     } finally {
       setUpdating(false);
@@ -113,7 +116,6 @@ const OrderDetail = () => {
                 border: 1px solid #ccc;
                 margin-right: 5px;
               }
-              /* Ẩn phần cập nhật trạng thái khi in */
               .export-hidden {
                 display: none !important;
               }
@@ -146,9 +148,33 @@ const OrderDetail = () => {
   if (loading) return <div className="container"><p>Đang tải dữ liệu...</p></div>;
   if (error) return <div className="container"><div className="alert alert-danger">{error}</div></div>;
 
+  const openBase64Image = (base64Data) => {
+    if (!base64Data) return;
+    const arr = base64Data.split(",");
+    const mime = arr[0].match(/:(.*?);/)[1];
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    const blob = new Blob([u8arr], { type: mime });
+    const url = URL.createObjectURL(blob);
+    window.open(url, "_blank");
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  };
+
   return (
     <div className="container">
-      <div className="text-end my-4">
+      {/* ✅ Toast thông báo */}
+      <Toast
+        show={toast.show}
+        message={toast.message}
+        type={toast.type}
+        onClose={() => setToast({ ...toast, show: false })}
+      />
+
+      <div className="text-end my-2">
         <div className="btn-group" role="group" aria-label="Export Options">
           <button
             className="btn btn-outline-primary px-4 py-2 fw-semibold d-flex align-items-center gap-2 me-2"
@@ -193,7 +219,6 @@ const OrderDetail = () => {
                     </span>
                   </p>
 
-                  {/* 🛠 Cập nhật trạng thái - sẽ ẩn khi in hoặc xuất PDF */}
                   {order.trangthai !== 3 && order.trangthai !== 4 && (
                     <div className="mt-2 d-print-none export-hidden">
                       <label><strong>🛠 Cập nhật trạng thái</strong></label>
@@ -204,7 +229,12 @@ const OrderDetail = () => {
                           <option value={3}>Hoàn tất</option>
                           <option value={4}>Đã huỷ</option>
                         </select>
-                        <button className="btn btn-primary" onClick={handleUpdateStatus} disabled={updating}>
+                        <button 
+                          type="button"
+                          className="btn btn-primary" 
+                          onClick={handleUpdateStatus} 
+                          disabled={updating}
+                        >
                           {updating ? "Đang cập nhật..." : "Cập nhật"}
                         </button>
                       </div>
@@ -230,6 +260,7 @@ const OrderDetail = () => {
                     <th>STT</th>
                     <th className="col-1">Mã sản phẩm</th>
                     <th>Tên sản phẩm</th>
+                    <th>Hình ảnh</th>
                     <th className="col-2">Màu</th>
                     <th>Size</th>
                     <th>Số lượng</th>
@@ -244,14 +275,69 @@ const OrderDetail = () => {
                         <td>{item.masanpham}</td>
                         <td>{item.tensanpham}</td>
                         <td>
+                          {item.isThietKe ? (
+                            <div style={{ display: "flex", gap: "4px", justifyContent: "center" }}>
+                              {item.hinhanhFront && (
+                                <img
+                                  src={item.hinhanhFront}
+                                  alt="Front"
+                                  style={{
+                                    width: 50,
+                                    height: 50,
+                                    border: "1px solid #ddd",
+                                    borderRadius: 4,
+                                    objectFit: "cover",
+                                    cursor: "zoom-in",
+                                  }}
+                                  onClick={() => openBase64Image(item.hinhanhFront)}
+                                />
+                              )}
+                              {item.hinhanhBack && (
+                                <img
+                                  src={item.hinhanhBack}
+                                  alt="Back"
+                                  style={{
+                                    width: 50,
+                                    height: 50,
+                                    border: "1px solid #ddd",
+                                    borderRadius: 4,
+                                    objectFit: "cover",
+                                    cursor: "zoom-in",
+                                  }}
+                                  onClick={() => openBase64Image(item.hinhanhBack)}
+                                />
+                              )}
+                            </div>
+                          ) : (
+                            item.hinhanh && (
+                              <img
+                                src={item.hinhanh}
+                                alt={item.tensanpham}
+                                style={{
+                                  width: 50,
+                                  height: 50,
+                                  border: "1px solid #ddd",
+                                  borderRadius: 4,
+                                  objectFit: "cover",
+                                  cursor: "zoom-in",
+                                }}
+                                onClick={() => openBase64Image(item.hinhanh)}
+                              />
+                            )
+                          )}
+                        </td>
+                        <td>
                           <div className="d-flex align-items-center justify-content-center gap-2">
-                            <div style={{
-                              width: 20,
-                              height: 20,
-                              backgroundColor: item.mausanpham,
-                              borderRadius: "50%",
-                              border: "1px solid #ccc"
-                            }} title={getColorName(item.mausanpham)} />
+                            <div
+                              style={{
+                                width: 20,
+                                height: 20,
+                                backgroundColor: item.mausanpham,
+                                borderRadius: "50%",
+                                border: "1px solid #ccc",
+                              }}
+                              title={getColorName(item.mausanpham)}
+                            />
                             <span>{getColorName(item.mausanpham)}</span>
                           </div>
                         </td>
@@ -262,7 +348,7 @@ const OrderDetail = () => {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="7" className="text-muted">Không có sản phẩm nào.</td>
+                      <td colSpan="8" className="text-muted">Không có sản phẩm nào.</td>
                     </tr>
                   )}
                 </tbody>

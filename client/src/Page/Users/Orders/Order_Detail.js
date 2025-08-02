@@ -72,6 +72,31 @@ const OrderDetail = () => {
             alert("Lỗi không xác định khi huỷ đơn hàng.");
         }
     };
+    // ✅ Hàm mở ảnh base64 an toàn
+    const openBase64Image = (base64Data) => {
+        if (!base64Data) return;
+
+        // Tách header và phần data
+        const arr = base64Data.split(",");
+        const mime = arr[0].match(/:(.*?);/)[1];
+        const bstr = atob(arr[1]); // giải mã base64
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+
+        while (n--) {
+            u8arr[n] = bstr.charCodeAt(n);
+        }
+
+        // Tạo Blob + URL tạm
+        const blob = new Blob([u8arr], { type: mime });
+        const url = URL.createObjectURL(blob);
+
+        // ✅ Mở tab mới
+        window.open(url, "_blank");
+
+        // 🧹 Giải phóng bộ nhớ sau 1 phút
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+    };
 
     return (
         <div className="container">
@@ -131,6 +156,7 @@ const OrderDetail = () => {
                                     <tr>
                                         <th>#</th>
                                         <th>Mã SP</th>
+                                        <th>Hình ảnh</th> {/* ✅ thêm cột hình ảnh */}
                                         <th>Tên sản phẩm</th>
                                         <th>Loại</th>
                                         <th>Màu sắc</th>
@@ -151,16 +177,71 @@ const OrderDetail = () => {
                                             <tr key={index}>
                                                 <td>{index + 1}</td>
                                                 <td>{item.masanpham}</td>
+
+                                                {/* ✅ Hiển thị hình ảnh */}
+                                                <td>
+                                                    {item.isThietKe ? (
+                                                        <div style={{ display: "flex", gap: "4px", justifyContent: "center" }}>
+                                                            {item.hinhanhFront && (
+                                                                <img
+                                                                    src={item.hinhanhFront}
+                                                                    alt="Front"
+                                                                    style={{
+                                                                        width: 50,
+                                                                        height: 50,
+                                                                        border: "1px solid #ddd",
+                                                                        borderRadius: 4,
+                                                                        objectFit: "cover",
+                                                                        cursor: "zoom-in",
+                                                                    }}
+                                                                    onClick={() => openBase64Image(item.hinhanhFront)} // ✅ dùng hàm mới
+                                                                />
+                                                            )}
+                                                            {item.hinhanhBack && (
+                                                                <img
+                                                                    src={item.hinhanhBack}
+                                                                    alt="Back"
+                                                                    style={{
+                                                                        width: 50,
+                                                                        height: 50,
+                                                                        border: "1px solid #ddd",
+                                                                        borderRadius: 4,
+                                                                        objectFit: "cover",
+                                                                        cursor: "zoom-in",
+                                                                    }}
+                                                                    onClick={() => openBase64Image(item.hinhanhBack)} // ✅ dùng hàm mới
+                                                                />
+                                                            )}
+                                                        </div>
+                                                    ) : (
+                                                        item.hinhanh && (
+                                                            <img
+                                                                src={item.hinhanh}
+                                                                alt={item.tensanpham}
+                                                                style={{
+                                                                    width: 50,
+                                                                    height: 50,
+                                                                    border: "1px solid #ddd",
+                                                                    borderRadius: 4,
+                                                                    objectFit: "cover",
+                                                                    cursor: "zoom-in",
+                                                                }}
+                                                                onClick={() => openBase64Image(item.hinhanh)} // ✅ dùng hàm mới
+                                                            />
+                                                        )
+                                                    )}
+                                                </td>
+                                                
                                                 <td>
                                                     <Link to={productLink} target="_blank">
                                                         {item.tensanpham}
                                                     </Link>
                                                 </td>
                                                 <td>
-                                                    <span className={`badge ${item.isThietKe ? "bg-info text-dark" : "bg-secondary"}`}>
-                                                        {item.isThietKe
-                                                            ? "Thiết kế riêng"
-                                                            : "Sản phẩm tiêu chuẩn"}
+                                                    <span
+                                                        className={`badge ${item.isThietKe ? "bg-info text-dark" : "bg-secondary"}`}
+                                                    >
+                                                        {item.isThietKe ? "Thiết kế riêng" : "Sản phẩm tiêu chuẩn"}
                                                     </span>
                                                 </td>
                                                 <td>
@@ -172,7 +253,7 @@ const OrderDetail = () => {
                                                                 width: 24,
                                                                 height: 24,
                                                                 borderRadius: "50%",
-                                                                border: isLight ? "1px solid #333" : "1px solid #ccc"
+                                                                border: isLight ? "1px solid #333" : "1px solid #ccc",
                                                             }}
                                                             title={colorName}
                                                         ></span>

@@ -115,8 +115,10 @@
 
 30/07/2025
 -Code 
-	+ Fix lỗi khi thiết kế chụp mặt trước và sau của sản phẩm thiết kế để lưu vào csdl tránh bị ghi đè lên nếu có thiết kế mới
-	+ Bị lỗi inset hình ảnh được thì ko cho xóa và copy được
+	+ Fix lỗi khi thiết kế chụp mặt trước và sau của sản phẩm thiết kế để lưu vào csdl tránh bị ghi đè lên nếu có thiết kế mới ( XONG)
+	=> Khi thêm giỏ hàng thì chụp mặt front và back của thiết kế để chèn vào csdl
+	
+	+ Bị lỗi inset hình ảnh được thì ko cho xóa và copy được (XONG)
 
 
 01/08/2025
@@ -129,6 +131,9 @@
 	+ Đã thiết kế được chỗ mũ nhưng chỉ lấy có front và back ( Hats: const views = ["front", "right", "left", "back", "bottom"];)
 - Tối nay phải xong và bắt đầu viết báo cáo
 - Thu thập các hình ảnh về size, giới tính
+
+02/08/2025
+	+ Viết báo cáo
 
 
 	
