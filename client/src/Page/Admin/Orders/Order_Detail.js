@@ -4,8 +4,8 @@ import { getOrderDetailById, updateOrderStatus } from "../../../api/Order/order.
 import { format } from "date-fns";
 import vi from "date-fns/locale/vi";
 import { colors } from "../../../config/colors";
-import html2pdf from "html2pdf.js";
-import Toast from "../../../Components/Toast"; // ✅ import Toast
+import html2pdf from "html2pdf.js/dist/html2pdf.bundle.min";
+import Toast from "../../../Components/Toast";
 
 const OrderDetail = () => {
   const { orderId } = useParams();

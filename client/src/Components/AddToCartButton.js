@@ -189,9 +189,11 @@ const AddToCartButton = ({
 
       {/* 📦 Modal chọn size & số lượng */}
       <Modal show={showModal} onHide={handleClose} centered>
-        <Modal.Header closeButton>
+        <Modal.Header closeButton className="d-flex flex-column align-items-start">
           <Modal.Title>Chọn Size và Số lượng</Modal.Title>
+          <small className="text-muted">Đối với sản phẩm thiết kế tối thiểu là 50</small>
         </Modal.Header>
+
 
         <Modal.Body>
           <Form>

@@ -17,25 +17,20 @@ const TShirtDesign = () => {
     const [selectedColor, setSelectedColor] = useState(null);
     const containerRef = useRef();
     const overlayZoneRef = useRef();
-    const [exportFormat, setExportFormat] = useState("png"); // mặc định PNG
-    const [savedInfo, setSavedInfo] = useState(null); // dùng để hiển thị kết quả đã lưu
+    const [exportFormat, setExportFormat] = useState("png");
+    const [savedInfo, setSavedInfo] = useState(null);
     const frontImage = images.find(img => img.vitri === "front") || null;
     const [exportedBase64, setExportedBase64] = useState(null);
-    const [previewImage, setPreviewImage] = useState(null);
-    const [showPreviewModal, setShowPreviewModal] = useState(false);
     const [frontPreviewUrl, setFrontPreviewUrl] = useState(null);
-    const [loadingGenerate, setLoadingGenerate] = useState(false);
-    const [tryOnPreviewUrls, setTryOnPreviewUrls] = useState([]);
     const [availableSizes, setAvailableSizes] = useState([]);
-    const [selectedSize, setSelectedSize] = useState("");
+
     const location = useLocation();
     const { id } = useParams();
     const productType = location.pathname.split("/")[2];
-    const frontImgRef = useRef(null);
-    const backImgRef = useRef(null);
+
     const frontContainerRef = useRef(null);
     const backContainerRef = useRef(null);
-    const [snapLines, setSnapLines] = useState({ vertical: false, horizontal: false });
+
     const [overlaysMap, setOverlaysMap] = useState({
         front: [],
         back: [],

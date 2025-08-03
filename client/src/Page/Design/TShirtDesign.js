@@ -9,7 +9,7 @@ import { BASE_URL_UPLOAD_DESIGN } from "../../api/TryOn/tryon.api";
 import html2canvas from "html2canvas";
 import { getProductSizesFromDesignId } from "../../api/Design/design.api";
 import { getDesignFrame } from "../../config/design";
-import Cropper from "react-easy-crop";
+
 const TShirtDesign = () => {
     // const { productType, id } = useParams();
     const [design, setDesign] = useState(null);
@@ -33,21 +33,9 @@ const TShirtDesign = () => {
     const location = useLocation();
     const { id } = useParams();
     const productType = location.pathname.split("/")[2];
-    const frontImgRef = useRef(null);
-    const backImgRef = useRef(null);
+
     const frontContainerRef = useRef(null);
     const backContainerRef = useRef(null);
-    const [snapLines, setSnapLines] = useState({ vertical: false, horizontal: false });
-    // lưu ảnh nào (front/back) và index trong overlay
-
-    const [showCropModal, setShowCropModal] = useState(false);
-    const [cropImage, setCropImage] = useState(null);
-    const [cropTarget, setCropTarget] = useState({ side: null, index: null });
-
-    // 🟠 Crop state
-    const [crop, setCrop] = useState({ x: 0, y: 0 });
-    const [zoom, setZoom] = useState(1);
-    const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
 
     const [overlaysMap, setOverlaysMap] = useState({
         front: [],
@@ -525,53 +513,6 @@ const TShirtDesign = () => {
         color: ov.content?.color || "#000",
         whiteSpace: "nowrap",
     });
-
-    // 🟢 Hàm crop ảnh (GỘP NGAY TRONG FILE)
-    const getCroppedImg = (imageSrc, pixelCrop) => {
-        return new Promise((resolve, reject) => {
-            const image = new Image();
-            image.src = imageSrc;
-            image.crossOrigin = "anonymous";
-            image.onload = () => {
-                const canvas = document.createElement("canvas");
-                canvas.width = pixelCrop.width;
-                canvas.height = pixelCrop.height;
-                const ctx = canvas.getContext("2d");
-
-                ctx.drawImage(
-                    image,
-                    pixelCrop.x,
-                    pixelCrop.y,
-                    pixelCrop.width,
-                    pixelCrop.height,
-                    0,
-                    0,
-                    pixelCrop.width,
-                    pixelCrop.height
-                );
-
-                resolve(canvas.toDataURL("image/png"));
-            };
-            image.onerror = (err) => reject(err);
-        });
-    };
-
-    // 🟢 Hoàn tất crop và thay overlay
-    const handleCropDone = async () => {
-        try {
-            const croppedImage = await getCroppedImg(cropImage, croppedAreaPixels);
-            setOverlaysMap((prev) => {
-                const updated = { ...prev };
-                updated[cropTarget.side][cropTarget.index].content = croppedImage;
-                return updated;
-            });
-            setShowCropModal(false);
-            setCropImage(null);
-        } catch (e) {
-            console.error("❌ Lỗi crop:", e);
-        }
-    };
-
     return (
         <div className="container-fluid">
             <div className="row">
@@ -893,12 +834,7 @@ const TShirtDesign = () => {
                                                                 height: "100%",
                                                                 objectFit: "contain",
                                                                 pointerEvents: "auto",
-                                                            }}
-                                                            onDoubleClick={() => {
-                                                                setCropImage(ov.content);
-                                                                setCropTarget({ side: "front", index: i }); // hoặc "back"
-                                                                setShowCropModal(true);
-                                                            }}
+                                                            }}                                            
                                                         />
                                                     )}
                                                 </div>
@@ -962,14 +898,14 @@ const TShirtDesign = () => {
                                                 // ⚠️ KHÔNG set props "position" nữa
                                                 onDragStop={(e, d) => {
                                                     setOverlaysMap((prev) => {
-                                                        const updated = [...(prev.front || [])];
+                                                        const updated = [...(prev.back || [])];
                                                         updated[i] = { ...updated[i], x: d.x, y: d.y };
-                                                        return { ...prev, front: updated };
+                                                        return { ...prev, back: updated };
                                                     });
                                                 }}
                                                 onResizeStop={(e, direction, ref, delta, position) => {
                                                     setOverlaysMap((prev) => {
-                                                        const updated = [...(prev.front || [])];
+                                                        const updated = [...(prev.back || [])];
                                                         updated[i] = {
                                                             ...updated[i],
                                                             width: ref.offsetWidth,
@@ -979,7 +915,7 @@ const TShirtDesign = () => {
                                                         if (isText) {
                                                             updated[i].fontSize = Math.max(8, Math.round(ref.offsetHeight * 0.8));
                                                         }
-                                                        return { ...prev, front: updated };
+                                                        return { ...prev, back: updated };
                                                     });
                                                 }}
                                                 bounds="parent"

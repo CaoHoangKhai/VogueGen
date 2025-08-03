@@ -125,18 +125,26 @@
 - Code
 	+ Thêm ảnh thiết kế vào giỏ hàng(XONG)
 	+ Tải ảnh ko được và xóa, copy ko được (XONG) 
-		*Chỗ di chuyển hình ảnh không được mượt lắm
+		*Chỗ di chuyển hình ảnh không được mượt lắm (XONG)
 	+ Chỗ bấm sinh ảnh ko được (XONG)
 	+ Có thể đơn giản hóa
 	+ Đã thiết kế được chỗ mũ nhưng chỉ lấy có front và back ( Hats: const views = ["front", "right", "left", "back", "bottom"];)
 - Tối nay phải xong và bắt đầu viết báo cáo
 - Thu thập các hình ảnh về size, giới tính
 
+
 02/08/2025
 	+ Viết báo cáo
 
 
-	
+03/08/2025
+-Code
+	+ Bị lỗi khi load lại design thì back bị chạy loạn xạ
+	+ Tìm hình ảnh cho các người mẫu
+-Báo cáo
+	+ Phải xong Phần GIỚI THIỆU
+	+ TỚI PHẦN 2 Chương 3
+
 
 Lưu ý:
 Vào hội đồng ko demo đăng nhập, đăng ký

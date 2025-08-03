@@ -47,15 +47,14 @@ class CartService {
                 data.soluong = 10000;
             }
 
-            // ✅ Query tìm sản phẩm đã có trong giỏ
+            // ✅ Query tìm sản phẩm đã có trong giỏ (PHÂN BIỆT SẢN PHẨM GỐC/THIẾT KẾ)
             const query = {
                 manguoidung: data.manguoidung,
                 masanpham: data.masanpham,
                 size: data.size,
-                mausac: data.mausac
+                mausac: data.mausac,
+                madesign: data.madesign || null   // 🔥 KEY FIX: luôn có trường madesign
             };
-
-            if (data.madesign) query.madesign = data.madesign;
 
             const existed = await this.cart.findOne(query);
 
@@ -63,7 +62,6 @@ class CartService {
             // 🔄 1️⃣ Nếu sản phẩm đã tồn tại
             // ================================
             if (existed) {
-
                 // ⚠️ Nếu đã đạt 10.000 trước đó
                 if (existed.soluong >= 10000) {
                     return {
@@ -73,11 +71,8 @@ class CartService {
                 }
 
                 const newQuantity = existed.soluong + data.soluong;
-
-                // ✅ Nếu cộng thêm vượt 10.000 thì giới hạn lại
                 const finalQuantity = Math.min(newQuantity, 10000);
 
-                // ✅ Cập nhật số lượng & ảnh thiết kế mới nhất
                 const updateData = { soluong: finalQuantity };
                 if (data.isThietKe || data.madesign) {
                     if (data.previewFront) updateData.hinhanhFront = data.previewFront;
@@ -89,7 +84,6 @@ class CartService {
                     { $set: updateData }
                 );
 
-                // ✅ Phân biệt 2 tình huống:
                 if (newQuantity > 10000) {
                     return {
                         success: true,
@@ -112,13 +106,10 @@ class CartService {
                 size: data.size,
                 mausac: data.mausac,
                 soluong: data.soluong,
-                ...(data.madesign && { madesign: data.madesign }),
+                madesign: data.madesign || null,   // 🔥 KEY FIX: luôn có trường này
                 ...(data.isThietKe && { isThietKe: true }),
-
-                // ✅ Lưu ảnh thiết kế (nếu có)
                 ...(data.previewFront && { hinhanhFront: data.previewFront }),
                 ...(data.previewBack && { hinhanhBack: data.previewBack }),
-
                 createdAt: new Date()
             });
 
@@ -128,7 +119,6 @@ class CartService {
             return { success: false, message: `❌ Lỗi hệ thống khi thêm giỏ hàng: ${err.message}` };
         }
     }
-
 
     async getCartByUserId(userId) {
         try {
