@@ -97,7 +97,6 @@ const OrderDetail = () => {
         // 🧹 Giải phóng bộ nhớ sau 1 phút
         setTimeout(() => URL.revokeObjectURL(url), 60000);
     };
-
     return (
         <div className="container">
             <div className="card shadow-sm p-4">
@@ -114,10 +113,12 @@ const OrderDetail = () => {
                             <h5 className="mb-3 text-primary">Thông tin đơn hàng</h5>
                             <div className="row">
                                 <div className="col-md-6 mb-2"><strong>Mã đơn hàng:</strong> {order.madonhang}</div>
-                                <div className="col-md-6 mb-2">
-                                    <strong>Ngày đặt:</strong>{" "}
-                                    {new Date(order.ngaydat).toLocaleString("vi-VN")}
-                                </div>
+                                {order && (
+                                    <div className="col-md-6 mb-2">
+                                        <strong>Ngày đặt (UTC):</strong>{" "}
+                                        {new Date(order.ngaydat).toISOString().replace("T", " ").slice(0, 19)}
+                                    </div>
+                                )}
                                 <div className="col-md-6 mb-2"><strong>Họ tên:</strong> {order.hoten}</div>
                                 <div className="col-md-6 mb-2"><strong>Số điện thoại:</strong> {order.sodienthoai}</div>
                                 <div className="col-md-6 mb-2">
@@ -231,7 +232,7 @@ const OrderDetail = () => {
                                                         )
                                                     )}
                                                 </td>
-                                                
+
                                                 <td>
                                                     <Link to={productLink} target="_blank">
                                                         {item.tensanpham}

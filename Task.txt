@@ -145,6 +145,10 @@
 	+ Phải xong Phần GIỚI THIỆU
 	+ TỚI PHẦN 2 Chương 3
 
+04/08/2025
+-Code
+	+ Nếu người dùng thiết kế rồi thêm giỏ hàng nhưng cũng size đó và thiết kế đó nhưng có chỉnh sửa mà khi thêm thì bị upload
+
 
 Lưu ý:
 Vào hội đồng ko demo đăng nhập, đăng ký
@@ -155,13 +159,47 @@ Dọn dẹp lại desktop
 
 
 
+Người dùng có tài khoản
+	+ Xem trang tổng quan 
+	+ Có thể tìm kiếm bằng giá tiền, size, màu sắc
+	+ Xem chi tiết sản phẩm
+	+ Thêm sản phẩm vào giỏ hàng ( chọn size và màu)
+	+ Có thể chọn thiết kế sản phẩm( dựa trên sản phẩm và màu)-> thiết kế ( chọn lại màu, thêm text, img căn chỉnh) và thêm sản phẩm thiết kế vào giỏ hàng, có thể sinh ảnh mà mình đã thiết kế ( dựa trên size, màu sắc áo , mẫu thiết, giới tính) 
+	+ Có thể đặt hàng
+	+ Đặt lại mật khẩu
+	+ Đăng nhập
+	+ Đăng ký
+	+ Có thể xem lại thiết kế ( đổi tên, xóa)
+	+ Có thể thêm địa chỉ nhận hàng ( tối đa 5)
+	+ Có thể xem sản phẩm mà mình yêu thích
+	+ Có thể xem danh sách đơn hàng, đơn hàng chi tiết
+	+ Có thể hủy đơn hàng nếu đang ở trạng thái chờ xác nhận
 
+Khách vãng lai
+	+ Có thể xem chi tiết sản phẩm
+	+ Có thể thử tính năng mặc ảo
 
-
-
-
-
-
+Quản trị viên
+	- Xem trang tổng quan ( tổng khách hàng, tổng sản phẩm, tổng đơn hàng( 28 ngày), doanh thu (28 ngày), đơn hàng mới nhất, sản phẩm bán chạy nhất)
+	- Sản phẩm
+		+ Thêm sản phẩm
+		+ Xem chi tiết
+		+ Sửa
+	- Người dùng
+		+ Tìm kiếm theo tên, email, số điện thoại
+		+ Có thể xuất file người dùng bao gồm (Họ tên, sđt, email)
+		+ Có thể khoá người dùng ( Khóa/ Mở)
+		+ Có thể thêm người dùng thủ công và tự động)
+	- Sản phẩm
+		+ Có thể xem danh sách sản phẩm
+		+ Tìm kiếm dựa trên tên sản phẩm, thể loại
+		+ Xem chi tiết sản phẩm
+		+ Có thể thêm danh mục sản phẩm
+	- Đơn hàng
+		+ Xem danh sách đơn hàng
+		+ Tìm kiếm đơn hàng dựa trên tên khách hàng, mã đơn hàng
+		+ Tìm kiếm dựa trên trạng thái đơn hàng
+		
 
 
 

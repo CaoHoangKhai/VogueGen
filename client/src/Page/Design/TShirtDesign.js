@@ -81,7 +81,7 @@ const TShirtDesign = () => {
                 gioitinh: design?.gioitinh || "unisex",
                 design_id: design?._id,
                 colorcloth: design?.mau,
-                size: selectedSize, // ✅ gửi luôn size đã chọn
+                size: "selectedSize", // ✅ gửi luôn size đã chọn
             };
 
             // 🔍 Log ra để xem trước khi gửi
@@ -573,7 +573,7 @@ const TShirtDesign = () => {
                                 <div className="modal-dialog modal-dialog-centered modal-xl" role="document">
                                     <div className="modal-content">
                                         <div className="modal-header">
-                                            <h5 className="modal-title">Xem trước thiết kế & Thử áo</h5>
+                                            <h5 className="modal-title text-center">Xem trước thiết kế & Thử áo</h5>
                                             <button
                                                 type="button"
                                                 className="btn-close"

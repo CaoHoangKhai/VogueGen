@@ -210,7 +210,14 @@ const OrderDetail = () => {
                 </div>
 
                 <div className="col-md-6">
-                  <p><strong>Ngày đặt:</strong> {formatDate(order.ngaydat)}</p>
+                  {order && (
+                    <>
+                      <div className="col-md-6 mb-2">
+                        <strong>Ngày đặt:</strong>{" "}
+                        {new Date(order.ngaydat).toISOString().replace("T", " ").slice(0, 19)}
+                      </div>
+                    </>
+                  )}
                   <p><strong>Phương thức thanh toán:</strong> {order.phuongthucthanhtoan === "cod" ? "Thanh toán khi nhận hàng" : order.phuongthucthanhtoan}</p>
                   <p>
                     <strong>Trạng thái hiện tại:</strong>{" "}
@@ -229,10 +236,10 @@ const OrderDetail = () => {
                           <option value={3}>Hoàn tất</option>
                           <option value={4}>Đã huỷ</option>
                         </select>
-                        <button 
+                        <button
                           type="button"
-                          className="btn btn-primary" 
-                          onClick={handleUpdateStatus} 
+                          className="btn btn-primary"
+                          onClick={handleUpdateStatus}
                           disabled={updating}
                         >
                           {updating ? "Đang cập nhật..." : "Cập nhật"}

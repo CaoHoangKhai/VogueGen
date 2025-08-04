@@ -68,7 +68,20 @@ const Order = () => {
     const total = cartItems.reduce((sum, item) => sum + (item.giasanpham || 0) * (item.soluong || 1), 0);
 
     const handleChange = (e) => {
-        setForm({ ...form, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+
+        if (name === "sodienthoai") {
+            // ✅ Chỉ giữ lại số (loại bỏ chữ tự động)
+            const onlyNumbers = value.replace(/\D/g, "");
+
+            // ✅ Giới hạn 10 số
+            if (onlyNumbers.length <= 10) {
+                setForm({ ...form, [name]: onlyNumbers });
+            }
+            return;
+        }
+
+        setForm({ ...form, [name]: value });
     };
 
     // Khi chọn địa chỉ có sẵn
@@ -82,15 +95,25 @@ const Order = () => {
                 : ""
         }));
     };
+    const validatePhone = (phone) => /^[0-9]{10}$/.test(phone);
 
     const handleOrder = async (e) => {
         e.preventDefault();
 
+        // ✅ Kiểm tra số điện thoại
+        if (!validatePhone(form.sodienthoai)) {
+            setToast({ show: true, message: "❌ Số điện thoại phải gồm đúng 10 chữ số!", type: "error" });
+            return;
+        }
+
+        // ✅ Kiểm tra giỏ hàng
         if (cartItems.length === 0) {
             setToast({ show: true, message: "Giỏ hàng của bạn đang trống!", type: "error" });
             return;
         }
-        if (!form.hoten || !form.sodienthoai || !form.diachinguoidung) {
+
+        // ✅ Kiểm tra thông tin bắt buộc
+        if (!form.hoten || !form.diachinguoidung) {
             setToast({ show: true, message: "Vui lòng nhập đầy đủ thông tin!", type: "error" });
             return;
         }
@@ -105,7 +128,6 @@ const Order = () => {
             tongtien: total,
             phuongthucthanhtoan: form.phuongthucthanhtoan,
             chitiet: cartItems.map(item => {
-                // 🟠 Base fields (dùng cho mọi sản phẩm)
                 const base = {
                     masanpham: item.masanpham,
                     tensanpham: item.tensanpham,
@@ -117,17 +139,15 @@ const Order = () => {
                     madesign: item.madesign || null,
                 };
 
-                // 🟢 Nếu là sản phẩm có thiết kế
                 if (item.hinhanhFront || item.hinhanhBack) {
                     return {
                         ...base,
                         hinhanhFront: item.hinhanhFront || null,
                         hinhanhBack: item.hinhanhBack || null,
-                        hinhanh: null // ❌ không cần ảnh chuẩn
+                        hinhanh: null
                     };
                 }
 
-                // 🟢 Nếu là sản phẩm thường (không có thiết kế)
                 return {
                     ...base,
                     hinhanh: item.hinhanh || null,
@@ -143,10 +163,10 @@ const Order = () => {
 
             setToast({ show: true, message: "Đặt hàng thành công!", type: "success" });
 
-            // 🧹 Dọn giỏ hàng trên client
+            // 🧹 Dọn giỏ hàng
             setCartItems([]);
 
-            // 🧹 Reset form
+            // 🧹 Reset ghi chú
             setForm(prev => ({ ...prev, ghichu: "" }));
 
         } catch (error) {
@@ -261,7 +281,7 @@ const Order = () => {
                                                                 src={item.hinhanh}
                                                                 alt={item.tensanpham}
                                                                 style={{
-                                                                    width: "100%",
+                                                                    width: "50%",
                                                                     height: "100%",
                                                                     objectFit: "cover",
                                                                     border: "1px solid #ddd",
@@ -315,19 +335,18 @@ const Order = () => {
                                         name="hoten"
                                         value={form.hoten}
                                         onChange={handleChange}
+                                        placeholder="Nhập họ tên"
                                     />
                                 </div>
-
-                                <div className="mb-3">
-                                    <label className="form-label">Số điện thoại</label>
-                                    <input
-                                        type="text"
-                                        className="form-control"
-                                        name="sodienthoai"
-                                        value={form.sodienthoai}
-                                        onChange={handleChange}
-                                    />
-                                </div>
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    name="sodienthoai"
+                                    value={form.sodienthoai}
+                                    onChange={handleChange}
+                                    inputMode="numeric"     // ⚡ Gợi ý bàn phím số trên mobile
+                                    placeholder="Nhập số điện thoại 10 số"
+                                />
 
                                 <div className="mb-3">
                                     <label className="form-label">Chọn địa chỉ có sẵn</label>
@@ -366,6 +385,7 @@ const Order = () => {
                                         name="ghichu"
                                         value={form.ghichu}
                                         onChange={handleChange}
+                                        placeholder="Nhập ghi chú"
                                     />
                                 </div>
 
