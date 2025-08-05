@@ -206,7 +206,9 @@ const OrderDetail = () => {
                   <p><strong>Mã đơn hàng:</strong> {order.madonhang}</p>
                   <p><strong>Khách hàng:</strong> {order.hoten}</p>
                   <p><strong>SĐT:</strong> {order.sodienthoai}</p>
-                  <p><strong>Địa chỉ:</strong> {order.diachinguoidung}</p>
+                  <p>
+                    <strong>Địa chỉ:</strong> {order.diachinguoidung.split(',').join(' > ')}
+                  </p>
                 </div>
 
                 <div className="col-md-6">

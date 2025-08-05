@@ -26,10 +26,6 @@ const OrderDetail = () => {
         return luminance > 200;
     };
 
-    const formatDiaChi = (str) => {
-        if (!str) return "Không rõ";
-        return str.split(",").map(s => s.trim()).join(" > ");
-    };
 
     useEffect(() => {
         const fetchOrderDetail = async () => {
@@ -122,7 +118,7 @@ const OrderDetail = () => {
                                 <div className="col-md-6 mb-2"><strong>Họ tên:</strong> {order.hoten}</div>
                                 <div className="col-md-6 mb-2"><strong>Số điện thoại:</strong> {order.sodienthoai}</div>
                                 <div className="col-md-6 mb-2">
-                                    <strong>Địa chỉ:</strong> {formatDiaChi(order.diachinguoidung)}
+                                    <strong>Địa chỉ:</strong> {(order.diachinguoidung)}
                                 </div>
                                 <div className="col-md-6 mb-2"><strong>Ghi chú:</strong> {order.ghichu || "Không có"}</div>
                                 <div className="col-md-6 mb-2">

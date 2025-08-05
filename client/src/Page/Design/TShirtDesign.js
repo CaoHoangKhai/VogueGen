@@ -80,8 +80,8 @@ const TShirtDesign = () => {
                 image_base64: frontPreviewUrl,
                 gioitinh: design?.gioitinh || "unisex",
                 design_id: design?._id,
-                colorcloth: design?.mau,
-                size: "selectedSize", // ✅ gửi luôn size đã chọn
+                colorcloth: selectedColor,
+                size: selectedSize, // ✅ gửi luôn size đã chọn
             };
 
             // 🔍 Log ra để xem trước khi gửi
@@ -717,9 +717,9 @@ const TShirtDesign = () => {
                                 <img
                                     src={`data:${images.find(
                                         (img) => img.vitri === "front" && img.mau === selectedColor
-                                    )?.contentType};base64,${images.find((img) => img.vitri === "front" && img.mau === selectedColor)
-                                        ?.data
-                                        }`}
+                                    )?.contentType};base64,${images.find(
+                                        (img) => img.vitri === "front" && img.mau === selectedColor
+                                    )?.data}`}
                                     alt="front"
                                     style={{
                                         maxWidth: "100%",
@@ -729,6 +729,7 @@ const TShirtDesign = () => {
                                         userSelect: "none",
                                         position: "relative",
                                         zIndex: 2,
+                                        backgroundColor: "transparent", // thêm dòng này để đảm bảo
                                     }}
                                 />
 
@@ -834,7 +835,7 @@ const TShirtDesign = () => {
                                                                 height: "100%",
                                                                 objectFit: "contain",
                                                                 pointerEvents: "auto",
-                                                            }}                                            
+                                                            }}
                                                         />
                                                     )}
                                                 </div>

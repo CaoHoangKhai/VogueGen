@@ -66,7 +66,9 @@ const ProductAdd = () => {
   };
 
   const isFormValid = () => {
-    const positions = getPositions();
+    // Lấy danh sách vị trí ảnh, loại bỏ 'extra' nếu có
+    const positions = getPositions().filter((pos) => pos !== "extra");
+
     const hasValidImagesForAllColors = selectedColors.every((code) => {
       const colorSet = imagesByColor[code] || {};
       return positions.every((pos) => (colorSet[pos] || []).length === 1);
@@ -83,18 +85,22 @@ const ProductAdd = () => {
   };
 
   const getMissingImagesByColor = () => {
-    const positions = getPositions();
+    // Lấy danh sách vị trí bắt buộc (loại bỏ "extra")
+    const requiredPositions = getPositions().filter(pos => pos !== "extra");
+
     const result = [];
 
     selectedColors.forEach((code) => {
       const imgs = imagesByColor[code] || {};
-      const missing = positions.filter((pos) => !(imgs[pos] && imgs[pos].length === 1));
+      const missing = requiredPositions.filter(
+        (pos) => !(imgs[pos] && imgs[pos].length === 1)
+      );
 
       if (missing.length > 0) {
         result.push({
           colorCode: code,
           colorName: colors.find((c) => c.code === code)?.color || code,
-          missingPositions: missing
+          missingPositions: missing,
         });
       }
     });
@@ -527,7 +533,7 @@ const ProductAdd = () => {
 
         {getMissingImagesByColor().length > 0 && (
           <div className="alert alert-danger mt-3">
-            <strong>Các màu chưa đủ ảnh:</strong>
+            <strong>Các màu chưa đủ ảnh (bắt buộc):</strong>
             <ul className="mb-0">
               {getMissingImagesByColor().map((item, idx) => (
                 <li key={idx}>
@@ -535,6 +541,9 @@ const ProductAdd = () => {
                 </li>
               ))}
             </ul>
+            <div className="mt-2 text-muted small">
+              * Vị trí <strong>extra</strong> là tùy chọn, không bắt buộc.
+            </div>
           </div>
         )}
 

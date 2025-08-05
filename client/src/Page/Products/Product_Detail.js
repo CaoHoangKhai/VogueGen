@@ -271,36 +271,40 @@ const ProductDetail = () => {
                 <div className="row">
                     {/* Hình ảnh */}
                     <div className="col-md-6 d-flex">
-                        <div style={{ marginRight: 12 }}>
-                            {Object.entries(imagesByPosition).map(([pos, imgs]) => (
-                                <div key={pos} className="mb-2">
-                                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                                        {imgs.map((img) => {
-                                            const base64 = getBase64Image(img);
-                                            return (
-                                                <img
-                                                    key={img._id}
-                                                    src={base64}
-                                                    alt={pos}
-                                                    onClick={() => setMainImg(base64)}
-                                                    style={{
-                                                        width: 80,
-                                                        height: 80,
-                                                        objectFit: "cover",
-                                                        border:
-                                                            mainImg === base64
-                                                                ? "2px solid #007bff"
-                                                                : "1px solid #ccc",
-                                                        borderRadius: 4,
-                                                        cursor: "pointer",
-                                                    }}
-                                                />
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            ))}
+                        <div
+                            style={{
+                                marginRight: 12,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: 8,
+                                maxHeight: Math.min(Object.values(imagesByPosition).flat().length, 5) * 88,
+                                overflowY: Object.values(imagesByPosition).flat().length > 5 ? 'auto' : 'visible',
+                                paddingRight: 4,
+                            }}
+                        >
+                            {Object.entries(imagesByPosition).map(([pos, imgs]) =>
+                                imgs.map((img) => {
+                                    const base64 = getBase64Image(img);
+                                    return (
+                                        <img
+                                            key={img._id}
+                                            src={base64}
+                                            alt={pos}
+                                            onClick={() => setMainImg(base64)}
+                                            style={{
+                                                width: 80,
+                                                height: 80,
+                                                objectFit: 'cover',
+                                                border: mainImg === base64 ? '2px solid #007bff' : '1px solid #ccc',
+                                                borderRadius: 4,
+                                                cursor: 'pointer',
+                                            }}
+                                        />
+                                    );
+                                })
+                            )}
                         </div>
+
                         <div
                             style={{
                                 width: 400,
