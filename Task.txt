@@ -148,7 +148,9 @@
 04/08/2025
 -Code
 	+ Nếu người dùng thiết kế rồi thêm giỏ hàng nhưng cũng size đó và thiết kế đó nhưng có chỉnh sửa mà khi thêm thì bị upload
-
+06/08/2025
+- Vẽ sơ đồ class
+viết xong phần giới thiệu và chương 1 phần nội dung
 
 Lưu ý:
 Vào hội đồng ko demo đăng nhập, đăng ký

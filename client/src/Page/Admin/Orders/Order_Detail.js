@@ -207,7 +207,7 @@ const OrderDetail = () => {
                   <p><strong>Khách hàng:</strong> {order.hoten}</p>
                   <p><strong>SĐT:</strong> {order.sodienthoai}</p>
                   <p>
-                    <strong>Địa chỉ:</strong> {order.diachinguoidung.split(',').join(' > ')}
+                    <strong>Địa chỉ:</strong> {order.diachinguoidung}
                   </p>
                 </div>
 
@@ -274,90 +274,109 @@ const OrderDetail = () => {
                     <th>Size</th>
                     <th>Số lượng</th>
                     <th>Giá</th>
+                    <th>Thành tiền</th> {/* ✅ Cột mới */}
                   </tr>
                 </thead>
                 <tbody>
                   {order.chitiet.length > 0 ? (
-                    order.chitiet.map((item, index) => (
-                      <tr key={index}>
-                        <td>{index + 1}</td>
-                        <td>{item.masanpham}</td>
-                        <td>{item.tensanpham}</td>
-                        <td>
-                          {item.isThietKe ? (
-                            <div style={{ display: "flex", gap: "4px", justifyContent: "center" }}>
-                              {item.hinhanhFront && (
-                                <img
-                                  src={item.hinhanhFront}
-                                  alt="Front"
-                                  style={{
-                                    width: 50,
-                                    height: 50,
-                                    border: "1px solid #ddd",
-                                    borderRadius: 4,
-                                    objectFit: "cover",
-                                    cursor: "zoom-in",
-                                  }}
-                                  onClick={() => openBase64Image(item.hinhanhFront)}
-                                />
+                    <>
+                      {order.chitiet.map((item, index) => {
+                        const colorName = getColorName(item.mausanpham);
+                        const thanhTien = item.giatien * item.soluong;
+
+                        return (
+                          <tr key={index}>
+                            <td>{index + 1}</td>
+                            <td>{item.masanpham}</td>
+                            <td>{item.tensanpham}</td>
+                            <td>
+                              {item.isThietKe ? (
+                                <div style={{ display: "flex", gap: "4px", justifyContent: "center" }}>
+                                  {item.hinhanhFront && (
+                                    <img
+                                      src={item.hinhanhFront}
+                                      alt="Front"
+                                      style={{
+                                        width: 50,
+                                        height: 50,
+                                        border: "1px solid #ddd",
+                                        borderRadius: 4,
+                                        objectFit: "cover",
+                                        cursor: "zoom-in",
+                                      }}
+                                      onClick={() => openBase64Image(item.hinhanhFront)}
+                                    />
+                                  )}
+                                  {item.hinhanhBack && (
+                                    <img
+                                      src={item.hinhanhBack}
+                                      alt="Back"
+                                      style={{
+                                        width: 50,
+                                        height: 50,
+                                        border: "1px solid #ddd",
+                                        borderRadius: 4,
+                                        objectFit: "cover",
+                                        cursor: "zoom-in",
+                                      }}
+                                      onClick={() => openBase64Image(item.hinhanhBack)}
+                                    />
+                                  )}
+                                </div>
+                              ) : (
+                                item.hinhanh && (
+                                  <img
+                                    src={item.hinhanh}
+                                    alt={item.tensanpham}
+                                    style={{
+                                      width: 50,
+                                      height: 50,
+                                      border: "1px solid #ddd",
+                                      borderRadius: 4,
+                                      objectFit: "cover",
+                                      cursor: "zoom-in",
+                                    }}
+                                    onClick={() => openBase64Image(item.hinhanh)}
+                                  />
+                                )
                               )}
-                              {item.hinhanhBack && (
-                                <img
-                                  src={item.hinhanhBack}
-                                  alt="Back"
+                            </td>
+                            <td>
+                              <div className="d-flex align-items-center justify-content-center gap-2">
+                                <div
                                   style={{
-                                    width: 50,
-                                    height: 50,
-                                    border: "1px solid #ddd",
-                                    borderRadius: 4,
-                                    objectFit: "cover",
-                                    cursor: "zoom-in",
+                                    width: 20,
+                                    height: 20,
+                                    backgroundColor: item.mausanpham,
+                                    borderRadius: "50%",
+                                    border: "1px solid #ccc",
                                   }}
-                                  onClick={() => openBase64Image(item.hinhanhBack)}
+                                  title={colorName}
                                 />
-                              )}
-                            </div>
-                          ) : (
-                            item.hinhanh && (
-                              <img
-                                src={item.hinhanh}
-                                alt={item.tensanpham}
-                                style={{
-                                  width: 50,
-                                  height: 50,
-                                  border: "1px solid #ddd",
-                                  borderRadius: 4,
-                                  objectFit: "cover",
-                                  cursor: "zoom-in",
-                                }}
-                                onClick={() => openBase64Image(item.hinhanh)}
-                              />
-                            )
-                          )}
+                                <span>{colorName}</span>
+                              </div>
+                            </td>
+                            <td>{item.size}</td>
+                            <td>{item.soluong}</td>
+                            <td>{item.giatien.toLocaleString("vi-VN")}₫</td>
+                            <td>{thanhTien.toLocaleString("vi-VN")}₫</td> {/* ✅ Thành tiền */}
+                          </tr>
+                        );
+                      })}
+
+                      {/* ✅ Tổng cộng tất cả sản phẩm */}
+                      <tr>
+                        <td colSpan="8" className="text-end fw-bold">Tổng cộng:</td>
+                        <td className="fw-bold text-drak">
+                          {order.chitiet
+                            .reduce((sum, item) => sum + item.giatien * item.soluong, 0)
+                            .toLocaleString("vi-VN")}₫
                         </td>
-                        <td>
-                          <div className="d-flex align-items-center justify-content-center gap-2">
-                            <div
-                              style={{
-                                width: 20,
-                                height: 20,
-                                backgroundColor: item.mausanpham,
-                                borderRadius: "50%",
-                                border: "1px solid #ccc",
-                              }}
-                              title={getColorName(item.mausanpham)}
-                            />
-                            <span>{getColorName(item.mausanpham)}</span>
-                          </div>
-                        </td>
-                        <td>{item.size}</td>
-                        <td>{item.soluong}</td>
-                        <td>{item.giatien.toLocaleString("vi-VN")}₫</td>
                       </tr>
-                    ))
+                    </>
                   ) : (
                     <tr>
-                      <td colSpan="8" className="text-muted">Không có sản phẩm nào.</td>
+                      <td colSpan="9" className="text-muted">Không có sản phẩm nào.</td>
                     </tr>
                   )}
                 </tbody>

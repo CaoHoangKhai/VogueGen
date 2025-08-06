@@ -153,13 +153,14 @@ const OrderDetail = () => {
                                     <tr>
                                         <th>#</th>
                                         <th>Mã SP</th>
-                                        <th>Hình ảnh</th> {/* ✅ thêm cột hình ảnh */}
+                                        <th>Hình ảnh</th>
                                         <th>Tên sản phẩm</th>
                                         <th>Loại</th>
                                         <th>Màu sắc</th>
                                         <th>Size</th>
                                         <th>Số lượng</th>
-                                        <th>Giá tiền</th>
+                                        <th>Đơn giá</th>
+                                        <th>Thành tiền</th> {/* ✅ Cột mới */}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -169,6 +170,8 @@ const OrderDetail = () => {
                                         const productLink = item.designLink
                                             ? `http://localhost:3000/design/${item.designLink}`
                                             : `http://localhost:3000/products/detail/${item.masanpham}`;
+
+                                        const thanhTien = item.giatien * item.soluong;
 
                                         return (
                                             <tr key={index}>
@@ -191,7 +194,7 @@ const OrderDetail = () => {
                                                                         objectFit: "cover",
                                                                         cursor: "zoom-in",
                                                                     }}
-                                                                    onClick={() => openBase64Image(item.hinhanhFront)} // ✅ dùng hàm mới
+                                                                    onClick={() => openBase64Image(item.hinhanhFront)}
                                                                 />
                                                             )}
                                                             {item.hinhanhBack && (
@@ -206,7 +209,7 @@ const OrderDetail = () => {
                                                                         objectFit: "cover",
                                                                         cursor: "zoom-in",
                                                                     }}
-                                                                    onClick={() => openBase64Image(item.hinhanhBack)} // ✅ dùng hàm mới
+                                                                    onClick={() => openBase64Image(item.hinhanhBack)}
                                                                 />
                                                             )}
                                                         </div>
@@ -223,7 +226,7 @@ const OrderDetail = () => {
                                                                     objectFit: "cover",
                                                                     cursor: "zoom-in",
                                                                 }}
-                                                                onClick={() => openBase64Image(item.hinhanh)} // ✅ dùng hàm mới
+                                                                onClick={() => openBase64Image(item.hinhanh)}
                                                             />
                                                         )
                                                     )}
@@ -235,9 +238,7 @@ const OrderDetail = () => {
                                                     </Link>
                                                 </td>
                                                 <td>
-                                                    <span
-                                                        className={`badge ${item.isThietKe ? "bg-info text-dark" : "bg-secondary"}`}
-                                                    >
+                                                    <span className={`badge ${item.isThietKe ? "bg-info text-dark" : "bg-secondary"}`}>
                                                         {item.isThietKe ? "Thiết kế riêng" : "Sản phẩm tiêu chuẩn"}
                                                     </span>
                                                 </td>
@@ -260,10 +261,23 @@ const OrderDetail = () => {
                                                 <td>{item.size}</td>
                                                 <td>{item.soluong}</td>
                                                 <td>{item.giatien.toLocaleString()}đ</td>
+                                                <td>{thanhTien.toLocaleString()}đ</td> {/* ✅ Thành tiền */}
                                             </tr>
                                         );
                                     })}
                                 </tbody>
+
+                                {/* ✅ Tổng cộng tất cả sản phẩm */}
+                                <tfoot>
+                                    <tr>
+                                        <td colSpan="9" className="text-end fw-bold">Tổng cộng:</td>
+                                        <td className="fw-bold text-dark">
+                                            {order.chitiet
+                                                .reduce((sum, item) => sum + item.giatien * item.soluong, 0)
+                                                .toLocaleString()}đ
+                                        </td>
+                                    </tr>
+                                </tfoot>
                             </table>
                         </div>
                     </>
