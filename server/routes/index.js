@@ -10,6 +10,7 @@ const productRouter = require("./products.route");   // Quản lý sản phẩm,
 const orderRouter = require("./order.route");
 const categoryRoute = require("./category.route");
 const sizeRouter = require("./size.route");
+const tryOnRouter = require("./try_on.route");     // Quản lý ảnh try-on của người dùng
 // Export hàm nhận vào app (Express instance)
 module.exports = function (app) {
     // Mount các route vào đường dẫn tương ứng
@@ -23,5 +24,6 @@ module.exports = function (app) {
     app.use("/products", productRouter);  // → /products, /products/:id,...
     app.use("/order", orderRouter),
         app.use("/category", categoryRoute),
-        app.use("/size", sizeRouter);
+        app.use("/size", sizeRouter),
+        app.use("/try_on", tryOnRouter); // → /tryon, /tryon/:id, /tryon/user/:manguoidung
 };

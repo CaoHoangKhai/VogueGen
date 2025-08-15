@@ -4,7 +4,7 @@ import OrderList from '../Page/Users/Orders/Order_List';
 import OrderDetail from '../Page/Users/Orders/Order_Detail';
 import FavoriteList from '../Page/Users/Favorite/Favorite_List';
 import MyDesign from '../Page/Users/Design/My_Design';
-
+import UserTryOnPage from '../Page/Users/Try_On/UserTryOnPage';
 const userRoutes = [
   { path: '/user/profile', element: <Profile /> },
   { path: '/user/location', element: <UserLocation /> },
@@ -12,7 +12,8 @@ const userRoutes = [
   { path: '/user/orders', element: <OrderList /> },
   { path: '/user/order_detail/:orderId', element: <OrderDetail /> },
   { path: '/user/favorites', element: <FavoriteList /> },
-  { path: '/user/my-designs', element: <MyDesign /> }
+  { path: '/user/my-designs', element: <MyDesign /> },
+  { path: '/user/try_on', element: <UserTryOnPage /> },
 ];
 
 export default userRoutes;

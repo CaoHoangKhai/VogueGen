@@ -67,21 +67,6 @@ function BannerSection({ showToast }) {
                         <li><FaBoxOpen style={{ color: "#00ACC1" }} className="me-2" />1000+ Products Available</li>
                         <li><FaTags style={{ color: "#E91E63" }} className="me-2" />Best Price Guarantee</li>
                     </ul>
-                    <Button
-                        variant="contained"
-                        style={{
-                            background: "linear-gradient(90deg, #C2185B 0%, #7B1FA2 100%)",
-                            color: "#fff",
-                            marginTop: 16,
-                            fontWeight: 600,
-                            letterSpacing: 1
-                        }}
-                        size="large"
-                        fullWidth
-                        onClick={() => showToast("Welcome to Shopify!", "success")}
-                    >
-                        Show Toast
-                    </Button>
                     <Link to="/category" style={{ textDecoration: "none" }}>
                         <Button
                             variant="contained"

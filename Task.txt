@@ -152,6 +152,34 @@
 - Vẽ sơ đồ class
 viết xong phần giới thiệu và chương 1 phần nội dung
 
+07/08/2025
+- Báo cáo
+	+ Viết xong tất cả phần Website
+
+
+08/08/2025
+-Báo cáo 
+	+ 1.2.3 Vấn đề và giải pháp cho thiết kế cá nhân hóa
+
+
+09/08/2025
+- Code
+	+ Chỗ thiết kế là chọn giới tính hoặc drop down + mặc định của sản phẩm (XONG)
+	+ Fix lỗi Product và Product_Detail
+	+ 
+	+ Thêm khi sinh ảnh thì lưu cho người dùng đó (XONG)
+10/08/2025
+- Code 
+	+ Fix Product_Detail
+	+ Fix Design
+ 
+15/08/2025
+-Code
+	+ Đổ dữ liệu vào nhớ là có background
+-LV:
+	+ In ra 3 cuốn ( trắng đen, trừ bìa)
+	+ Nộp ở Khoa
+
 Lưu ý:
 Vào hội đồng ko demo đăng nhập, đăng ký
 Xem hội đồng là ai thì thêm hình người đó và tên vào sản phẩm thiết kế

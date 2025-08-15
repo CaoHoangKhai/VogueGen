@@ -9,7 +9,7 @@ const OrderList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchName, setSearchName] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
-  const ordersPerPage = 5;
+  const ordersPerPage = 4;
 
   const navigate = useNavigate();
 

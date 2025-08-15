@@ -47,70 +47,74 @@ class CartService {
                 data.soluong = 10000;
             }
 
-            // ✅ Query tìm sản phẩm đã có trong giỏ (PHÂN BIỆT SẢN PHẨM GỐC/THIẾT KẾ)
+            // 🔥 Tạo query theo sản phẩm và thiết kế
             const query = {
                 manguoidung: data.manguoidung,
                 masanpham: data.masanpham,
                 size: data.size,
                 mausac: data.mausac,
-                madesign: data.madesign || null   // 🔥 KEY FIX: luôn có trường madesign
+                madesign: data.madesign || null,
             };
 
-            const existed = await this.cart.findOne(query);
+            // ============================
+            // Nếu là design thì **KHÔNG** tìm, luôn insert mới
+            // Nếu không phải design thì check tồn tại để update
+            // ============================
+            if (!data.isThietKe && !data.madesign) {
+                // Sản phẩm gốc -> tìm sản phẩm tồn tại
+                const existed = await this.cart.findOne(query);
 
-            // ================================
-            // 🔄 1️⃣ Nếu sản phẩm đã tồn tại
-            // ================================
-            if (existed) {
-                // ⚠️ Nếu đã đạt 10.000 trước đó
-                if (existed.soluong >= 10000) {
-                    return {
-                        success: true,
-                        message: "⚠️ Sản phẩm này đã đạt số lượng tối đa (10.000) cho size này."
-                    };
-                }
+                if (existed) {
+                    if (existed.soluong >= 10000) {
+                        return {
+                            success: true,
+                            message: "⚠️ Sản phẩm này đã đạt số lượng tối đa (10.000) cho size này.",
+                        };
+                    }
 
-                const newQuantity = existed.soluong + data.soluong;
-                const finalQuantity = Math.min(newQuantity, 10000);
+                    const newQuantity = existed.soluong + data.soluong;
+                    const finalQuantity = Math.min(newQuantity, 10000);
 
-                const updateData = { soluong: finalQuantity };
-                if (data.isThietKe || data.madesign) {
-                    if (data.previewFront) updateData.hinhanhFront = data.previewFront;
-                    if (data.previewBack) updateData.hinhanhBack = data.previewBack;
-                }
+                    const updateData = { soluong: finalQuantity };
+                    // Cập nhật ảnh thiết kế nếu có (đối với sản phẩm gốc thì thường không có)
+                    if (data.isThietKe || data.madesign) {
+                        if (data.previewFront) updateData.hinhanhFront = data.previewFront;
+                        if (data.previewBack) updateData.hinhanhBack = data.previewBack;
+                    }
 
-                await this.cart.updateOne(
-                    { _id: existed._id },
-                    { $set: updateData }
-                );
+                    await this.cart.updateOne(
+                        { _id: existed._id },
+                        { $set: updateData }
+                    );
 
-                if (newQuantity > 10000) {
-                    return {
-                        success: true,
-                        message: "⚠️ Đã đạt giới hạn tối đa 10.000 sản phẩm. Chỉ thêm đủ để đạt 10.000."
-                    };
-                } else {
-                    return {
-                        success: true,
-                        message: "✅ Đã tăng số lượng và cập nhật ảnh thiết kế."
-                    };
+                    if (newQuantity > 10000) {
+                        return {
+                            success: true,
+                            message: "⚠️ Đã đạt giới hạn tối đa 10.000 sản phẩm. Chỉ thêm đủ để đạt 10.000.",
+                        };
+                    } else {
+                        return {
+                            success: true,
+                            message: "✅ Đã tăng số lượng sản phẩm.",
+                        };
+                    }
                 }
             }
 
-            // ================================
-            // 🔄 2️⃣ Nếu sản phẩm chưa có trong giỏ
-            // ================================
+            // ============================
+            // Insert mới (luôn insert mới với design, hoặc insert mới nếu sản phẩm gốc chưa tồn tại)
+            // ============================
             await this.cart.insertOne({
                 manguoidung: data.manguoidung,
                 masanpham: data.masanpham,
                 size: data.size,
                 mausac: data.mausac,
                 soluong: data.soluong,
-                madesign: data.madesign || null,   // 🔥 KEY FIX: luôn có trường này
+                madesign: data.madesign || null,
                 ...(data.isThietKe && { isThietKe: true }),
                 ...(data.previewFront && { hinhanhFront: data.previewFront }),
                 ...(data.previewBack && { hinhanhBack: data.previewBack }),
-                createdAt: new Date()
+                createdAt: new Date(),
             });
 
             return { success: true, message: "✅ Đã thêm sản phẩm vào giỏ hàng." };

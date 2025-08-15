@@ -33,7 +33,7 @@ exports.createProduct = async (req, res) => {
 
     // Parse giới tính
     const gioitinh = req.body.gioitinh?.toLowerCase() || "";
-    if (!["nam", "nu","unisex","be-trai","be-gai"].includes(gioitinh)) {
+    if (!["nam", "nu", "unisex", "be-trai", "be-gai"].includes(gioitinh)) {
       return res.status(400).json({ error: "Giới tính chỉ được phép là 'nam' hoặc 'nu'" });
     }
 
@@ -105,6 +105,28 @@ exports.createProduct = async (req, res) => {
   } catch (error) {
     console.error("❌ Lỗi khi tạo sản phẩm:", error);
     res.status(500).json({ error: "Lỗi server khi tạo sản phẩm" });
+  }
+};
+
+
+exports.deleteProduct = async (req, res) => {
+  try {
+    const { productId } = req.params; // lấy productId từ URL, ví dụ /products/:productId
+
+    if (!productId || !ObjectId.isValid(productId)) {
+      return res.status(400).json({ success: false, message: "ProductId không hợp lệ" });
+    }
+    const productService = new ProductServer(MongoDB.client);
+    const result = await productService.deleteProduct(productId);
+
+    if (!result.success) {
+      return res.status(404).json({ success: false, message: result.message });
+    }
+
+    return res.json({ success: true, message: "Đã xóa sản phẩm và dữ liệu liên quan" });
+  } catch (error) {
+    console.error("❌ deleteProduct controller error:", error);
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -235,6 +257,62 @@ exports.getTopSellingProducts = async (req, res) => {
       success: false,
       message: "Lỗi khi truy vấn sản phẩm bán chạy.",
       error: error.message
+    });
+  }
+};
+
+exports.updateProduct = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    console.log("📥 [UPDATE PRODUCT] request params:", req.params);
+    console.log("📥 [UPDATE PRODUCT] raw body:", req.body);
+
+    // Lấy dữ liệu từ req.body
+    const productData = {
+      tensanpham: req.body.tensanpham,
+      giasanpham: req.body.giasanpham,
+      theloai: req.body.theloai,
+      mota: req.body.mota,
+      gioitinh: req.body.gioitinh,
+      sizes: [],
+    };
+
+    // Parse sizes từ JSON string nếu có
+    try {
+      if (req.body.sizes) {
+        productData.sizes = JSON.parse(req.body.sizes);
+      }
+    } catch (err) {
+      console.warn("⚠️ Không parse được sizes:", err.message);
+    }
+
+    // Nếu có file upload thì log metadata (không xử lý ảnh ở đây)
+    if (req.files && req.files.length > 0) {
+      console.log(`📦 Nhận ${req.files.length} file:`);
+      req.files.forEach((file, idx) => {
+        console.log(
+          `   [${idx}] name=${file.originalname}, size=${file.size}, type=${file.mimetype}`
+        );
+      });
+    } else {
+      console.log("⚠️ Không có file upload.");
+    }
+
+    // Gọi service để update
+    const productService = new ProductServer(MongoDB.client);
+    const result = await productService.updateProduct(productId, productData);
+
+    if (result.success) {
+      return res.status(200).json(result);
+    } else {
+      return res.status(400).json(result);
+    }
+  } catch (error) {
+    console.error("❌ Lỗi trong updateProduct:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Lỗi server khi cập nhật sản phẩm",
+      error: error.message,
     });
   }
 };

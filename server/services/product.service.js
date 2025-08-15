@@ -59,6 +59,32 @@ class ProductServer {
       return { success: false, message: error.message };
     }
   }
+  
+  async deleteProduct(productId) {
+    try {
+      const _id = typeof productId === "string" ? new ObjectId(productId) : productId;
+
+      // Xóa sản phẩm chính
+      const result = await this.sanpham.deleteOne({ _id });
+      if (result.deletedCount === 0) {
+        return { success: false, message: "Sản phẩm không tồn tại" };
+      }
+
+      // Xóa màu sắc liên quan
+      await this.mausanpham.deleteMany({ masanpham: _id });
+
+      // Xóa kích thước liên quan
+      await this.kichthuoc.deleteMany({ masanpham: _id });
+
+      // Xóa hình ảnh liên quan
+      await this.hinhanhsanpham.deleteMany({ masanpham: _id });
+
+      return { success: true, message: "Đã xóa sản phẩm và các dữ liệu liên quan" };
+    } catch (error) {
+      console.error("❌ deleteProduct error:", error);
+      return { success: false, message: error.message };
+    }
+  }
 
   async getAllProducts() {
     try {
@@ -292,8 +318,53 @@ class ProductServer {
       console.error("❌ [ProductService.getBestSellingProducts] Lỗi:", error.message);
       throw error;
     }
-
   }
+  async updateProduct(productId, productData) {
+    try {
+      // Chuyển productId sang ObjectId nếu cần
+      const { ObjectId } = require("mongodb");
+      const _id = new ObjectId(productId);
+
+      // Cập nhật sản phẩm chính
+      const updateFields = {
+        tensanpham: productData.tensanpham,
+        giasanpham: productData.giasanpham,
+        theloai: productData.theloai,
+        mota: productData.mota,
+        gioitinh: productData.gioitinh || "",
+      };
+
+      const result = await this.sanpham.updateOne(
+        { _id },
+        { $set: updateFields }
+      );
+
+      // Xóa kích thước cũ và insert mới
+      if (Array.isArray(productData.sizes)) {
+        await this.kichthuoc.deleteMany({ masanpham: _id });
+
+        const kichthuocDocs = productData.sizes.map(size => ({
+          masanpham: _id,
+          size: typeof size === "string" ? size.trim() : size?.size?.trim(),
+        }));
+
+        if (kichthuocDocs.length) {
+          await this.kichthuoc.insertMany(kichthuocDocs);
+        }
+      }
+
+      return {
+        success: true,
+        message: "Cập nhật sản phẩm thành công",
+        matchedCount: result.matchedCount,
+        modifiedCount: result.modifiedCount,
+      };
+    } catch (error) {
+      console.error("❌ updateProduct error:", error);
+      return { success: false, message: error.message };
+    }
+  }
+
 }
 
 module.exports = ProductServer;

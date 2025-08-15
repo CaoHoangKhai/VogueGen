@@ -2,8 +2,9 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
   getProductById,
-  // updateProduct,
-  getImagesByColor
+  updateProduct,
+  getImagesByColor,
+  deleteProduct
 } from "../../../api/Product/product.api";
 import { getAllSizes } from "../../../api/Size/size.api";
 import { getAllCategories } from "../../../api/Category/category.api";
@@ -55,10 +56,13 @@ const AdminProductDetail = () => {
   // ====================== LOAD PRODUCT DETAIL ======================
   useEffect(() => {
     if (!id) return;
-    getProductById(id)
-      .then((product) => {
+
+    const loadProduct = async () => {
+      try {
+        const product = await getProductById(id);
         if (!product) return;
-        // Đổ dữ liệu vào state
+
+        // Basic form fields
         setForm({
           tensanpham: product.tensanpham || "",
           giasanpham: product.giasanpham || "",
@@ -67,34 +71,62 @@ const AdminProductDetail = () => {
           mota: product.mota || "",
           gioitinh: product.gioitinh || "",
         });
-        setSelectedSizes(product.kichthuoc || []);
-        setSelectedColors(product.mausanpham || []);
-        if (product.mausanpham && product.mausanpham.length > 0) {
-          setSelectedColor(product.mausanpham[0]);
-        }
 
-        // Load ảnh theo màu
-        if (product.mausanpham?.length) {
+        // ==== SIZES: lấy array string từ product.kichthuoc (object array) ====
+        setSelectedSizes((product.kichthuoc || []).map((s) => s.size));
+
+        // ==== COLORS: normalize sang mảng mã màu string (ví dụ "#BEBEBE") ====
+        const colorCodes = (product.mausanpham || []).map((c) => (typeof c === "string" ? c : (c.mau || c)));
+        setSelectedColors(colorCodes);
+        setSelectedColor(colorCodes[0] || "");
+
+        // ==== LOAD IMAGES THEO MÀU (dùng colorCodes) ====
+        if (colorCodes.length > 0) {
           const imgMap = {};
-          Promise.all(
-            product.mausanpham.map((code) =>
-              getImagesByColor(product._id, code).then((imgs) => {
-                imgMap[code] = {};
-                imgs.forEach((img) => {
-                  if (!imgMap[code][img.vitri]) {
-                    imgMap[code][img.vitri] = [];
-                  }
-                  imgMap[code][img.vitri].push({
+
+          // gọi song song các request
+          await Promise.all(
+            colorCodes.map(async (colorCode) => {
+              try {
+                const imgs = await getImagesByColor(product._id, colorCode);
+                imgMap[colorCode] = {};
+
+                // normalize từng ảnh về .url
+                (imgs || []).forEach((img) => {
+                  const url =
+                    img.url ||
+                    img.path ||
+                    img.src ||
+                    img.imageUrl ||
+                    img.link ||
+                    (img.data && img.contentType ? `data:${img.contentType};base64,${img.data}` : null);
+
+                  const vitri = img.vitri || img.position || "extra";
+
+                  if (!imgMap[colorCode][vitri]) imgMap[colorCode][vitri] = [];
+                  imgMap[colorCode][vitri].push({
                     ...img,
-                    isOld: true, // đánh dấu ảnh cũ
+                    url, // chắc chắn có trường url (hoặc null)
+                    isOld: true,
                   });
                 });
-              })
-            )
-          ).then(() => setImagesByColor(imgMap));
+              } catch (err) {
+                console.error("[loadProduct] Lỗi load images for color", colorCode, err);
+                imgMap[colorCode] = {}; // giữ key để UI không crash
+              }
+            })
+          );
+
+          setImagesByColor(imgMap);
+        } else {
+          setImagesByColor({});
         }
-      })
-      .catch((err) => console.error("❌ Lỗi load sản phẩm:", err));
+      } catch (err) {
+        console.error("❌ Lỗi load sản phẩm:", err);
+      }
+    };
+
+    loadProduct();
   }, [id]);
 
   // ====================== FUNCTION ======================
@@ -175,44 +207,157 @@ const AdminProductDetail = () => {
   };
 
   // ====================== SUBMIT UPDATE ======================
+  // Thay thế toàn bộ hàm handleSubmit hiện tại bằng đoạn này
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const formData = new FormData();
-    formData.append("tensanpham", form.tensanpham);
-    formData.append("giasanpham", form.giasanpham);
-    formData.append("theloai", form.theloai);
-    formData.append("mota", form.mota);
-    formData.append("sizes", JSON.stringify(selectedSizes));
-    formData.append("colors", JSON.stringify(selectedColors));
-    formData.append("gioitinh", form.gioitinh);
-    formData.append("deletedImages", JSON.stringify(deletedImageIds));
+    // disable submit button khi đang gửi
+    setToast({ show: false, message: "", type: "" });
+    let isSending = true;
+    try {
+      // build FormData
+      const formData = new FormData();
+      formData.append("tensanpham", form.tensanpham);
+      formData.append("giasanpham", form.giasanpham);
+      formData.append("theloai", form.theloai);
+      formData.append("mota", form.mota);
+      formData.append("sizes", JSON.stringify(selectedSizes));
+      formData.append("colors", JSON.stringify(selectedColors));
+      formData.append("gioitinh", form.gioitinh);
+      formData.append("deletedImages", JSON.stringify(deletedImageIds));
 
-    let index = 0;
-    const positions = getPositions();
+      let index = 0;
+      const positions = getPositions();
 
-    for (const colorCode of selectedColors) {
-      const colorImages = imagesByColor[colorCode] || {};
-      for (const position of positions) {
-        const imgs = colorImages[position] || [];
-        for (const img of imgs) {
-          if (!img.isOld) {
-            // chỉ append ảnh mới
-            formData.append(`images[${index}]`, img.file);
-            formData.append(`positions[${index}]`, position);
-            formData.append(`colors[${index}]`, colorCode);
-            index++;
+      console.groupCollapsed("📝 [handleSubmit] Dữ liệu chuẩn bị gửi");
+      console.log("📌 tensanpham:", form.tensanpham);
+      console.log("💰 giasanpham:", form.giasanpham);
+      console.log("📂 theloai:", form.theloai);
+      console.log("📝 mota:", form.mota);
+      console.log("📏 sizes:", selectedSizes);
+      console.log("🎨 colors:", selectedColors);
+      console.log("🚻 gioitinh:", form.gioitinh);
+      console.log("🗑 deletedImages:", deletedImageIds);
+
+      // Append files and metadata
+      for (const colorCode of selectedColors) {
+        const colorImages = imagesByColor[colorCode] || {};
+        for (const position of positions) {
+          const imgs = colorImages[position] || [];
+          for (const img of imgs) {
+            if (!img.isOld && img.file) {
+              const thisIndex = index;
+
+              // append file and its metadata using index
+              formData.append(`images[${thisIndex}]`, img.file);
+              formData.append(`positions[${thisIndex}]`, position);
+              formData.append(`colors[${thisIndex}]`, colorCode);
+
+              console.groupCollapsed(`📷 Ảnh mới #${thisIndex}`);
+              console.log("name:", img.file.name);
+              console.log("size:", img.file.size);
+              console.log("type:", img.file.type);
+              console.log("position:", position);
+              console.log("colorCode:", colorCode);
+
+              // optional: preview length (async)
+              try {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                  const dataUrl = ev.target.result;
+                  console.log("base64 length:", dataUrl.length);
+                  console.groupEnd();
+                };
+                reader.onerror = (er) => {
+                  console.warn("⚠️ FileReader error for image preview", er);
+                  console.groupEnd();
+                };
+                reader.readAsDataURL(img.file);
+              } catch (err) {
+                console.warn("⚠️ Không thể đọc file để preview:", err);
+                console.groupEnd();
+              }
+
+              index++;
+            }
           }
         }
       }
-    }
 
-    try {
-      // await updateProduct(id, formData);
-      setToast({ show: true, message: "✅ Cập nhật sản phẩm thành công!", type: "success" });
+      console.log(`📦 Tổng số ảnh mới gửi: ${index}`);
+      console.groupEnd();
+
+      // gọi API updateProduct - hàm bạn đã import
+      console.log(`[handleSubmit] 🚀 Gọi API updateProduct với id=${id} ...`);
+      setToast({ show: true, message: "Đang gửi dữ liệu...", type: "info" });
+
+      const res = await updateProduct(id, formData);
+
+      // xử lý response
+      if (res && (res.success || res.message || res.id)) {
+        console.log("[handleSubmit] ✅ updateProduct response:", res);
+        setToast({ show: true, message: "✅ Cập nhật sản phẩm thành công!", type: "success" });
+        try {
+          const refreshed = await getProductById(id);
+          if (refreshed) {
+            setForm({
+              tensanpham: refreshed.tensanpham || "",
+              giasanpham: refreshed.giasanpham || "",
+              giasanphamRaw: new Intl.NumberFormat("vi-VN").format(refreshed.giasanpham || 0),
+              theloai: refreshed.theloai || "",
+              mota: refreshed.mota || "",
+              gioitinh: refreshed.gioitinh || "",
+            });
+            setSelectedSizes((refreshed.kichthuoc || []).map((s) => s.size));
+            const colorCodes = (refreshed.mausanpham || []).map((c) => (typeof c === "string" ? c : (c.mau || c)));
+            setSelectedColors(colorCodes);
+            setSelectedColor(colorCodes[0] || "");
+            // reload images if needed (you could reuse loadProduct logic)
+          }
+        } catch (errRefresh) {
+          console.warn("⚠️ Không thể refresh product sau khi update:", errRefresh);
+        }
+      } else {
+        console.error("[handleSubmit] ❌ updateProduct trả về lỗi:", res);
+        setToast({ show: true, message: `❌ Lỗi khi cập nhật: ${res?.error || res?.message || "Không xác định"}`, type: "error" });
+      }
     } catch (err) {
       console.error("❌ Lỗi update sản phẩm:", err);
-      setToast({ show: true, message: "❌ Lỗi cập nhật sản phẩm", type: "error" });
+      setToast({ show: true, message: `❌ Lỗi khi cập nhật sản phẩm: ${err?.message || err}`, type: "error" });
+    } finally {
+      isSending = false;
+    }
+  };
+
+  // ====================== XÓA SẢN PHẨM ======================
+  const handleDeleteProduct = async () => {
+    if (!id) return;
+
+    const confirmDelete = window.confirm(
+      "⚠️ Bạn có chắc chắn muốn xóa sản phẩm này? Hành động này không thể hoàn tác!"
+    );
+    if (!confirmDelete) return;
+
+    setToast({ show: true, message: "Đang xóa sản phẩm...", type: "info" });
+
+    try {
+      const res = await deleteProduct(id);
+      if (res.success) {
+        setToast({ show: true, message: "✅ Đã xóa sản phẩm thành công!", type: "success" });
+        // Chuyển hướng về danh sách sản phẩm sau khi xóa
+        setTimeout(() => {
+          window.location.href = "/admin/products"; // hoặc dùng navigate nếu react-router-dom v6
+        }, 1200);
+      } else {
+        setToast({
+          show: true,
+          message: `❌ Xóa sản phẩm thất bại: ${res.error || res.message}`,
+          type: "error",
+        });
+      }
+    } catch (err) {
+      console.error("❌ Lỗi xóa sản phẩm:", err);
+      setToast({ show: true, message: `❌ Lỗi xóa sản phẩm: ${err?.message || err}`, type: "error" });
     }
   };
 
@@ -362,6 +507,8 @@ const AdminProductDetail = () => {
             <option value="">-- Chọn giới tính --</option>
             <option value="nam">Nam</option>
             <option value="nu">Nữ</option>
+            <option value="be-trai">Bé trai</option>
+            <option value="be-gai">Bé gái</option>
             <option value="unisex">Unisex</option>
           </select>
         </div>
@@ -392,8 +539,7 @@ const AdminProductDetail = () => {
                 <button
                   key={size._id}
                   type="button"
-                  className={`btn btn-sm ${isSelected ? "btn-primary" : "btn-outline-secondary"
-                    }`}
+                  className={`btn btn-sm ${isSelected ? "btn-primary" : "btn-outline-secondary"}`}
                   onClick={() => toggleSize(size.size)}
                 >
                   {size.size}
@@ -487,12 +633,25 @@ const AdminProductDetail = () => {
         )}
 
         <hr />
-        <button
-          type="submit"
-          className="btn btn-success btn-lg w-100 d-flex align-items-center justify-content-center gap-2 shadow-sm rounded-3 mb-4"
-        >
-          💾 Cập nhật sản phẩm
-        </button>
+        <div className="row g-2 mb-4">
+          <div className="col-7">
+            <button
+              type="submit"
+              className="btn btn-success btn-lg w-100 d-flex align-items-center justify-content-center gap-2 shadow-sm rounded-3"
+            >
+              💾 Cập nhật sản phẩm
+            </button>
+          </div>
+          <div className="col-3">
+            <button
+              type="button"
+              onClick={handleDeleteProduct}
+              className="btn btn-danger btn-lg w-100 d-flex align-items-center justify-content-center gap-2 shadow-sm rounded-3"
+            >
+              🗑 Xóa sản phẩm
+            </button>
+          </div>
+        </div>
       </form>
     </div>
   );

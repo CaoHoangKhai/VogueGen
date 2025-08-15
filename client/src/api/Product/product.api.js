@@ -35,8 +35,6 @@ export const getColorsByProductId = async (productId) => {
     }
 };
 
-
-
 // 📌 Lấy danh sách ảnh theo màu sản phẩm
 export const getImagesByColor = async (productId, colorCode) => {
     try {
@@ -48,7 +46,6 @@ export const getImagesByColor = async (productId, colorCode) => {
         return [];
     }
 };
-
 
 // 📌 Lấy danh sách sản phẩm theo slug danh mục (category)
 export const getProductsByCategorySlug = async (slug) => {
@@ -90,4 +87,131 @@ export const getTopSellingProducts = async () => {
         console.error("❌ Lỗi khi lấy sản phẩm bán chạy:", error);
         return [];
     }
+};
+
+export const updateProduct = async (productId, formData, opts = {}) => {
+  try {
+    // ==== Kiểm tra tham số ====
+    if (!productId) throw new Error("❌ Thiếu productId khi gọi updateProduct");
+    if (!(formData instanceof FormData)) {
+      throw new Error("❌ formData phải là instance của FormData");
+    }
+
+    const { token = null, timeoutMs = 30000 } = opts;
+
+    // ==== Preview FormData trước khi gửi ====
+    const entries = Array.from(formData.entries());
+    const fileCount = entries.filter(([, v]) => v instanceof File).length;
+    console.groupCollapsed(`[updateProduct] 🔀 Preview FormData — productId=${productId}`);
+    console.log(`📦 Tổng entries: ${entries.length}, số file: ${fileCount}`);
+    for (const [key, value] of entries) {
+      if (value instanceof File) {
+        console.log(`   ${key}: File { name: ${value.name}, size: ${value.size}, type: ${value.type} }`);
+      } else {
+        const s = String(value);
+        console.log(`   ${key}: ${s.length > 100 ? s.slice(0, 100) + "… (truncated)" : s}`);
+      }
+    }
+    console.groupEnd();
+
+    // ==== Chuẩn bị request ====
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    const headers = {};
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
+    console.log(`[updateProduct] 🚀 PUT ${BASE_URL_PRODUCTS}/${productId}`);
+
+    const resp = await fetch(`${BASE_URL_PRODUCTS}/${productId}`, {
+      method: "PUT",
+      headers, // KHÔNG set Content-Type → browser tự thêm boundary
+      body: formData,
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    // ==== Xử lý phản hồi ====
+    let payload;
+    const contentType = resp.headers.get("content-type") || "";
+    try {
+      payload = contentType.includes("application/json")
+        ? await resp.json()
+        : await resp.text();
+    } catch (err) {
+      payload = { error: `⚠️ Không parse được response: ${err.message}` };
+    }
+
+    if (!resp.ok) {
+      console.error("[updateProduct] ❌ Server error:", resp.status, payload);
+      return {
+        success: false,
+        status: resp.status,
+        error: payload?.error || payload?.message || `HTTP ${resp.status}`,
+      };
+    }
+
+    console.log("[updateProduct] ✅ Success:", payload);
+    return { success: true, status: resp.status, data: payload };
+
+  } catch (err) {
+    if (err.name === "AbortError") {
+      console.error("[updateProduct] ⏳ Request timeout");
+      return { success: false, error: "Request timeout" };
+    }
+    console.error("[updateProduct] ❌ Error:", err);
+    return { success: false, error: err.message || "Unknown error" };
+  }
+};
+
+export const deleteProduct = async (productId, opts = {}) => {
+  try {
+    if (!productId) throw new Error("❌ Thiếu productId khi gọi deleteProduct");
+
+    const { token = null, timeoutMs = 30000 } = opts;
+
+    const headers = {};
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    const resp = await fetch(`${BASE_URL_PRODUCTS}/${productId}`, {
+      method: "DELETE",
+      headers,
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    let payload;
+    const contentType = resp.headers.get("content-type") || "";
+    try {
+      payload = contentType.includes("application/json")
+        ? await resp.json()
+        : await resp.text();
+    } catch (err) {
+      payload = { error: `⚠️ Không parse được response: ${err.message}` };
+    }
+
+    if (!resp.ok) {
+      console.error("[deleteProduct] ❌ Server error:", resp.status, payload);
+      return {
+        success: false,
+        status: resp.status,
+        error: payload?.error || payload?.message || `HTTP ${resp.status}`,
+      };
+    }
+
+    console.log("[deleteProduct] ✅ Success:", payload);
+    return { success: true, message: payload?.message || "Xóa sản phẩm thành công" };
+  } catch (err) {
+    if (err.name === "AbortError") {
+      console.error("[deleteProduct] ⏳ Request timeout");
+      return { success: false, error: "Request timeout" };
+    }
+    console.error("[deleteProduct] ❌ Error:", err);
+    return { success: false, error: err.message || "Unknown error" };
+  }
 };

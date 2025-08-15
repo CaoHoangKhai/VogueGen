@@ -10,11 +10,12 @@ import Toast from "../../../Components/Toast";
 const ProductAdd = () => {
   const [categories, setCategories] = useState([]);
   const [availableSizes, setAvailableSizes] = useState([]);
-  const [selectedSizes, setSelectedSizes] = useState([]);
+
   const [selectedColors, setSelectedColors] = useState([]);
   const [toast, setToast] = useState({ show: false, message: "", type: "" });
   const [selectedColor, setSelectedColor] = useState("");
   const [imagesByColor, setImagesByColor] = useState({});
+  const [selectedSizes, setSelectedSizes] = useState([]);
 
   const [form, setForm] = useState({
     tensanpham: "",

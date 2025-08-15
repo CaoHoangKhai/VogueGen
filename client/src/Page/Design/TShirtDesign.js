@@ -9,7 +9,7 @@ import { BASE_URL_UPLOAD_DESIGN } from "../../api/TryOn/tryon.api";
 import html2canvas from "html2canvas";
 import { getProductSizesFromDesignId } from "../../api/Design/design.api";
 import { getDesignFrame } from "../../config/design";
-
+import { addTryOnImage } from "../../api/TryOn/tryon.api";
 const TShirtDesign = () => {
     // const { productType, id } = useParams();
     const [design, setDesign] = useState(null);
@@ -30,6 +30,7 @@ const TShirtDesign = () => {
     const [tryOnPreviewUrls, setTryOnPreviewUrls] = useState([]);
     const [availableSizes, setAvailableSizes] = useState([]);
     const [selectedSize, setSelectedSize] = useState("");
+    const [selectedGender, setSelectedGender] = useState("");
     const location = useLocation();
     const { id } = useParams();
     const productType = location.pathname.split("/")[2];
@@ -70,28 +71,35 @@ const TShirtDesign = () => {
 
         fetchSizes();
     }, [id]);
+    useEffect(() => {
+        if (!selectedGender && design?.gioitinh) {
+            setSelectedGender(design.gioitinh);
+        }
+    }, [design?.gioitinh, selectedGender]);
 
     const handleGenerateTryOnImages = async () => {
         if (!frontPreviewUrl) return;
+        if (!selectedSize || !selectedGender) {
+            alert("Vui lòng chọn đầy đủ Size và Giới tính trước khi sinh ảnh.");
+            return;
+        }
+
         setLoadingGenerate(true);
 
         try {
             const payload = {
                 image_base64: frontPreviewUrl,
-                gioitinh: design?.gioitinh || "unisex",
+                gioitinh: selectedGender || design?.gioitinh || "unisex",
                 design_id: design?._id,
                 colorcloth: selectedColor,
-                size: selectedSize, // ✅ gửi luôn size đã chọn
+                size: selectedSize,
             };
 
-            // 🔍 Log ra để xem trước khi gửi
             console.log("📤 Payload gửi lên API:", payload);
 
             const res = await fetch(`${BASE_URL_UPLOAD_DESIGN}`, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
             });
 
@@ -100,6 +108,17 @@ const TShirtDesign = () => {
 
             if (data.success && Array.isArray(data.results)) {
                 setTryOnPreviewUrls(data.results);
+
+                const manguoidung = design?.manguoidung; // ưu tiên lấy từ design
+
+                for (const base64Image of data.results) {
+                    try {
+                        const insertedId = await addTryOnImage(manguoidung, base64Image);
+                        console.log(`Đã lưu ảnh try-on với id: ${insertedId}`);
+                    } catch (err) {
+                        console.error("Lỗi lưu ảnh try-on lên server:", err);
+                    }
+                }
             } else {
                 alert("❌ Không có ảnh try-on trả về");
             }
@@ -109,6 +128,7 @@ const TShirtDesign = () => {
             setLoadingGenerate(false);
         }
     };
+
 
     useEffect(() => {
         if (!id) return;
@@ -513,6 +533,7 @@ const TShirtDesign = () => {
         color: ov.content?.color || "#000",
         whiteSpace: "nowrap",
     });
+
     return (
         <div className="container-fluid">
             <div className="row">
@@ -583,7 +604,7 @@ const TShirtDesign = () => {
 
                                         <div className="modal-body">
                                             <div className="row">
-                                                {/* 📌 CỘT 3: Ảnh áo */}
+                                                {/* CỘT 3: Ảnh áo */}
                                                 <div className="col-3 text-center border-end">
                                                     <h6 className="mb-3">👕 Ảnh thiết kế</h6>
                                                     <img
@@ -595,11 +616,11 @@ const TShirtDesign = () => {
                                                             maxHeight: "50vh",
                                                             objectFit: "contain",
                                                             borderRadius: "8px",
-                                                            boxShadow: "0 2px 6px rgba(0,0,0,0.15)"
+                                                            boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
                                                         }}
                                                     />
 
-                                                    {/* 🔽 SIZE SELECTOR (radio - chỉ chọn 1) */}
+                                                    {/* SIZE SELECTOR */}
                                                     <div className="mt-3">
                                                         <h6>📏 Chọn Size</h6>
 
@@ -611,7 +632,7 @@ const TShirtDesign = () => {
                                                                             type="radio"
                                                                             className="btn-check"
                                                                             id={`size-${size}`}
-                                                                            name="size-options"   // 👈 Cùng name -> chỉ chọn 1
+                                                                            name="size-options"
                                                                             value={size}
                                                                             checked={selectedSize === size}
                                                                             onChange={() => setSelectedSize(size)}
@@ -630,9 +651,37 @@ const TShirtDesign = () => {
                                                             <p className="text-muted mt-2">⚠️ Không có size khả dụng.</p>
                                                         )}
                                                     </div>
+
+                                                    {/* GENDER SELECTOR */}
+                                                    <div className="mt-3">
+                                                        <h6>👤 Chọn giới tính</h6>
+                                                        <div>
+                                                            {[
+                                                                { label: "Nam", value: "nam" },
+                                                                { label: "Nữ", value: "nu" },
+                                                                { label: "Bé trai", value: "be-trai" },
+                                                                { label: "Bé gái", value: "be-gai" },
+                                                            ].map(({ label, value }) => (
+                                                                <div className="form-check form-check-inline" key={value}>
+                                                                    <input
+                                                                        className="form-check-input"
+                                                                        type="radio"
+                                                                        name="genderOptions"
+                                                                        id={`gender-${value}`}
+                                                                        value={value}
+                                                                        checked={selectedGender === value}
+                                                                        onChange={() => setSelectedGender(value)}
+                                                                    />
+                                                                    <label className="form-check-label" htmlFor={`gender-${value}`}>
+                                                                        {label}
+                                                                    </label>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
                                                 </div>
 
-                                                {/* 📌 CỘT 7: Kết quả thử áo */}
+                                                {/* CỘT 9: Kết quả thử áo */}
                                                 <div className="col-9">
                                                     <h6 className="text-center mb-3">✨ Kết quả thử áo</h6>
 
@@ -642,13 +691,15 @@ const TShirtDesign = () => {
                                                                 <div className="spinner-border text-primary" role="status">
                                                                     <span className="visually-hidden">Loading...</span>
                                                                 </div>
-                                                                <p className="mt-2 text-primary fw-bold">
-                                                                    ⏳ Đang sinh ảnh try-on...
-                                                                </p>
+                                                                <p className="mt-2 text-primary fw-bold">⏳ Đang sinh ảnh try-on...</p>
                                                             </div>
                                                         ) : tryOnPreviewUrls.length > 0 ? (
                                                             tryOnPreviewUrls.map((item, idx) => (
-                                                                <div key={idx} className="text-center">
+                                                                <div
+                                                                    key={idx}
+                                                                    className="text-center position-relative"
+                                                                    style={{ maxWidth: "150px" }}
+                                                                >
                                                                     <img
                                                                         src={item.image_base64}
                                                                         alt={`TryOn ${idx}`}
@@ -657,13 +708,21 @@ const TShirtDesign = () => {
                                                                             maxHeight: "220px",
                                                                             objectFit: "contain",
                                                                             borderRadius: "6px",
-                                                                            boxShadow: "0 2px 6px rgba(0,0,0,0.1)"
+                                                                            boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
                                                                         }}
                                                                     />
-                                                                    <p
-                                                                        className="mt-2 text-muted"
-                                                                        style={{ fontSize: "14px" }}
+                                                                    {/* Nút tải về */}
+                                                                    <a
+                                                                        href={item.image_base64}
+                                                                        download={`tryon_${idx}.png`}
+                                                                        className="btn btn-sm btn-outline-primary position-absolute"
+                                                                        style={{ top: 4, right: 4, padding: "0 6px", fontSize: 12, zIndex: 10 }}
+                                                                        title="Tải ảnh về"
+                                                                        onClick={e => e.stopPropagation()} // tránh click ảnh nếu có event click cha
                                                                     >
+                                                                        ⬇
+                                                                    </a>
+                                                                    <p className="mt-2 text-muted" style={{ fontSize: "14px" }}>
                                                                         👕 {item.model.replace(".jpg", "")}
                                                                     </p>
                                                                 </div>
@@ -687,8 +746,8 @@ const TShirtDesign = () => {
 
                                             <button
                                                 className="btn btn-primary"
-                                                onClick={handleGenerateTryOnImages}
-                                                disabled={loadingGenerate || !selectedSize} // ⛔ Không cho bấm nếu chưa chọn size
+                                                onClick={() => handleGenerateTryOnImages(selectedSize, selectedGender)}
+                                                disabled={loadingGenerate || !selectedSize || !selectedGender}
                                             >
                                                 {loadingGenerate ? "Đang xử lý..." : "👕 SINH ẢNH THỬ ÁO"}
                                             </button>

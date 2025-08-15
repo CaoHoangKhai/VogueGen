@@ -1,14 +1,15 @@
 // FaCog
-import {
-  FaUsers, FaUserPlus, FaBoxOpen,
-  FaHeart,
-  FaShoppingCart, FaMapMarkerAlt
+import { 
+  FaUsers, FaUserPlus, FaBoxOpen, FaHeart, 
+  FaShoppingCart, FaMapMarkerAlt 
 } from 'react-icons/fa';
-import { MdDashboard, MdCategory, MdDesignServices } from "react-icons/md";
-import { IoMdAddCircle } from "react-icons/io";
-import { HiOutlineClipboardList } from "react-icons/hi";
-import { BiSolidUserAccount } from "react-icons/bi";
-import { RiShoppingBag3Fill } from "react-icons/ri";
+import { MdDashboard, MdCategory, MdDesignServices, MdOutlineWardrobe } from 'react-icons/md';
+import { IoMdAddCircle } from 'react-icons/io';
+import { HiOutlineClipboardList } from 'react-icons/hi';
+import { BiSolidUserAccount } from 'react-icons/bi';
+import { RiShoppingBag3Fill } from 'react-icons/ri';
+import { GiTShirt } from 'react-icons/gi'; 
+
 
 const sidebarConfig = {
   admin: [
@@ -82,39 +83,40 @@ const sidebarConfig = {
     {
       label: 'Thông tin cá nhân',
       path: '/user/profile',
-      icon: BiSolidUserAccount
+      icon: BiSolidUserAccount, // hợp lý, biểu tượng người dùng
     },
     {
       label: 'Thiết kế của tôi',
       path: '/user/my-designs',
-      icon: MdDesignServices
+      icon: MdDesignServices, // đúng, thể hiện dịch vụ thiết kế
+    },
+    {
+      label: 'Thử đồ (Try-On)',  // đổi label để phân biệt
+      path: '/user/try_on',
+      icon: GiTShirt, // icon áo thun phù hợp cho mục thử đồ
     },
     {
       label: 'Giỏ hàng',
       path: '/auth/cart',
-      icon: FaShoppingCart
+      icon: FaShoppingCart, // đúng
     },
     {
       label: 'Địa chỉ nhận hàng',
       path: '/user/location',
-      icon: FaMapMarkerAlt
+      icon: FaMapMarkerAlt, // đúng
     },
     {
       label: 'Yêu thích',
       path: '/user/favorites',
-      icon: FaHeart
+      icon: FaHeart, // đúng
     },
     {
       label: 'Danh sách đơn hàng',
       path: '/user/orders',
-      icon: HiOutlineClipboardList
-    },
-    // {
-    //   label: 'Cài đặt',
-    //   path: '/user/settings',
-    //   icon: FaCog
-    // }
+      icon: HiOutlineClipboardList, // đúng
+    }
   ]
+
 };
 
 export default sidebarConfig;
