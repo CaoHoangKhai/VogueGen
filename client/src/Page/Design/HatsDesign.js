@@ -23,6 +23,11 @@ const TShirtDesign = () => {
     const [exportedBase64, setExportedBase64] = useState(null);
     const [frontPreviewUrl, setFrontPreviewUrl] = useState(null);
     const [availableSizes, setAvailableSizes] = useState([]);
+    const overlayRefs = {
+        front: useRef(null),
+        right: useRef(null),
+        left: useRef(null),
+    };
 
     const location = useLocation();
     const { id } = useParams();
@@ -245,14 +250,25 @@ const TShirtDesign = () => {
         }
     };
 
-
     const addOverlay = (overlay) => {
-        if (!selectedImage?.vitri) return;
+        const side = selectedImage?.vitri || "front";
+        const zoneRef = overlayRefs[side];
+        if (!zoneRef?.current) return;
 
-        setOverlaysMap((prev) => ({
-            ...prev,
-            [selectedImage.vitri]: [...(prev[selectedImage.vitri] || []), overlay],
-        }));
+        const zone = zoneRef.current;
+        const zoneWidth = zone.offsetWidth;
+        const zoneHeight = zone.offsetHeight;
+
+        const newOverlay = {
+            ...overlay,
+            x: Math.floor(zoneWidth / 2 - (overlay.width || 150) / 2),
+            y: Math.floor(zoneHeight / 2 - (overlay.height || 50) / 2),
+        };
+
+        setOverlaysMap((prev) => {
+            const updated = [...(prev[side] || []), newOverlay];
+            return { ...prev, [side]: updated };
+        });
     };
 
     useEffect(() => {
@@ -569,7 +585,7 @@ const TShirtDesign = () => {
                                         {/* 🎨 Vùng overlay */}
                                         {isDesignable && (
                                             <div
-                                                ref={overlayZoneRef}
+                                                ref={overlayRefs[side]}
                                                 className="position-absolute"
                                                 style={{
                                                     ...getDesignFrame(productType, side),
@@ -585,6 +601,7 @@ const TShirtDesign = () => {
 
                                                     return (
                                                         <Rnd
+
                                                             key={`${side}-${i}`}
                                                             position={{
                                                                 x: ov.x || 0,

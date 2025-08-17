@@ -1,4 +1,4 @@
-const BASE_URL = "https://8bb546f817f2.ngrok-free.app";
+const BASE_URL = " https://e9abdbb4dc05.ngrok-free.app";
 
 export const BASE_URL_TRY_ON = `${BASE_URL}/tryon`;
 export const BASE_URL_UPLOAD_DESIGN = `${BASE_URL}/upload_design`;

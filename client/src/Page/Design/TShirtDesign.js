@@ -38,6 +38,9 @@ const TShirtDesign = () => {
     const frontContainerRef = useRef(null);
     const backContainerRef = useRef(null);
 
+    const overlayFrontRef = useRef(null);
+    const overlayBackRef = useRef(null);
+
     const [overlaysMap, setOverlaysMap] = useState({
         front: [],
         back: [],
@@ -348,51 +351,49 @@ const TShirtDesign = () => {
     };
 
 
+
     const handleExportImage = async (format, callback) => {
-        if (!containerRef.current || !overlayZoneRef.current) return;
-
-        const overlayEl = overlayZoneRef.current;
-        const prevBorder = overlayEl.style.border;
-
         try {
+            // chọn đúng container theo mặt được chọn
+            const isFront = selectedImage?.vitri === "front";
+            const container = isFront ? frontContainerRef.current : backContainerRef.current;
+            const overlayEl = isFront ? overlayFrontRef.current : overlayBackRef.current;
+
+            if (!container || !overlayEl) return;
+
+            const prevBorder = overlayEl.style.border;
             overlayEl.style.border = "none";
 
-            // ✅ Nếu xuất JPEG/WebP thì set background trắng vì JPEG/WebP không hỗ trợ trong suốt
+            // nếu JPEG/WebP thì set background trắng
             const bgColor = (format === "jpeg" || format === "webp") ? "#ffffff" : null;
 
-            const canvas = await html2canvas(containerRef.current, {
+            const canvas = await html2canvas(container, {
                 useCORS: true,
                 backgroundColor: bgColor,
             });
 
-            // ✅ Chọn đúng định dạng ảnh
             let mimeType = "image/png";
             if (format === "jpeg") mimeType = "image/jpeg";
             else if (format === "webp") mimeType = "image/webp";
 
             const dataURL = canvas.toDataURL(mimeType, 1.0);
 
-            // ✅ Tải về
+            // tải file
             const link = document.createElement("a");
             link.href = dataURL;
             link.download = `design-${design?._id || "export"}.${format}`;
             link.click();
 
-            // ✅ Callback trả ảnh về cho LeftSidebarDesign (nếu có)
             if (typeof callback === "function") {
                 callback(dataURL);
             }
 
-            // ✅ Lưu state để hiển thị preview
             setExportedBase64(dataURL);
-
-        } catch (error) {
-            console.error("❌ Lỗi khi xuất ảnh:", error);
-        } finally {
             overlayEl.style.border = prevBorder;
+        } catch (err) {
+            console.error("❌ Lỗi khi export:", err);
         }
     };
-
     const exportDesignAsBase64 = async ({ format = "png" } = {}) => {
         if (!containerRef.current || !overlayZoneRef.current) return null;
 
@@ -759,7 +760,10 @@ const TShirtDesign = () => {
                     )}
                 </div>
 
-                <div className="col-md-9 d-flex justify-content-center align-items-center" style={{ minHeight: "80vh" }}>
+                <div
+                    className="col-md-9 d-flex justify-content-center align-items-center"
+                    style={{ minHeight: "80vh" }}
+                >
                     {selectedImage ? (
                         <>
                             {/* 🎯 FRONT */}
@@ -771,14 +775,14 @@ const TShirtDesign = () => {
                                     width: "fit-content",
                                     display: selectedImage?.vitri === "front" ? "block" : "none",
                                 }}
+                                aria-hidden={selectedImage?.vitri !== "front"}
                             >
                                 {/* 🖼 Ảnh chính FRONT */}
                                 <img
-                                    src={`data:${images.find(
-                                        (img) => img.vitri === "front" && img.mau === selectedColor
-                                    )?.contentType};base64,${images.find(
-                                        (img) => img.vitri === "front" && img.mau === selectedColor
-                                    )?.data}`}
+                                    src={`data:${images.find((img) => img.vitri === "front" && img.mau === selectedColor)
+                                            ?.contentType
+                                        };base64,${images.find((img) => img.vitri === "front" && img.mau === selectedColor)?.data
+                                        }`}
                                     alt="front"
                                     style={{
                                         maxWidth: "100%",
@@ -788,13 +792,13 @@ const TShirtDesign = () => {
                                         userSelect: "none",
                                         position: "relative",
                                         zIndex: 2,
-                                        backgroundColor: "transparent", // thêm dòng này để đảm bảo
+                                        backgroundColor: "transparent",
                                     }}
                                 />
 
                                 {/* 🎨 OVERLAY FRONT */}
                                 <div
-                                    ref={overlayZoneRef}
+                                    ref={overlayFrontRef}
                                     className="position-absolute"
                                     style={{
                                         ...getDesignFrame(productType, "front"),
@@ -815,7 +819,6 @@ const TShirtDesign = () => {
                                                     width: isText ? ov.width || 150 : ov.width || 100,
                                                     height: isText ? ov.height || 50 : ov.height || 100,
                                                 }}
-                                                // ⚠️ KHÔNG set props "position" nữa
                                                 onDragStop={(e, d) => {
                                                     setOverlaysMap((prev) => {
                                                         const updated = [...(prev.front || [])];
@@ -833,7 +836,10 @@ const TShirtDesign = () => {
                                                             ...position,
                                                         };
                                                         if (isText) {
-                                                            updated[i].fontSize = Math.max(8, Math.round(ref.offsetHeight * 0.8));
+                                                            updated[i].fontSize = Math.max(
+                                                                8,
+                                                                Math.round(ref.offsetHeight * 0.8)
+                                                            );
                                                         }
                                                         return { ...prev, front: updated };
                                                     });
@@ -850,7 +856,6 @@ const TShirtDesign = () => {
                                                     setSelectedOverlayIndex(i);
                                                 }}
                                             >
-
                                                 <div style={{ width: "100%", height: "100%", position: "relative" }}>
                                                     {/* 📄 COPY & ❌ DELETE */}
                                                     {isSelected && (
@@ -859,9 +864,10 @@ const TShirtDesign = () => {
                                                             <button
                                                                 onMouseDown={(e) => {
                                                                     e.stopPropagation();
-                                                                    handleCopyOverlay(i); // ✅ gọi hàm copy
+                                                                    handleCopyOverlay(i);
                                                                 }}
                                                                 style={copyDeleteBtnStyle("left")}
+                                                                title="Sao chép"
                                                             >
                                                                 📄
                                                             </button>
@@ -870,162 +876,10 @@ const TShirtDesign = () => {
                                                             <button
                                                                 onMouseDown={(e) => {
                                                                     e.stopPropagation();
-                                                                    handleDeleteOverlay(i); // ✅ gọi hàm delete
+                                                                    handleDeleteOverlay(i);
                                                                 }}
                                                                 style={copyDeleteBtnStyle("right")}
-                                                            >
-                                                                ❌
-                                                            </button>
-                                                        </>
-                                                    )}
-
-                                                    {/* ✍️ TEXT hoặc IMAGE */}
-                                                    {isText ? (
-                                                        <div style={textContainerStyle}>
-                                                            <span style={getTextStyle(ov)}>{ov.content?.text || ""}</span>
-                                                        </div>
-                                                    ) : (
-                                                        <img
-                                                            src={ov.content}
-                                                            alt="overlay-img"
-                                                            draggable={false}
-                                                            style={{
-                                                                width: "100%",
-                                                                height: "100%",
-                                                                objectFit: "contain",
-                                                                pointerEvents: "auto",
-                                                            }}
-                                                        />
-                                                    )}
-                                                </div>
-                                            </Rnd>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-
-                            {/* 🎯 BACK */}
-
-                            <div
-                                ref={backContainerRef}
-                                className="position-relative"
-                                style={{
-                                    maxHeight: "90vh",
-                                    width: "fit-content",
-                                    display: selectedImage?.vitri === "back" ? "block" : "none",
-                                }}
-                            >
-                                {/* 🖼 Ảnh chính BACK */}
-                                <img
-                                    src={`data:${images.find((img) => img.vitri === "back" && img.mau === selectedColor)?.contentType
-                                        };base64,${images.find((img) => img.vitri === "back" && img.mau === selectedColor)?.data
-                                        }`}
-                                    alt="back"
-                                    style={{
-                                        maxWidth: "100%",
-                                        maxHeight: "90vh",
-                                        display: "block",
-                                        pointerEvents: "none",
-                                        userSelect: "none",
-                                        position: "relative",
-                                        zIndex: 2,
-                                    }}
-                                />
-
-                                {/* 🎨 OVERLAY BACK */}
-                                <div
-                                    ref={overlayZoneRef}
-                                    className="position-absolute"
-                                    style={{
-                                        ...getDesignFrame(productType, "back"),
-                                        zIndex: 3,
-                                        pointerEvents: "auto",
-                                    }}
-                                >
-                                    {(overlaysMap["back"] || []).map((ov, i) => {
-                                        const isText = ov.type === "text";
-                                        const isSelected = selectedOverlayIndex === i;
-
-                                        return (
-                                            <Rnd
-                                                key={`back-${i}`}
-                                                default={{
-                                                    x: ov.x || 0,
-                                                    y: ov.y || 0,
-                                                    width: isText ? ov.width || 150 : ov.width || 100,
-                                                    height: isText ? ov.height || 50 : ov.height || 100,
-                                                }}
-                                                // ⚠️ KHÔNG set props "position" nữa
-                                                onDragStop={(e, d) => {
-                                                    setOverlaysMap((prev) => {
-                                                        const updated = [...(prev.back || [])];
-                                                        updated[i] = { ...updated[i], x: d.x, y: d.y };
-                                                        return { ...prev, back: updated };
-                                                    });
-                                                }}
-                                                onResizeStop={(e, direction, ref, delta, position) => {
-                                                    setOverlaysMap((prev) => {
-                                                        const updated = [...(prev.back || [])];
-                                                        updated[i] = {
-                                                            ...updated[i],
-                                                            width: ref.offsetWidth,
-                                                            height: ref.offsetHeight,
-                                                            ...position,
-                                                        };
-                                                        if (isText) {
-                                                            updated[i].fontSize = Math.max(8, Math.round(ref.offsetHeight * 0.8));
-                                                        }
-                                                        return { ...prev, back: updated };
-                                                    });
-                                                }}
-                                                bounds="parent"
-                                                enableResizing
-                                                style={{
-                                                    zIndex: 4,
-                                                    border: isSelected ? "2px dashed #00bcd4" : "none",
-                                                    transition: "border 0.2s ease",
-                                                }}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setSelectedOverlayIndex(i);
-                                                }}
-                                            >
-
-                                                <div style={{ width: "100%", height: "100%", position: "relative" }}>
-                                                    {/* 📄 COPY & ❌ DELETE */}
-                                                    {isSelected && (
-                                                        <>
-                                                            {/* COPY */}
-                                                            <button
-                                                                onMouseDown={(e) => {
-                                                                    e.stopPropagation();
-                                                                    setOverlaysMap((prev) => {
-                                                                        const updated = [...(prev.back || [])];
-                                                                        const copy = {
-                                                                            ...updated[i],
-                                                                            x: (updated[i].x || 0) + 10,
-                                                                            y: (updated[i].y || 0) + 10,
-                                                                        };
-                                                                        return { ...prev, back: [...updated, copy] };
-                                                                    });
-                                                                }}
-                                                                style={copyDeleteBtnStyle("left")}
-                                                            >
-                                                                📄
-                                                            </button>
-
-                                                            {/* DELETE */}
-                                                            <button
-                                                                onMouseDown={(e) => {
-                                                                    e.stopPropagation();
-                                                                    setOverlaysMap((prev) => {
-                                                                        const updated = [...(prev.back || [])];
-                                                                        updated.splice(i, 1);
-                                                                        return { ...prev, back: updated };
-                                                                    });
-                                                                    setSelectedOverlayIndex(null);
-                                                                }}
-                                                                style={copyDeleteBtnStyle("right")}
+                                                                title="Xóa"
                                                             >
                                                                 ❌
                                                             </button>
@@ -1050,8 +904,171 @@ const TShirtDesign = () => {
                                                                 pointerEvents: "auto",
                                                             }}
                                                             onError={(e) => {
-                                                                console.warn("❌ Lỗi load overlay:", ov.content);
-                                                                e.target.src = "/fallback.png";
+                                                                console.warn("❌ Lỗi load overlay FRONT:", ov.content);
+                                                                e.currentTarget.src = "/fallback.png";
+                                                            }}
+                                                        />
+                                                    )}
+                                                </div>
+                                            </Rnd>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* 🎯 BACK */}
+                            <div
+                                ref={backContainerRef}
+                                className="position-relative"
+                                style={{
+                                    maxHeight: "90vh",
+                                    width: "fit-content",
+                                    display: selectedImage?.vitri === "back" ? "block" : "none",
+                                }}
+                                aria-hidden={selectedImage?.vitri !== "back"}
+                            >
+                                {/* 🖼 Ảnh chính BACK */}
+                                <img
+                                    src={`data:${images.find((img) => img.vitri === "back" && img.mau === selectedColor)
+                                            ?.contentType
+                                        };base64,${images.find((img) => img.vitri === "back" && img.mau === selectedColor)?.data
+                                        }`}
+                                    alt="back"
+                                    style={{
+                                        maxWidth: "100%",
+                                        maxHeight: "90vh",
+                                        display: "block",
+                                        pointerEvents: "none",
+                                        userSelect: "none",
+                                        position: "relative",
+                                        zIndex: 2,
+                                        backgroundColor: "transparent",
+                                    }}
+                                />
+
+                                {/* 🎨 OVERLAY BACK */}
+                                <div
+                                    ref={overlayBackRef}
+                                    className="position-absolute"
+                                    style={{
+                                        ...getDesignFrame(productType, "back"),
+                                        zIndex: 3,
+                                        pointerEvents: "auto",
+                                    }}
+                                >
+                                    {(overlaysMap["back"] || []).map((ov, i) => {
+                                        const isText = ov.type === "text";
+                                        const isSelected = selectedOverlayIndex === i;
+
+                                        return (
+                                            <Rnd
+                                                key={`back-${i}`}
+                                                default={{
+                                                    x: ov.x || 0,
+                                                    y: ov.y || 0,
+                                                    width: isText ? ov.width || 150 : ov.width || 100,
+                                                    height: isText ? ov.height || 50 : ov.height || 100,
+                                                }}
+                                                onDragStop={(e, d) => {
+                                                    setOverlaysMap((prev) => {
+                                                        const updated = [...(prev.back || [])];
+                                                        updated[i] = { ...updated[i], x: d.x, y: d.y };
+                                                        return { ...prev, back: updated };
+                                                    });
+                                                }}
+                                                onResizeStop={(e, direction, ref, delta, position) => {
+                                                    setOverlaysMap((prev) => {
+                                                        const updated = [...(prev.back || [])];
+                                                        updated[i] = {
+                                                            ...updated[i],
+                                                            width: ref.offsetWidth,
+                                                            height: ref.offsetHeight,
+                                                            ...position,
+                                                        };
+                                                        if (isText) {
+                                                            updated[i].fontSize = Math.max(
+                                                                8,
+                                                                Math.round(ref.offsetHeight * 0.8)
+                                                            );
+                                                        }
+                                                        return { ...prev, back: updated };
+                                                    });
+                                                }}
+                                                bounds="parent"
+                                                enableResizing
+                                                style={{
+                                                    zIndex: 4,
+                                                    border: isSelected ? "2px dashed #00bcd4" : "none",
+                                                    transition: "border 0.2s ease",
+                                                }}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setSelectedOverlayIndex(i);
+                                                }}
+                                            >
+                                                <div style={{ width: "100%", height: "100%", position: "relative" }}>
+                                                    {/* 📄 COPY & ❌ DELETE */}
+                                                    {isSelected && (
+                                                        <>
+                                                            {/* COPY */}
+                                                            <button
+                                                                onMouseDown={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setOverlaysMap((prev) => {
+                                                                        const updated = [...(prev.back || [])];
+                                                                        const copy = {
+                                                                            ...updated[i],
+                                                                            x: (updated[i].x || 0) + 10,
+                                                                            y: (updated[i].y || 0) + 10,
+                                                                        };
+                                                                        return { ...prev, back: [...updated, copy] };
+                                                                    });
+                                                                }}
+                                                                style={copyDeleteBtnStyle("left")}
+                                                                title="Sao chép"
+                                                            >
+                                                                📄
+                                                            </button>
+
+                                                            {/* DELETE */}
+                                                            <button
+                                                                onMouseDown={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setOverlaysMap((prev) => {
+                                                                        const updated = [...(prev.back || [])];
+                                                                        updated.splice(i, 1);
+                                                                        return { ...prev, back: updated };
+                                                                    });
+                                                                    setSelectedOverlayIndex(null);
+                                                                }}
+                                                                style={copyDeleteBtnStyle("right")}
+                                                                title="Xóa"
+                                                            >
+                                                                ❌
+                                                            </button>
+                                                        </>
+                                                    )}
+
+                                                    {/* ✍️ TEXT hoặc IMAGE */}
+                                                    {isText ? (
+                                                        <div style={textContainerStyle}>
+                                                            <span style={getTextStyle(ov)}>{ov.content?.text || ""}</span>
+                                                        </div>
+                                                    ) : (
+                                                        <img
+                                                            crossOrigin="anonymous"
+                                                            src={ov.content}
+                                                            alt="overlay-img"
+                                                            draggable={false}
+                                                            style={{
+                                                                width: "100%",
+                                                                height: "100%",
+                                                                objectFit: "contain",
+                                                                pointerEvents: "auto",
+                                                            }}
+                                                            onError={(e) => {
+                                                                console.warn("❌ Lỗi load overlay BACK:", ov.content);
+                                                                e.currentTarget.src = "/fallback.png";
                                                             }}
                                                         />
                                                     )}

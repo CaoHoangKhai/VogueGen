@@ -1,4 +1,5 @@
-import { useParams } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
+import React from "react";
 import { useEffect, useState, useRef } from "react";
 import { getDesignDetail, getImagesByColor, saveDesign } from "../../api/Design/design.api";
 import { addToCart } from "../../api/Cart/cart.api";
@@ -6,22 +7,14 @@ import LeftSidebarDesign from "../../Components/Sidebar/LeftSidebarDesign";
 import { Rnd } from "react-rnd";
 import { BASE_URL_UPLOAD_DESIGN } from "../../api/TryOn/tryon.api";
 import html2canvas from "html2canvas";
-
-const toolBtnStyle = {
-    fontSize: 10,
-    padding: "2px 4px",
-    borderRadius: 3,
-    backgroundColor: "#f0f0f0",
-    border: "1px solid #ccc",
-    cursor: "pointer"
-};
-
+import { getProductSizesFromDesignId } from "../../api/Design/design.api";
+import { getDesignFrame } from "../../config/design";
+import { addTryOnImage } from "../../api/TryOn/tryon.api";
 const PoloShirtDesign = () => {
-    const { id } = useParams();
+    // const { productType, id } = useParams();
     const [design, setDesign] = useState(null);
     const [images, setImages] = useState([]);
     const [selectedImage, setSelectedImage] = useState(null);
-    const [overlaysMap, setOverlaysMap] = useState({});
     const [selectedColor, setSelectedColor] = useState(null);
     const [selectedOverlayIndex, setSelectedOverlayIndex] = useState(null);
     const containerRef = useRef();
@@ -35,33 +28,110 @@ const PoloShirtDesign = () => {
     const [frontPreviewUrl, setFrontPreviewUrl] = useState(null);
     const [loadingGenerate, setLoadingGenerate] = useState(false);
     const [tryOnPreviewUrls, setTryOnPreviewUrls] = useState([]);
+    const [availableSizes, setAvailableSizes] = useState([]);
+    const [selectedSize, setSelectedSize] = useState("");
+    const [selectedGender, setSelectedGender] = useState("");
+    const location = useLocation();
+    const { id } = useParams();
+    const productType = location.pathname.split("/")[2];
+
+    const frontContainerRef = useRef(null);
+    const backContainerRef = useRef(null);
+
+    const overlayFrontRef = useRef(null);
+    const overlayBackRef = useRef(null);
+
+    const [overlaysMap, setOverlaysMap] = useState({
+        front: [],
+        back: [],
+    });
+    useEffect(() => {
+        // Khi load images hoặc đổi màu → mặc định chọn front
+        const firstFront = images.find(
+            (img) => img.vitri.trim().toLowerCase() === "front" && img.mau === selectedColor
+        );
+        if (firstFront) setSelectedImage(firstFront);
+    }, [images, selectedColor]);
+
+    useEffect(() => {
+        if (!id) return;
+
+        const fetchSizes = async () => {
+            try {
+                const res = await getProductSizesFromDesignId(id);
+                if (res.success && res.data) {
+                    console.log("✅ Size lấy được từ API:", res.data.sizes);
+                    setAvailableSizes(res.data.sizes);   // ⬅ Lưu size vào state
+                } else {
+                    console.warn("⚠️ Không tìm thấy size cho thiết kế:", id);
+                    setAvailableSizes([]);
+                }
+            } catch (err) {
+                console.error("❌ Lỗi khi gọi API size:", err);
+                setAvailableSizes([]);
+            }
+        };
+
+        fetchSizes();
+    }, [id]);
+    useEffect(() => {
+        if (!selectedGender && design?.gioitinh) {
+            setSelectedGender(design.gioitinh);
+        }
+    }, [design?.gioitinh, selectedGender]);
 
     const handleGenerateTryOnImages = async () => {
         if (!frontPreviewUrl) return;
+        if (!selectedSize || !selectedGender) {
+            alert("Vui lòng chọn đầy đủ Size và Giới tính trước khi sinh ảnh.");
+            return;
+        }
 
         setLoadingGenerate(true);
 
         try {
-            const res = await fetch("https://1ef57d7a7c99.ngrok-free.app/upload", {
+            const payload = {
+                image_base64: frontPreviewUrl,
+                gioitinh: selectedGender || design?.gioitinh || "unisex",
+                design_id: design?._id,
+                colorcloth: selectedColor,
+                size: selectedSize,
+            };
+
+            console.log("📤 Payload gửi lên API:", payload);
+
+            const res = await fetch(`${BASE_URL_UPLOAD_DESIGN}`, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    image_base64: frontPreviewUrl, // Gửi chuỗi base64
-                }),
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
             });
 
             const data = await res.json();
-            if (data.file_url) {
-                setTryOnPreviewUrls((prev) => [...prev, data.file_url]);
+            console.log("✅ [HANDLE GENERATE] Kết quả trả về:", data);
+
+            if (data.success && Array.isArray(data.results)) {
+                setTryOnPreviewUrls(data.results);
+
+                const manguoidung = design?.manguoidung; // ưu tiên lấy từ design
+
+                for (const base64Image of data.results) {
+                    try {
+                        const insertedId = await addTryOnImage(manguoidung, base64Image);
+                        console.log(`Đã lưu ảnh try-on với id: ${insertedId}`);
+                    } catch (err) {
+                        console.error("Lỗi lưu ảnh try-on lên server:", err);
+                    }
+                }
+            } else {
+                alert("❌ Không có ảnh try-on trả về");
             }
         } catch (err) {
-            console.error("❌ Lỗi gửi base64:", err);
+            console.error("❌ [HANDLE GENERATE] Lỗi gửi base64:", err);
         } finally {
             setLoadingGenerate(false);
         }
     };
+
 
     useEffect(() => {
         if (!id) return;
@@ -152,11 +222,10 @@ const PoloShirtDesign = () => {
         }
     };
 
-    const handleAddToCart = async ({ id, size, quantity }) => {
+    const handleAddToCart = async ({ size, quantity }) => {
         try {
             const user = JSON.parse(localStorage.getItem("user"));
             const userId = user?._id;
-            console.log("[handleAddToCart] userId:", userId);
 
             if (!userId) {
                 console.warn("⚠️ Vui lòng đăng nhập để thêm vào giỏ hàng!");
@@ -169,113 +238,94 @@ const PoloShirtDesign = () => {
             }
 
             if (!size || !selectedColor) {
-                console.warn("[handleAddToCart] Chưa chọn size hoặc màu:", {
-                    selectedSize: size,
-                    selectedColor,
-                });
+                console.warn("[handleAddToCart] Chưa chọn size hoặc màu:", { selectedSize: size, selectedColor });
                 return;
             }
 
+            if (!(quantity > 50)) {
+                console.warn("[handleAddToCart] Chọn số lượng tối thiểu 50:", { soluong: quantity || 50 });
+                return;
+            }
+
+            // 🟢 1️⃣ Bắt buộc UI hiển thị mặt FRONT trước khi chụp
+            await new Promise((resolve) => {
+                setSelectedImage(() => {
+                    // 🔍 Lấy đúng ảnh front từ images theo màu đang chọn
+                    const frontImg = images.find(
+                        (img) => img.vitri === "front" && img.mau === selectedColor
+                    );
+                    return frontImg || null;
+                });
+
+                // ⏳ Đợi React render (2 frame để browser update UI hoàn tất)
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(resolve);
+                });
+            });
+
+            // ✅ 2️⃣ Chụp FRONT
+            const frontCanvas = await html2canvas(frontContainerRef.current, {
+                useCORS: true,
+                backgroundColor: null,
+            });
+            const frontImageBase64 = frontCanvas.toDataURL("image/png");
+
+            // ✅ 3️⃣ Chụp BACK (mặt sau vẫn chụp được dù đang bị ẩn)
+            const backCanvas = await html2canvas(backContainerRef.current, {
+                useCORS: true,
+                backgroundColor: null,
+            });
+            const backImageBase64 = backCanvas.toDataURL("image/png");
+
+            // 📦 4️⃣ Tạo dữ liệu gửi API
             const cartItem = {
                 manguoidung: userId,
                 masanpham: design.masanpham,
-                soluong: quantity || 1,
-                size: size,
+                soluong: quantity || 50,
+                size,
                 mausac: selectedColor,
                 isThietKe: true,
                 mathietke: design._id,
+                designImages: {
+                    front: frontImageBase64,
+                    back: backImageBase64,
+                },
             };
 
-            console.log("[handleAddToCart] Dữ liệu gửi đi:", cartItem);
+            console.log("[handleAddToCart] 🛍 Dữ liệu gửi đi:", cartItem);
 
+            // 🚀 5️⃣ Gọi API thêm vào giỏ hàng
             const res = await addToCart(cartItem);
-            console.log("[handleAddToCart] Phản hồi từ server:", res);
+            console.log("[handleAddToCart] ✅ Phản hồi từ server:", res);
 
-            // Kiểm tra theo đúng format server trả về
             if (res?.success) {
                 console.log("🛒 Đã thêm thiết kế vào giỏ hàng!");
             } else {
                 console.error(`❌ Không thể thêm vào giỏ hàng: ${res?.message || "Lỗi không xác định"}`);
             }
         } catch (err) {
-            console.error("[handleAddToCart] Lỗi khi gọi API:", err.message || err);
+            console.error("[handleAddToCart] ❌ Lỗi khi gọi API:", err.message || err);
         }
     };
 
+
     const addOverlay = (overlay) => {
-        const vitri = selectedImage?.vitri;
-        if (!vitri) return;
+        if (!selectedImage?.vitri) return;
+
         setOverlaysMap((prev) => ({
             ...prev,
-            [vitri]: [...(prev[vitri] || []), overlay],
+            [selectedImage.vitri]: [...(prev[selectedImage.vitri] || []), overlay],
         }));
-    };
-
-    const handleDragStop = (i, d) => {
-        const vitri = selectedImage?.vitri;
-        setSelectedOverlayIndex(i);
-        setOverlaysMap((prev) => {
-            const updated = [...(prev[vitri] || [])];
-            updated[i] = { ...updated[i], x: d.x, y: d.y };
-            return { ...prev, [vitri]: updated };
-        });
-    };
-
-    const handleResizeStop = (i, ref, position) => {
-        const vitri = selectedImage?.vitri;
-        setSelectedOverlayIndex(i);
-
-        setOverlaysMap((prev) => {
-            const updated = [...(prev[vitri] || [])];
-            const current = updated[i];
-
-            updated[i] = {
-                ...current,
-                x: position.x,
-                y: position.y,
-                width: ref.offsetWidth,
-                height: ref.offsetHeight,
-            };
-
-            return { ...prev, [vitri]: updated };
-        });
-    };
-
-    const handleDeleteOverlay = (index) => {
-        const vitri = selectedImage?.vitri;
-        setOverlaysMap((prev) => {
-            const updated = [...(prev[vitri] || [])];
-            updated.splice(index, 1);
-            return { ...prev, [vitri]: updated };
-        });
-        setSelectedOverlayIndex(null);
-    };
-
-    const handleCopyOverlay = (index) => {
-        const vitri = selectedImage?.vitri;
-        setOverlaysMap((prev) => {
-            const updated = [...(prev[vitri] || [])];
-            const original = updated[index];
-            const copy = {
-                ...original,
-                x: (original.x || 0) + 20,
-                y: (original.y || 0) + 20,
-            };
-            updated.push(copy);
-            return { ...prev, [vitri]: updated };
-        });
     };
 
     useEffect(() => {
         const handleClickOutside = (e) => {
             const isInContainer = containerRef.current?.contains(e.target);
             const isInOverlayZone = overlayZoneRef.current?.contains(e.target);
-
             // ✅ Nếu click trong ảnh (container) nhưng không phải vùng thiết kế → tắt chọn
             if (isInContainer && !isInOverlayZone) {
                 setSelectedOverlayIndex(null);
             }
-
             // ✅ Nếu click ngoài cả vùng ảnh → cũng tắt
             if (!isInContainer) {
                 setSelectedOverlayIndex(null);
@@ -287,37 +337,6 @@ const PoloShirtDesign = () => {
         };
     }, []);
 
-    const handleImageUpload = (imgBase64) => {
-        const img = new Image();
-        img.onload = () => {
-            const overlayZone = overlayZoneRef.current;
-            if (!overlayZone) return;
-
-            const overlayWidth = overlayZone.offsetWidth;
-            const overlayHeight = overlayZone.offsetHeight;
-
-            const aspectRatio = img.width / img.height;
-
-            let width = overlayWidth * 0.8; // scale ảnh vừa 80% vùng thiết kế
-            let height = width / aspectRatio;
-
-            // Nếu cao vượt quá vùng thiết kế thì scale lại
-            if (height > overlayHeight * 0.8) {
-                height = overlayHeight * 0.8;
-                width = height * aspectRatio;
-            }
-
-            addOverlay({
-                type: "image",
-                content: imgBase64,
-                x: (overlayWidth - width) / 2,
-                y: (overlayHeight - height) / 2,
-                width,
-                height
-            });
-        };
-        img.src = imgBase64;
-    };
     const loadDesignImages = async () => {
         if (!design || !design.masanpham || !selectedColor) return;
         try {
@@ -332,47 +351,49 @@ const PoloShirtDesign = () => {
     };
 
 
-    const handleExportImage = async (callback) => {
-        if (!containerRef.current || !overlayZoneRef.current) return;
 
-        const overlayEl = overlayZoneRef.current;
-        const prevBorder = overlayEl.style.border;
-
+    const handleExportImage = async (format, callback) => {
         try {
+            // chọn đúng container theo mặt được chọn
+            const isFront = selectedImage?.vitri === "front";
+            const container = isFront ? frontContainerRef.current : backContainerRef.current;
+            const overlayEl = isFront ? overlayFrontRef.current : overlayBackRef.current;
+
+            if (!container || !overlayEl) return;
+
+            const prevBorder = overlayEl.style.border;
             overlayEl.style.border = "none";
 
-            const canvas = await html2canvas(containerRef.current, {
+            // nếu JPEG/WebP thì set background trắng
+            const bgColor = (format === "jpeg" || format === "webp") ? "#ffffff" : null;
+
+            const canvas = await html2canvas(container, {
                 useCORS: true,
-                backgroundColor: null,
+                backgroundColor: bgColor,
             });
 
             let mimeType = "image/png";
-            if (exportFormat === "jpeg") mimeType = "image/jpeg";
-            else if (exportFormat === "webp") mimeType = "image/webp";
+            if (format === "jpeg") mimeType = "image/jpeg";
+            else if (format === "webp") mimeType = "image/webp";
 
-            const dataURL = canvas.toDataURL(mimeType);
+            const dataURL = canvas.toDataURL(mimeType, 1.0);
 
-            // Tải về
+            // tải file
             const link = document.createElement("a");
             link.href = dataURL;
-            link.download = `design-${design?._id || "export"}.${exportFormat}`;
+            link.download = `design-${design?._id || "export"}.${format}`;
             link.click();
 
-            // Callback trả ảnh về cho LeftSidebarDesign
             if (typeof callback === "function") {
                 callback(dataURL);
             }
 
-            // Lưu state để truyền cho prop previewImage
             setExportedBase64(dataURL);
-
-        } catch (error) {
-            console.error("❌ Lỗi khi xuất ảnh:", error);
-        } finally {
             overlayEl.style.border = prevBorder;
+        } catch (err) {
+            console.error("❌ Lỗi khi export:", err);
         }
     };
-
     const exportDesignAsBase64 = async ({ format = "png" } = {}) => {
         if (!containerRef.current || !overlayZoneRef.current) return null;
 
@@ -401,22 +422,118 @@ const PoloShirtDesign = () => {
     };
 
     const handleRequestPreview = async () => {
-        if (!containerRef.current || !overlayZoneRef.current) return;
+        if (!frontContainerRef.current) return;
 
-        const overlayEl = overlayZoneRef.current;
-        const prevBorder = overlayEl.style.border;
-        overlayEl.style.border = "none";
+        // 1️⃣ Clone DOM
+        const clone = frontContainerRef.current.cloneNode(true);
 
-        const canvas = await html2canvas(containerRef.current, {
-            useCORS: true,
-            backgroundColor: null,
-        });
+        // 2️⃣ Xóa border dashed & nút
+        clone.querySelectorAll("button").forEach((btn) => btn.remove());
+        clone.querySelectorAll(".position-absolute").forEach((el) => (el.style.border = "none"));
 
-        overlayEl.style.border = prevBorder;
+        // 3️⃣ Ẩn clone (đặt ngoài màn hình)
+        clone.style.position = "absolute";
+        clone.style.top = "-9999px";
+        document.body.appendChild(clone);
 
-        const imageUrl = canvas.toDataURL("image/png");
-        setFrontPreviewUrl(imageUrl); // 👉 Gán ảnh preview tại đây
+        // 4️⃣ Chụp clone
+        const canvas = await html2canvas(clone, { useCORS: true, backgroundColor: null, scale: 2 });
+
+        // 5️⃣ Xóa clone
+        document.body.removeChild(clone);
+
+        setFrontPreviewUrl(canvas.toDataURL("image/png"));
     };
+
+    // 📄 Copy overlay
+    const handleCopyOverlay = (index) => {
+        const side = "front"; // 👉 vì block này đang render mặt front
+        setOverlaysMap(prev => {
+            const currentOverlays = [...(prev[side] || [])];
+            const copy = {
+                ...currentOverlays[index],
+                x: (currentOverlays[index].x || 0) + 10,
+                y: (currentOverlays[index].y || 0) + 10,
+            };
+            return { ...prev, [side]: [...currentOverlays, copy] };
+        });
+    };
+
+    // ❌ Delete overlay
+    const handleDeleteOverlay = (index) => {
+        const side = "front";
+        setOverlaysMap(prev => {
+            const currentOverlays = [...(prev[side] || [])];
+            const newOverlays = currentOverlays.filter((_, i) => i !== index);
+            return { ...prev, [side]: newOverlays };
+        });
+        setSelectedOverlayIndex(null);
+    };
+
+    // 🖼 Upload image overlay (Base64)
+    const handleImageUpload = (imgBase64) => {
+        const img = new Image();
+        img.onload = () => {
+            const overlayZone = overlayZoneRef.current;
+            if (!overlayZone) return;
+
+            const overlayWidth = overlayZone.offsetWidth;
+            const overlayHeight = overlayZone.offsetHeight;
+
+            const aspectRatio = img.width / img.height;
+
+            let width = overlayWidth * 0.8;
+            let height = width / aspectRatio;
+
+            if (height > overlayHeight * 0.8) {
+                height = overlayHeight * 0.8;
+                width = height * aspectRatio;
+            }
+
+            addOverlay({
+                type: "image",
+                content: imgBase64, // ✅ Base64 đảm bảo load được
+                x: (overlayWidth - width) / 2,
+                y: (overlayHeight - height) / 2,
+                width,
+                height,
+            });
+        };
+        img.src = imgBase64;
+    };
+    // 📦 Style cho button copy/delete
+    const copyDeleteBtnStyle = (side) => ({
+        position: "absolute",
+        top: -12,
+        [side]: -12,
+        zIndex: 9999, // 🔥 cao hơn overlay
+        background: "#fff",
+        border: "1px solid #ccc",
+        borderRadius: "50%",
+        width: 26,
+        height: 26,
+        cursor: "pointer",
+        pointerEvents: "auto",
+    });
+
+    // 📦 Style text overlay
+    const textContainerStyle = {
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        overflow: "hidden",
+    };
+
+    const getTextStyle = (ov) => ({
+        fontSize: `${ov.fontSize || 20}px`,
+        fontFamily: ov.content?.fontFamily || "Arial",
+        fontWeight: ov.content?.fontWeight || "normal",
+        fontStyle: ov.content?.fontStyle || "normal",
+        color: ov.content?.color || "#000",
+        whiteSpace: "nowrap",
+    });
 
     return (
         <div className="container-fluid">
@@ -446,11 +563,13 @@ const PoloShirtDesign = () => {
                         onExportImages={handleExportImage}
                         exportFormat={exportFormat}
                         onExportFormatChange={setExportFormat}
+                        // onExportFormatChange={(format) => handleExportImage(format)}
                         onSaveDesign={handleSaveDesign}
                         onAddToCart={handleAddToCart}
                         onExportDesign={exportDesignAsBase64}
+                        frontContainerRef={frontContainerRef}
+                        backContainerRef={backContainerRef}
                         onRequestPreview={handleRequestPreview}
-
                     />
                     {showPreviewModal && (
                         <div className="modal-backdrop">
@@ -460,6 +579,7 @@ const PoloShirtDesign = () => {
                             </div>
                         </div>
                     )}
+
                     {frontPreviewUrl && (
                         <>
                             {/* Modal backdrop */}
@@ -475,7 +595,7 @@ const PoloShirtDesign = () => {
                                 <div className="modal-dialog modal-dialog-centered modal-xl" role="document">
                                     <div className="modal-content">
                                         <div className="modal-header">
-                                            <h5 className="modal-title">Xem trước thiết kế (Mặt trước)</h5>
+                                            <h5 className="modal-title text-center">Xem trước thiết kế & Thử áo</h5>
                                             <button
                                                 type="button"
                                                 className="btn-close"
@@ -483,39 +603,137 @@ const PoloShirtDesign = () => {
                                             ></button>
                                         </div>
 
-                                        <div className="modal-body text-center">
-                                            {/* Ảnh mặt trước */}
-                                            <img
-                                                src={frontPreviewUrl}
-                                                alt="Front Preview"
-                                                style={{
-                                                    maxWidth: "50%",
-                                                    height: "auto",
-                                                    maxHeight: "50vh",
-                                                    objectFit: "contain",
-                                                }}
-                                            />
+                                        <div className="modal-body">
+                                            <div className="row">
+                                                {/* CỘT 3: Ảnh áo */}
+                                                <div className="col-3 text-center border-end">
+                                                    <h6 className="mb-3">👕 Ảnh thiết kế</h6>
+                                                    <img
+                                                        src={frontPreviewUrl}
+                                                        alt="Front Preview"
+                                                        style={{
+                                                            width: "100%",
+                                                            height: "auto",
+                                                            maxHeight: "50vh",
+                                                            objectFit: "contain",
+                                                            borderRadius: "8px",
+                                                            boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
+                                                        }}
+                                                    />
 
-                                            {/* Ảnh thử áo */}
-                                            {tryOnPreviewUrls.length > 0 && (
-                                                <div className="mt-4">
-                                                    <h6>Kết quả thử áo:</h6>
-                                                    <div className="d-flex flex-wrap justify-content-center gap-3 mt-2">
-                                                        {tryOnPreviewUrls.map((url, idx) => (
-                                                            <img
-                                                                key={idx}
-                                                                src={url}
-                                                                alt={`TryOn ${idx}`}
-                                                                style={{
-                                                                    maxWidth: "200px",
-                                                                    maxHeight: "250px",
-                                                                    objectFit: "contain",
-                                                                }}
-                                                            />
-                                                        ))}
+                                                    {/* SIZE SELECTOR */}
+                                                    <div className="mt-3">
+                                                        <h6>📏 Chọn Size</h6>
+
+                                                        {availableSizes.length > 0 ? (
+                                                            <div className="btn-group" role="group" aria-label="Chọn Size">
+                                                                {availableSizes.map((size) => (
+                                                                    <React.Fragment key={size}>
+                                                                        <input
+                                                                            type="radio"
+                                                                            className="btn-check"
+                                                                            id={`size-${size}`}
+                                                                            name="size-options"
+                                                                            value={size}
+                                                                            checked={selectedSize === size}
+                                                                            onChange={() => setSelectedSize(size)}
+                                                                        />
+                                                                        <label
+                                                                            className={`btn btn-outline-primary ${selectedSize === size ? "active" : ""}`}
+                                                                            htmlFor={`size-${size}`}
+                                                                            style={{ minWidth: 50 }}
+                                                                        >
+                                                                            {size}
+                                                                        </label>
+                                                                    </React.Fragment>
+                                                                ))}
+                                                            </div>
+                                                        ) : (
+                                                            <p className="text-muted mt-2">⚠️ Không có size khả dụng.</p>
+                                                        )}
+                                                    </div>
+
+                                                    {/* GENDER SELECTOR */}
+                                                    <div className="mt-3">
+                                                        <h6>👤 Chọn giới tính</h6>
+                                                        <div>
+                                                            {[
+                                                                { label: "Nam", value: "nam" },
+                                                                { label: "Nữ", value: "nu" },
+                                                                { label: "Bé trai", value: "be-trai" },
+                                                                { label: "Bé gái", value: "be-gai" },
+                                                            ].map(({ label, value }) => (
+                                                                <div className="form-check form-check-inline" key={value}>
+                                                                    <input
+                                                                        className="form-check-input"
+                                                                        type="radio"
+                                                                        name="genderOptions"
+                                                                        id={`gender-${value}`}
+                                                                        value={value}
+                                                                        checked={selectedGender === value}
+                                                                        onChange={() => setSelectedGender(value)}
+                                                                    />
+                                                                    <label className="form-check-label" htmlFor={`gender-${value}`}>
+                                                                        {label}
+                                                                    </label>
+                                                                </div>
+                                                            ))}
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            )}
+
+                                                {/* CỘT 9: Kết quả thử áo */}
+                                                <div className="col-9">
+                                                    <h6 className="text-center mb-3">✨ Kết quả thử áo</h6>
+
+                                                    <div className="d-flex flex-wrap justify-content-start gap-3">
+                                                        {loadingGenerate ? (
+                                                            <div className="w-100 text-center my-4">
+                                                                <div className="spinner-border text-primary" role="status">
+                                                                    <span className="visually-hidden">Loading...</span>
+                                                                </div>
+                                                                <p className="mt-2 text-primary fw-bold">⏳ Đang sinh ảnh try-on...</p>
+                                                            </div>
+                                                        ) : tryOnPreviewUrls.length > 0 ? (
+                                                            tryOnPreviewUrls.map((item, idx) => (
+                                                                <div
+                                                                    key={idx}
+                                                                    className="text-center position-relative"
+                                                                    style={{ maxWidth: "150px" }}
+                                                                >
+                                                                    <img
+                                                                        src={item.image_base64}
+                                                                        alt={`TryOn ${idx}`}
+                                                                        style={{
+                                                                            maxWidth: "150px",
+                                                                            maxHeight: "220px",
+                                                                            objectFit: "contain",
+                                                                            borderRadius: "6px",
+                                                                            boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+                                                                        }}
+                                                                    />
+                                                                    {/* Nút tải về */}
+                                                                    <a
+                                                                        href={item.image_base64}
+                                                                        download={`tryon_${idx}.png`}
+                                                                        className="btn btn-sm btn-outline-primary position-absolute"
+                                                                        style={{ top: 4, right: 4, padding: "0 6px", fontSize: 12, zIndex: 10 }}
+                                                                        title="Tải ảnh về"
+                                                                        onClick={e => e.stopPropagation()} // tránh click ảnh nếu có event click cha
+                                                                    >
+                                                                        ⬇
+                                                                    </a>
+                                                                    <p className="mt-2 text-muted" style={{ fontSize: "14px" }}>
+                                                                        👕 {item.model.replace(".jpg", "")}
+                                                                    </p>
+                                                                </div>
+                                                            ))
+                                                        ) : (
+                                                            <p className="text-muted">Chưa có kết quả thử áo.</p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
 
                                         <div className="modal-footer d-flex justify-content-between">
@@ -529,8 +747,8 @@ const PoloShirtDesign = () => {
 
                                             <button
                                                 className="btn btn-primary"
-                                                onClick={handleGenerateTryOnImages}
-                                                disabled={loadingGenerate}
+                                                onClick={() => handleGenerateTryOnImages(selectedSize, selectedGender)}
+                                                disabled={loadingGenerate || !selectedSize || !selectedGender}
                                             >
                                                 {loadingGenerate ? "Đang xử lý..." : "👕 SINH ẢNH THỬ ÁO"}
                                             </button>
@@ -542,197 +760,363 @@ const PoloShirtDesign = () => {
                     )}
                 </div>
 
-                <div className="col-md-9 d-flex justify-content-center align-items-center" style={{ minHeight: "80vh" }}>
+                <div
+                    className="col-md-9 d-flex justify-content-center align-items-center"
+                    style={{ minHeight: "80vh" }}
+                >
                     {selectedImage ? (
-                        <div
-                            ref={containerRef}
-                            className="position-relative"
-                            style={{ maxHeight: "90vh", width: "fit-content" }}
-                        >
-                            <img
-                                src={`data:${selectedImage.contentType};base64,${selectedImage.data}`}
-                                alt={selectedImage.vitri}
-                                style={{
-                                    maxWidth: "100%",
-                                    maxHeight: "90vh",
-                                    display: "block",
-                                    pointerEvents: "none",   // ✅ Vô hiệu hoá chuột
-                                    userSelect: "none",      // ✅ Không cho bôi đen ảnh
-                                }}
-                            />
-
+                        <>
+                            {/* 🎯 FRONT */}
                             <div
-                                ref={overlayZoneRef}
-                                className="position-absolute"
-                                onClick={() => setSelectedOverlayIndex(null)}
+                                ref={frontContainerRef}
+                                className="position-relative"
                                 style={{
-                                    top: "25%",
-                                    left: "32%",
-                                    width: "36%",
-                                    height: "50%",
-                                    border: "2px dashed #00bcd4",
-                                    zIndex: 10,
-                                    overflow: "hidden"
+                                    maxHeight: "90vh",
+                                    width: "fit-content",
+                                    display: selectedImage?.vitri === "front" ? "block" : "none",
                                 }}
+                                aria-hidden={selectedImage?.vitri !== "front"}
                             >
-                                {(overlaysMap[selectedImage?.vitri] || []).map((ov, i) => {
-                                    const isText = ov.type === "text";
-                                    const textContent = ov.content?.text || "";
-                                    const textColor = ov.content?.color || "#000";
-                                    const fontFamily = ov.content?.fontFamily || "Arial";
-                                    const fontWeight = ov.content?.fontWeight || "normal";
-                                    const fontStyle = ov.content?.fontStyle || "normal";
-                                    const fontSize = ov.fontSize || 20;
+                                {/* 🖼 Ảnh chính FRONT */}
+                                <img
+                                    src={`data:${images.find((img) => img.vitri === "front" && img.mau === selectedColor)
+                                            ?.contentType
+                                        };base64,${images.find((img) => img.vitri === "front" && img.mau === selectedColor)?.data
+                                        }`}
+                                    alt="front"
+                                    style={{
+                                        maxWidth: "100%",
+                                        maxHeight: "90vh",
+                                        display: "block",
+                                        pointerEvents: "none",
+                                        userSelect: "none",
+                                        position: "relative",
+                                        zIndex: 2,
+                                        backgroundColor: "transparent",
+                                    }}
+                                />
 
-                                    // 🔹 Tính width/height khít với text (chỉ lần đầu hoặc khi chưa có width/height trong state)
-                                    let textWidth = 150, textHeight = 50;
-                                    if (isText && typeof window !== "undefined") {
-                                        const canvas = document.createElement("canvas");
-                                        const ctx = canvas.getContext("2d");
-                                        ctx.font = `${fontWeight} ${fontStyle} ${fontSize}px ${fontFamily}`;
-                                        textWidth = ctx.measureText(textContent).width + 10;
-                                        textHeight = fontSize * 1.2 + 10;
-                                    }
+                                {/* 🎨 OVERLAY FRONT */}
+                                <div
+                                    ref={overlayFrontRef}
+                                    className="position-absolute"
+                                    style={{
+                                        ...getDesignFrame(productType, "front"),
+                                        zIndex: 3,
+                                        pointerEvents: "auto",
+                                    }}
+                                >
+                                    {(overlaysMap["front"] || []).map((ov, i) => {
+                                        const isText = ov.type === "text";
+                                        const isSelected = selectedOverlayIndex === i;
 
-                                    const isSelected = selectedOverlayIndex === i;
-                                    const scale = 1;
-
-                                    return (
-                                        <Rnd
-                                            key={i}
-                                            size={{
-                                                width: isText ? (ov.width || textWidth) : (ov.width || 100),
-                                                height: isText ? (ov.height || textHeight) : (ov.height || 100)
-                                            }}
-                                            position={{ x: ov.x || 0, y: ov.y || 0 }}
-                                            onDragStop={(e, d) => handleDragStop(i, d)}
-                                            onResizeStop={(e, direction, ref, delta, position) => {
-                                                handleResizeStop(i, ref, position);
-                                            }}
-                                            bounds="parent"
-                                            enableResizing={true}
-                                            style={{
-                                                zIndex: 20,
-                                                border: isSelected ? "2px dashed #00bcd4" : "none",
-                                                transition: "border 0.2s ease",
-                                                display: "flex",
-                                                alignItems: "center",
-                                                justifyContent: "center",
-                                            }}
-                                        >
-                                            <div
-                                                onClick={(e) => e.stopPropagation()}
+                                        return (
+                                            <Rnd
+                                                key={`front-${i}`}
+                                                default={{
+                                                    x: ov.x || 0,
+                                                    y: ov.y || 0,
+                                                    width: isText ? ov.width || 150 : ov.width || 100,
+                                                    height: isText ? ov.height || 50 : ov.height || 100,
+                                                }}
+                                                onDragStop={(e, d) => {
+                                                    setOverlaysMap((prev) => {
+                                                        const updated = [...(prev.front || [])];
+                                                        updated[i] = { ...updated[i], x: d.x, y: d.y };
+                                                        return { ...prev, front: updated };
+                                                    });
+                                                }}
+                                                onResizeStop={(e, direction, ref, delta, position) => {
+                                                    setOverlaysMap((prev) => {
+                                                        const updated = [...(prev.front || [])];
+                                                        updated[i] = {
+                                                            ...updated[i],
+                                                            width: ref.offsetWidth,
+                                                            height: ref.offsetHeight,
+                                                            ...position,
+                                                        };
+                                                        if (isText) {
+                                                            updated[i].fontSize = Math.max(
+                                                                8,
+                                                                Math.round(ref.offsetHeight * 0.8)
+                                                            );
+                                                        }
+                                                        return { ...prev, front: updated };
+                                                    });
+                                                }}
+                                                bounds="parent"
+                                                enableResizing
                                                 style={{
-                                                    width: "100%",
-                                                    height: "100%",
-                                                    position: "relative",
+                                                    zIndex: 4,
+                                                    border: isSelected ? "2px dashed #00bcd4" : "none",
+                                                    transition: "border 0.2s ease",
+                                                }}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setSelectedOverlayIndex(i);
                                                 }}
                                             >
-                                                {/* 🔹 Nút copy & delete */}
-                                                {isSelected && (
-                                                    <>
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                handleCopyOverlay(i);
-                                                            }}
-                                                            style={{
-                                                                ...toolBtnStyle,
-                                                                position: "absolute",
-                                                                top: -10,
-                                                                left: -10,
-                                                                zIndex: 30,
-                                                                transform: `scale(${scale})`,
-                                                                transformOrigin: "top left",
-                                                            }}
-                                                        >
-                                                            📄
-                                                        </button>
+                                                <div style={{ width: "100%", height: "100%", position: "relative" }}>
+                                                    {/* 📄 COPY & ❌ DELETE */}
+                                                    {isSelected && (
+                                                        <>
+                                                            {/* COPY */}
+                                                            <button
+                                                                onMouseDown={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleCopyOverlay(i);
+                                                                }}
+                                                                style={copyDeleteBtnStyle("left")}
+                                                                title="Sao chép"
+                                                            >
+                                                                📄
+                                                            </button>
 
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                handleDeleteOverlay(i);
-                                                            }}
-                                                            style={{
-                                                                ...toolBtnStyle,
-                                                                position: "absolute",
-                                                                top: -10,
-                                                                right: -10,
-                                                                zIndex: 30,
-                                                                transform: `scale(${scale})`,
-                                                                transformOrigin: "top right",
-                                                            }}
-                                                        >
-                                                            ❌
-                                                        </button>
-                                                    </>
-                                                )}
+                                                            {/* DELETE */}
+                                                            <button
+                                                                onMouseDown={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleDeleteOverlay(i);
+                                                                }}
+                                                                style={copyDeleteBtnStyle("right")}
+                                                                title="Xóa"
+                                                            >
+                                                                ❌
+                                                            </button>
+                                                        </>
+                                                    )}
 
-                                                {/* 🔹 Render text hoặc image */}
-                                                {isText ? (
-                                                    <div
-                                                        style={{
-                                                            width: "100%",
-                                                            height: "100%",
-                                                            display: "flex",
-                                                            alignItems: "center",
-                                                            justifyContent: "center",
-                                                            userSelect: "none",
-                                                            pointerEvents: "none",
-                                                            overflow: "visible",
-                                                        }}
-                                                    >
-                                                        <span
+                                                    {/* ✍️ TEXT hoặc IMAGE */}
+                                                    {isText ? (
+                                                        <div style={textContainerStyle}>
+                                                            <span style={getTextStyle(ov)}>{ov.content?.text || ""}</span>
+                                                        </div>
+                                                    ) : (
+                                                        <img
+                                                            crossOrigin="anonymous"
+                                                            src={ov.content}
+                                                            alt="overlay-img"
+                                                            draggable={false}
                                                             style={{
-                                                                display: "inline-block",
-                                                                fontSize: `${ov.fontSize || 24}px`,
-                                                                fontFamily,
-                                                                fontWeight,
-                                                                fontStyle,
-                                                                color: textColor,
-                                                                whiteSpace: "nowrap",
-                                                                transform: `scale(${(ov.width || 150) / (textContent.length * (ov.fontSize || 24) * 0.6)}, ${(ov.height || 50) / ((ov.fontSize || 24) * 1.2)})`,
-                                                                transformOrigin: "center center", // ✅ scale từ giữa
+                                                                width: "100%",
+                                                                height: "100%",
+                                                                objectFit: "contain",
+                                                                pointerEvents: "auto",
                                                             }}
-                                                        >
-                                                            {textContent}
-                                                        </span>
-                                                    </div>
-                                                ) : (
-                                                    <img
-                                                        src={ov.content}
-                                                        alt={`overlay-${i}`}
-                                                        style={{
-                                                            maxWidth: "100%",
-                                                            maxHeight: "100%",
-                                                            objectFit: "contain",
-                                                            userSelect: "none",
-                                                            pointerEvents: "none",
-                                                            display: "block",
-                                                            margin: "auto",
-                                                        }}
-                                                    />
-                                                )}
-                                            </div>
-                                        </Rnd>
-                                    );
-                                })}
+                                                            onError={(e) => {
+                                                                console.warn("❌ Lỗi load overlay FRONT:", ov.content);
+                                                                e.currentTarget.src = "/fallback.png";
+                                                            }}
+                                                        />
+                                                    )}
+                                                </div>
+                                            </Rnd>
+                                        );
+                                    })}
+                                </div>
                             </div>
-                        </div>
+
+                            {/* 🎯 BACK */}
+                            <div
+                                ref={backContainerRef}
+                                className="position-relative"
+                                style={{
+                                    maxHeight: "90vh",
+                                    width: "fit-content",
+                                    display: selectedImage?.vitri === "back" ? "block" : "none",
+                                }}
+                                aria-hidden={selectedImage?.vitri !== "back"}
+                            >
+                                {/* 🖼 Ảnh chính BACK */}
+                                <img
+                                    src={`data:${images.find((img) => img.vitri === "back" && img.mau === selectedColor)
+                                            ?.contentType
+                                        };base64,${images.find((img) => img.vitri === "back" && img.mau === selectedColor)?.data
+                                        }`}
+                                    alt="back"
+                                    style={{
+                                        maxWidth: "100%",
+                                        maxHeight: "90vh",
+                                        display: "block",
+                                        pointerEvents: "none",
+                                        userSelect: "none",
+                                        position: "relative",
+                                        zIndex: 2,
+                                        backgroundColor: "transparent",
+                                    }}
+                                />
+
+                                {/* 🎨 OVERLAY BACK */}
+                                <div
+                                    ref={overlayBackRef}
+                                    className="position-absolute"
+                                    style={{
+                                        ...getDesignFrame(productType, "back"),
+                                        zIndex: 3,
+                                        pointerEvents: "auto",
+                                    }}
+                                >
+                                    {(overlaysMap["back"] || []).map((ov, i) => {
+                                        const isText = ov.type === "text";
+                                        const isSelected = selectedOverlayIndex === i;
+
+                                        return (
+                                            <Rnd
+                                                key={`back-${i}`}
+                                                default={{
+                                                    x: ov.x || 0,
+                                                    y: ov.y || 0,
+                                                    width: isText ? ov.width || 150 : ov.width || 100,
+                                                    height: isText ? ov.height || 50 : ov.height || 100,
+                                                }}
+                                                onDragStop={(e, d) => {
+                                                    setOverlaysMap((prev) => {
+                                                        const updated = [...(prev.back || [])];
+                                                        updated[i] = { ...updated[i], x: d.x, y: d.y };
+                                                        return { ...prev, back: updated };
+                                                    });
+                                                }}
+                                                onResizeStop={(e, direction, ref, delta, position) => {
+                                                    setOverlaysMap((prev) => {
+                                                        const updated = [...(prev.back || [])];
+                                                        updated[i] = {
+                                                            ...updated[i],
+                                                            width: ref.offsetWidth,
+                                                            height: ref.offsetHeight,
+                                                            ...position,
+                                                        };
+                                                        if (isText) {
+                                                            updated[i].fontSize = Math.max(
+                                                                8,
+                                                                Math.round(ref.offsetHeight * 0.8)
+                                                            );
+                                                        }
+                                                        return { ...prev, back: updated };
+                                                    });
+                                                }}
+                                                bounds="parent"
+                                                enableResizing
+                                                style={{
+                                                    zIndex: 4,
+                                                    border: isSelected ? "2px dashed #00bcd4" : "none",
+                                                    transition: "border 0.2s ease",
+                                                }}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setSelectedOverlayIndex(i);
+                                                }}
+                                            >
+                                                <div style={{ width: "100%", height: "100%", position: "relative" }}>
+                                                    {/* 📄 COPY & ❌ DELETE */}
+                                                    {isSelected && (
+                                                        <>
+                                                            {/* COPY */}
+                                                            <button
+                                                                onMouseDown={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setOverlaysMap((prev) => {
+                                                                        const updated = [...(prev.back || [])];
+                                                                        const copy = {
+                                                                            ...updated[i],
+                                                                            x: (updated[i].x || 0) + 10,
+                                                                            y: (updated[i].y || 0) + 10,
+                                                                        };
+                                                                        return { ...prev, back: [...updated, copy] };
+                                                                    });
+                                                                }}
+                                                                style={copyDeleteBtnStyle("left")}
+                                                                title="Sao chép"
+                                                            >
+                                                                📄
+                                                            </button>
+
+                                                            {/* DELETE */}
+                                                            <button
+                                                                onMouseDown={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setOverlaysMap((prev) => {
+                                                                        const updated = [...(prev.back || [])];
+                                                                        updated.splice(i, 1);
+                                                                        return { ...prev, back: updated };
+                                                                    });
+                                                                    setSelectedOverlayIndex(null);
+                                                                }}
+                                                                style={copyDeleteBtnStyle("right")}
+                                                                title="Xóa"
+                                                            >
+                                                                ❌
+                                                            </button>
+                                                        </>
+                                                    )}
+
+                                                    {/* ✍️ TEXT hoặc IMAGE */}
+                                                    {isText ? (
+                                                        <div style={textContainerStyle}>
+                                                            <span style={getTextStyle(ov)}>{ov.content?.text || ""}</span>
+                                                        </div>
+                                                    ) : (
+                                                        <img
+                                                            crossOrigin="anonymous"
+                                                            src={ov.content}
+                                                            alt="overlay-img"
+                                                            draggable={false}
+                                                            style={{
+                                                                width: "100%",
+                                                                height: "100%",
+                                                                objectFit: "contain",
+                                                                pointerEvents: "auto",
+                                                            }}
+                                                            onError={(e) => {
+                                                                console.warn("❌ Lỗi load overlay BACK:", ov.content);
+                                                                e.currentTarget.src = "/fallback.png";
+                                                            }}
+                                                        />
+                                                    )}
+                                                </div>
+                                            </Rnd>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </>
                     ) : (
                         <div>⚠️ Không có ảnh phù hợp với màu được chọn</div>
                     )}
                 </div>
 
+                {/* 👉 THANH BÊN CHỌN FRONT / BACK */}
                 <div className="col-md-1 border-start d-flex flex-column align-items-center">
                     <h6 className="mt-3 mb-2">Mẫu</h6>
-                    {images.map((img) => (
-                        <div key={img._id || img.vitri + img.mau} onClick={() => setSelectedImage(img)} style={{ cursor: "pointer", marginBottom: 8, border: selectedImage?.vitri === img.vitri ? "2px solid #00bcd4" : "1px solid #ccc", padding: 2, borderRadius: 4 }}>
-                            <img src={`data:${img.contentType};base64,${img.data}`} alt={img.vitri} style={{ width: 60, height: 80, objectFit: "cover" }} />
-                            <div className="small text-muted text-center">{img.vitri}</div>
-                        </div>
-                    ))}
+
+                    {["front", "back"].map((side) => {
+                        const img = images.find(
+                            (i) => i.vitri.trim().toLowerCase() === side && i.mau === selectedColor
+                        );
+                        if (!img) return null;
+
+                        const isSelected = selectedImage?.vitri === img.vitri;
+
+                        return (
+                            <div
+                                key={img._id}
+                                onClick={() => setSelectedImage(img)}
+                                style={{
+                                    cursor: "pointer",
+                                    marginBottom: 8,
+                                    border: isSelected ? "2px solid #00bcd4" : "1px solid #ccc",
+                                    padding: 2,
+                                    borderRadius: 4,
+                                }}
+                            >
+                                <img
+                                    src={`data:${img.contentType};base64,${img.data}`}
+                                    alt={img.vitri || ""}
+                                    style={{ width: 60, height: 80, objectFit: "cover" }}
+                                />
+                                <div className="small text-muted text-center mt-1">{img.vitri}</div>
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
         </div>

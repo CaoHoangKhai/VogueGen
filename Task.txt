@@ -186,6 +186,13 @@ Xem hội đồng là ai thì thêm hình người đó và tên vào sản ph�
 Dọn dẹp lại desktop
 
 
+16/08/2025
+- Code 
+	+ Import ảnh lại đúng định dạng là png
+- PP
+	+ Làm cho xong (18/08/2025) sửa lại
+- Desktop
+	+ Dọn lại cho đẹp
 
 
 
